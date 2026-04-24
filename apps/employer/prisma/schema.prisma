@@ -1,0 +1,192 @@
+// Glimmora for Employers — Employer Portal
+// Separate DB from Consumer App; in production these sync via API.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Role within a company: OWNER | RECRUITER | HM | INTERVIEWER | FINANCE
+model Company {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  website     String?
+  about       String?    // public company description
+  logoUrl     String?
+  hqCountry   String?    // ISO alpha-2
+  hqCity      String?
+  size        String?    // startup, growth, enterprise
+  industry    String?
+  verified    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  members     Membership[]
+  jobs        Job[]
+  sponsorship SponsorshipPolicy?
+}
+
+model SponsorshipPolicy {
+  id                   String   @id @default(cuid())
+  companyId            String   @unique
+  company              Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Countries where company sponsors. JSON-stringified array of ISO-2 codes.
+  sponsorsCountries    String   @default("[]")
+  // Visa tiers supported, JSON
+  visaTiers            String   @default("[]")
+  relocationBenefit    String?  // e.g. "up to €8,000"
+  remoteFriendly       Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
+}
+
+model Membership {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       String   @default("RECRUITER") // OWNER, RECRUITER, HM, INTERVIEWER, FINANCE
+  createdAt  DateTime @default(now())
+
+  @@unique([companyId, userId])
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  emailVerified DateTime?
+  passwordHash  String
+  name          String?
+  image         String?
+  title         String?      // e.g. "Head of Talent"
+  status        String       @default("ACTIVE") // ACTIVE, SUSPENDED, DELETED
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  memberships   Membership[]
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model Job {
+  id              String        @id @default(cuid())
+  companyId       String
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title           String
+  department      String?
+  location        String?       // "Berlin, DE" or "Remote"
+  remote          String?       // on-site, hybrid, remote
+  seniority       String?       // junior, mid, senior, staff, principal
+  employmentType  String?       // full_time, contract, part_time
+  salaryMin       Int?
+  salaryMax       Int?
+  currency        String        @default("EUR")
+  description     String?
+  requirements    String?
+  status          String        @default("DRAFT") // DRAFT, ACTIVE, CLOSED
+  // Visa metadata
+  visaSponsorship Boolean       @default(false)
+  eligiblePassports String      @default("[]") // JSON array of ISO-2
+  visaTier        String?       // "EU Blue Card", "HSM", "Tech Visa", etc.
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  publishedAt     DateTime?
+  closedAt        DateTime?
+
+  applications    Application[]
+}
+
+model Application {
+  id            String    @id @default(cuid())
+  jobId         String
+  job           Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateName String
+  candidateEmail String
+  // Mirror of consumer twin (denormalised snapshot at application time)
+  passport      String?   // ISO-2
+  currentCountry String?
+  profession    String?
+  yearsExp      Int?
+  matchScore    Int       @default(0) // 0-100
+  visaFit       String    @default("unknown") // yes, maybe, no
+  stage         String    @default("NEW") // NEW, SHORTLISTED, INTERVIEW, OFFER, HIRED, REJECTED
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  interviews    Interview[]
+  offers        Offer[]
+}
+
+model Offer {
+  id                String    @id @default(cuid())
+  applicationId     String
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status            String    @default("DRAFT") // DRAFT, SENT, ACCEPTED, DECLINED, WITHDRAWN
+  baseSalary        Int       // annual salary, whole currency units
+  currency          String    @default("EUR")
+  bonusPct          Int?      // % of base
+  equity            String?   // free-form e.g. "0.05% over 4 years"
+  signingBonus      Int?
+  relocationBenefit String?   // e.g. "up to €8,000"
+  startDate         DateTime?
+  note              String?   // internal or to candidate
+  sentAt            DateTime?
+  respondedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Interview {
+  id            String    @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  kind          String    // PHONE, TECHNICAL, ONSITE, FINAL
+  scheduledAt   DateTime?
+  duration      Int?      // minutes
+  interviewer   String?
+  feedback      String?
+  rating        Int?      // 1-5
+  createdAt     DateTime  @default(now())
+}
+
+// ---- NextAuth tables ----
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

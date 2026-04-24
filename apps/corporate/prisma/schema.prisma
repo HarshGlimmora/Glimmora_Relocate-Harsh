@@ -1,0 +1,223 @@
+// Glimmora for Companies — Corporate / HR Mobility Portal
+// Enterprise B2B surface for Global Mobility leads managing relocations in bulk.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// An enterprise customer (the buyer of the platform).
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  hqCountry   String?
+  hqCity      String?
+  industry    String?
+  size        String?  // startup, scaleup, enterprise
+  contractTier String  @default("STANDARD") // STANDARD, ENTERPRISE, CUSTOM
+  billingEmail String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     CorporateMembership[]
+  employees   Employee[]
+  policies    Policy[]
+  approvals   Approval[]
+  invoices    Invoice[]
+}
+
+model CorporateUser {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified DateTime?
+  passwordHash  String
+  name          String?
+  title         String?
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships   CorporateMembership[]
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model CorporateMembership {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           CorporateUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String   @default("MANAGER") // OWNER, LEAD, MANAGER, FINANCE, VIEWER
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, userId])
+}
+
+// A staff member at the company — may or may not be actively relocating.
+model Employee {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // HR identity
+  email          String
+  name           String
+  title          String?
+  department     String?
+  homeCountry    String   // ISO-2 where they currently live/work
+  level          String?  // e.g. L5, Director, VP
+  manager        String?  // manager's name
+
+  // Relocation context (null if not relocating)
+  relocationStatus String  @default("NONE") // NONE, PLANNED, ACTIVE, SETTLED
+  destCountry    String?
+  destCity       String?
+  targetStartDate DateTime?
+  policyId       String?
+  policy         Policy?  @relation(fields: [policyId], references: [id])
+
+  // Derived from consumer events; cached for speed
+  milestonesDone Int      @default(0)
+  milestonesTotal Int     @default(0)
+  lastEventAt    DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  cases          RelocationCase[]
+  approvalsSubject Approval[]
+
+  @@unique([organizationId, email])
+}
+
+// A single relocation engagement (there may be re-assignments over time).
+// In production this mirrors the Consumer-side Relocation record via event sync.
+model RelocationCase {
+  id             String   @id @default(cuid())
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  destCountry    String
+  destCity       String?
+  startedAt      DateTime @default(now())
+  closedAt       DateTime?
+  status         String   @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED, CANCELLED
+
+  // Budget
+  budgetCap      Int?      // organization-side cap (e.g. €8000)
+  spent          Int       @default(0)
+  currency       String    @default("EUR")
+
+  // Stage snapshot (mirrored from Consumer)
+  stage          String    @default("OFFER_ACCEPTED")
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([employeeId, status])
+}
+
+// Organization-defined relocation benefit tiers.
+model Policy {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  tier           String   @default("STANDARD") // STANDARD, EXEC, EARLY_CAREER, INTERN
+  relocationCap  Int       // total budget in currency units
+  currency       String    @default("EUR")
+  housingCap     Int?      // optional sub-budget
+  shippingIncluded Boolean @default(true)
+  lumpSum        Int?      // alternative to itemised caps
+  active         Boolean   @default(true)
+  description    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  employees      Employee[]
+
+  @@unique([organizationId, name])
+}
+
+// Exception requests — HR manager asks Mobility Lead to override a policy.
+model Approval {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  kind           String   // BUDGET_OVERRIDE, POLICY_EXCEPTION, EXTENSION
+  requestedBy    String   // manager name
+  requestedAmount Int?    // for budget overrides
+  currency       String?  @default("EUR")
+  reason         String
+  status         String   @default("PENDING") // PENDING, APPROVED, DECLINED, WITHDRAWN
+  decidedBy      String?
+  decidedAt      DateTime?
+  decidedNote    String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, status])
+}
+
+model Invoice {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  number         String   @unique
+  period         String   // "2026-Q1"
+  total          Int       // in currency units
+  currency       String    @default("EUR")
+  status         String    @default("ISSUED") // ISSUED, PAID, OVERDUE, DISPUTED, VOID
+  issuedAt       DateTime
+  paidAt         DateTime?
+  dueAt          DateTime
+  lineItems      String   @default("[]") // JSON array
+
+  createdAt      DateTime @default(now())
+}
+
+// ---- NextAuth tables ----
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user              CorporateUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         CorporateUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

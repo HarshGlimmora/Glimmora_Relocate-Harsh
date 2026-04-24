@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glimmora Relocate — Architecture, IA & Flows</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --ink:#0F1222;
+    --ink-2:#2B2E44;
+    --paper:#FAF7F2;
+    --paper-2:#F2EEE6;
+    --line:#E4DDD1;
+    --rule:#D6CCBB;
+    --accent:#B3542A;       /* terra cotta */
+    --accent-soft:#F3DAC7;
+    --indigo:#3A3F7A;
+    --indigo-soft:#E2E3F2;
+    --mint:#2F7D66;
+    --mint-soft:#DBEDE6;
+    --ochre:#B48A2C;
+    --ochre-soft:#F4E8C7;
+    --violet:#6B3E8A;
+    --violet-soft:#EADDF2;
+    --slate:#5E6379;
+    --shadow: 0 1px 2px rgba(15,18,34,.05), 0 8px 24px rgba(15,18,34,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Inter","Helvetica Neue",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:56px 40px 120px}
+  header.cover{
+    border-bottom:1px solid var(--rule);
+    padding-bottom:56px;
+    margin-bottom:64px;
+    position:relative;
+  }
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:18px;
+  }
+  h1{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:500;
+    font-size:clamp(44px,6vw,76px);
+    line-height:1.02;
+    letter-spacing:-.025em;
+    margin:0 0 20px;
+    color:var(--ink);
+  }
+  h1 em{
+    font-style:italic;
+    font-weight:400;
+    color:var(--accent);
+  }
+  header.cover .lede{
+    font-family:"Fraunces",Georgia,serif;
+    font-size:22px;
+    font-weight:400;
+    color:var(--ink-2);
+    max-width:760px;
+    line-height:1.45;
+    margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;gap:48px;flex-wrap:wrap;
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;
+  }
+  .meta-row span b{color:var(--ink);font-weight:500}
+
+  h2{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:500;
+    font-size:40px;
+    letter-spacing:-.02em;
+    margin:96px 0 8px;
+    line-height:1.1;
+  }
+  h2 .num{
+    font-family:"JetBrains Mono",monospace;
+    font-size:13px;
+    color:var(--accent);
+    letter-spacing:.2em;
+    display:block;
+    margin-bottom:8px;
+    font-weight:500;
+  }
+  h3{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:500;
+    font-size:26px;
+    letter-spacing:-.01em;
+    margin:48px 0 12px;
+    line-height:1.2;
+  }
+  h4{
+    font-family:"Inter",sans-serif;
+    font-weight:600;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    color:var(--ink-2);
+    margin:28px 0 10px;
+  }
+  p{margin:0 0 16px;max-width:74ch}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+  a:hover{border-bottom-color:var(--accent)}
+  code{
+    font-family:"JetBrains Mono",monospace;
+    font-size:.9em;
+    background:var(--paper-2);
+    padding:1px 6px;
+    border-radius:4px;
+    color:var(--ink);
+  }
+  hr{border:none;border-top:1px solid var(--rule);margin:56px 0}
+
+  section.section-lead{
+    color:var(--ink-2);
+    font-size:18px;
+    max-width:70ch;
+    margin-bottom:36px;
+  }
+
+  /* TOC */
+  nav.toc{
+    position:sticky;
+    top:0;
+    background:rgba(250,247,242,0.92);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--rule);
+    z-index:10;
+    margin:-56px -40px 56px;
+    padding:14px 40px;
+  }
+  nav.toc .toc-inner{
+    max-width:1180px;margin:0 auto;
+    display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+    font-family:"JetBrains Mono",monospace;
+    font-size:11.5px;
+    letter-spacing:.08em;
+  }
+  nav.toc .brand{
+    color:var(--ink);font-weight:600;letter-spacing:.18em;
+    margin-right:18px;text-transform:uppercase;
+  }
+  nav.toc a{
+    color:var(--slate);border:none;padding:4px 8px;border-radius:4px;
+    text-transform:uppercase;
+  }
+  nav.toc a:hover{background:var(--paper-2);color:var(--ink)}
+
+  /* Cards / grids */
+  .grid{display:grid;gap:20px}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  .grid-4{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:900px){
+    .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+    .wrap{padding:40px 22px 80px}
+    nav.toc{margin:-40px -22px 40px;padding:12px 22px}
+  }
+
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:22px 24px;
+    box-shadow:var(--shadow);
+  }
+  .card .tag{
+    font-family:"JetBrains Mono",monospace;
+    font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:6px;
+  }
+  .card h4{margin:0 0 8px;font-family:"Fraunces",serif;font-size:20px;text-transform:none;letter-spacing:-.01em;color:var(--ink);font-weight:500}
+  .card p{font-size:14.5px;color:var(--ink-2);margin:0}
+  .card ul{margin:8px 0 0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+  .card ul li{margin-bottom:4px}
+
+  .pillar-card{border-left:3px solid var(--accent)}
+  .pillar-card.p2{border-color:var(--indigo)}
+  .pillar-card.p3{border-color:var(--mint)}
+  .pillar-card.p4{border-color:var(--ochre)}
+  .pillar-card.p5{border-color:var(--violet)}
+  .pillar-card.p6{border-color:var(--accent)}
+  .pillar-card.p7{border-color:var(--indigo)}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;
+    background:var(--paper-2);color:var(--ink-2);
+    border:1px solid var(--line);
+  }
+  .pill.accent{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+  .pill.indigo{background:var(--indigo-soft);color:var(--indigo);border-color:var(--indigo-soft)}
+  .pill.mint{background:var(--mint-soft);color:var(--mint);border-color:var(--mint-soft)}
+  .pill.ochre{background:var(--ochre-soft);color:var(--ochre);border-color:var(--ochre-soft)}
+  .pill.violet{background:var(--violet-soft);color:var(--violet);border-color:var(--violet-soft)}
+
+  /* Mermaid container */
+  .diagram{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:28px;
+    margin:28px 0;
+    box-shadow:var(--shadow);
+    overflow-x:auto;
+  }
+  .diagram-title{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--slate);margin-bottom:14px;
+  }
+  .diagram svg{max-width:100%;height:auto}
+
+  /* IA Tree */
+  .ia-tree{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:28px;box-shadow:var(--shadow);margin:20px 0;
+    font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.9;
+  }
+  .ia-tree .node{display:block}
+  .ia-tree .l1{color:var(--ink);font-weight:600}
+  .ia-tree .l2{color:var(--ink-2);padding-left:24px}
+  .ia-tree .l3{color:var(--slate);padding-left:48px}
+  .ia-tree .annot{color:var(--accent);font-size:11.5px;margin-left:8px;font-weight:400}
+
+  /* Persona */
+  .persona{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:22px 24px;box-shadow:var(--shadow);
+    display:flex;gap:18px;
+  }
+  .persona .avatar{
+    width:44px;height:44px;flex:0 0 44px;
+    border-radius:50%;background:var(--accent-soft);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Fraunces",serif;font-size:20px;font-weight:600;
+  }
+  .persona.p2 .avatar{background:var(--indigo-soft);color:var(--indigo)}
+  .persona.p3 .avatar{background:var(--mint-soft);color:var(--mint)}
+  .persona.p4 .avatar{background:var(--ochre-soft);color:var(--ochre)}
+  .persona.p5 .avatar{background:var(--violet-soft);color:var(--violet)}
+  .persona.p6 .avatar{background:var(--accent-soft);color:var(--accent)}
+  .persona.p7 .avatar{background:var(--indigo-soft);color:var(--indigo)}
+  .persona h4{margin:0 0 4px;text-transform:none;letter-spacing:-.005em;font-family:"Fraunces",serif;font-size:19px;color:var(--ink);font-weight:500}
+  .persona .role{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--slate);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .persona p{font-size:14px;color:var(--ink-2);margin:0 0 6px}
+  .persona .uses{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+  /* Module matrix */
+  table{
+    width:100%;border-collapse:collapse;
+    background:#fff;border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+    font-size:14px;margin:20px 0;
+  }
+  th,td{padding:12px 16px;text-align:left;vertical-align:top}
+  thead th{
+    background:var(--paper-2);font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--ink-2);font-weight:500;border-bottom:1px solid var(--rule);
+  }
+  tbody tr+tr td{border-top:1px solid var(--line)}
+  tbody td:first-child{font-weight:500;color:var(--ink)}
+  tbody td code{font-size:12px}
+
+  /* Callouts */
+  .callout{
+    border-left:3px solid var(--accent);
+    background:var(--accent-soft);
+    padding:16px 20px;border-radius:0 8px 8px 0;
+    margin:24px 0;color:var(--ink-2);
+    font-size:14.5px;
+  }
+  .callout b{color:var(--ink)}
+  .callout.indigo{border-color:var(--indigo);background:var(--indigo-soft)}
+  .callout.mint{border-color:var(--mint);background:var(--mint-soft)}
+
+  /* Feature list */
+  .feat-list{list-style:none;padding:0;margin:0}
+  .feat-list li{
+    padding:10px 0 10px 26px;
+    border-top:1px solid var(--line);
+    position:relative;font-size:14.5px;color:var(--ink-2);
+  }
+  .feat-list li:last-child{border-bottom:1px solid var(--line)}
+  .feat-list li::before{
+    content:"";position:absolute;left:4px;top:18px;
+    width:8px;height:8px;background:var(--accent);border-radius:50%;
+  }
+  .feat-list li b{color:var(--ink);font-weight:500}
+
+  /* Layer stack visualization */
+  .stack{display:flex;flex-direction:column;gap:8px;margin:24px 0}
+  .stack .layer{
+    background:#fff;border:1px solid var(--line);border-radius:8px;
+    padding:14px 20px;display:flex;justify-content:space-between;align-items:center;
+    box-shadow:var(--shadow);
+  }
+  .stack .layer .name{font-family:"Fraunces",serif;font-size:18px;font-weight:500}
+  .stack .layer .sub{font-size:13px;color:var(--slate)}
+  .stack .layer.l1{border-left:4px solid var(--accent)}
+  .stack .layer.l2{border-left:4px solid var(--indigo)}
+  .stack .layer.l3{border-left:4px solid var(--mint)}
+  .stack .layer.l4{border-left:4px solid var(--ochre)}
+  .stack .layer.l5{border-left:4px solid var(--violet)}
+
+  /* Footer */
+  footer{
+    margin-top:120px;padding-top:32px;
+    border-top:1px solid var(--rule);
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;
+    letter-spacing:.05em;
+  }
+
+  /* Print */
+  @media print{
+    nav.toc{display:none}
+    .wrap{padding:20px}
+    body{font-size:12px}
+    h2{page-break-before:always}
+    .diagram{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<nav class="toc">
+  <div class="toc-inner">
+    <span class="brand">Glimmora · Relocate</span>
+    <a href="#overview">Overview</a>
+    <a href="#pillars">Pillars</a>
+    <a href="#personas">Personas</a>
+    <a href="#portals">Portals</a>
+    <a href="#ecosystem">Ecosystem</a>
+    <a href="#ia">IA</a>
+    <a href="#flows">Flows</a>
+    <a href="#data">Data</a>
+    <a href="#tech">Stack</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#open">Open Qs</a>
+  </div>
+</nav>
+
+<!-- ============================================================= -->
+<!-- COVER                                                           -->
+<!-- ============================================================= -->
+<header class="cover">
+  <div class="eyebrow">Reference Document · v0.1 · 2026-04-22</div>
+  <h1>Glimmora Relocate<em>™</em><br/>Architecture, IA &amp; Flows</h1>
+  <p class="lede">
+    An AGI-native, cross-border life-onboarding platform that guides an individual or family
+    from the decision to move, through securing employment abroad, to arriving and being
+    fully set up in a new country — as one intelligent, execution-enabled system.
+  </p>
+  <div class="meta-row">
+    <span><b>Owner</b> &nbsp; Glimmora</span>
+    <span><b>Source</b> &nbsp; Final Enterprise SOW (upgraded)</span>
+    <span><b>Status</b> &nbsp; Greenfield</span>
+    <span><b>Stack</b> &nbsp; FastAPI · PostgreSQL · React · LLM + KG</span>
+  </div>
+</header>
+
+<!-- ============================================================= -->
+<!-- 1. OVERVIEW                                                     -->
+<!-- ============================================================= -->
+<section id="overview">
+  <h2><span class="num">01 — Overview</span>What we are building</h2>
+  <p class="section-lead">
+    Glimmora Relocate is <b>not</b> a job board, a relocation agency, or a neobank. It is the
+    intelligence layer that fuses all three into a single guided journey. The AGI Copilot
+    is the user&rsquo;s front door; everything else — job intelligence, country knowledge,
+    financial modelling, document compliance, marketplace fulfilment, escrowed payments,
+    timeline tracking — is a tool the Copilot orchestrates on the user&rsquo;s behalf.
+  </p>
+
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="tag">The promise</div>
+      <h4>Decision → Stability</h4>
+      <p>From the first thought of moving to being fully settled with a job, home, school, bank, and community — one thread of guidance.</p>
+    </div>
+    <div class="card">
+      <div class="tag">The shape</div>
+      <h4>Intelligence + Execution</h4>
+      <p>Not advice-only. Every recommendation is bookable, payable, trackable, and verifiable through the platform.</p>
+    </div>
+    <div class="card">
+      <div class="tag">The moat</div>
+      <h4>Digital Twin + Flywheel</h4>
+      <p>Each journey updates a knowledge graph + trained twins that make the next user&rsquo;s plan sharper. Data compounds.</p>
+    </div>
+  </div>
+
+  <h3>Architectural layers</h3>
+  <div class="stack">
+    <div class="layer l1"><span><span class="name">Presentation</span><br/><span class="sub">Consumer web + mobile · employer portal · partner portal · HR portal · admin console</span></span><span class="pill accent">UI</span></div>
+    <div class="layer l2"><span><span class="name">Application</span><br/><span class="sub">AGI Copilot runtime · workflow orchestrator · marketplace · payments · messaging</span></span><span class="pill indigo">APIs</span></div>
+    <div class="layer l3"><span><span class="name">AI Intelligence</span><br/><span class="sub">LLM orchestration · reasoning · planning · RAG · fine-tuned matchers · prediction models</span></span><span class="pill mint">Brain</span></div>
+    <div class="layer l4"><span><span class="name">Data &amp; Knowledge</span><br/><span class="sub">Digital Twins · Country Knowledge Graph · user history · documents vault · vector store</span></span><span class="pill ochre">Memory</span></div>
+    <div class="layer l5"><span><span class="name">Integration</span><br/><span class="sub">Employer ATSs · housing / school / bank APIs · KYC · payment rails · gov e-forms</span></span><span class="pill violet">Edges</span></div>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 2. PILLARS                                                      -->
+<!-- ============================================================= -->
+<section id="pillars">
+  <h2><span class="num">02 — Pillars</span>The seven pillars</h2>
+  <p class="section-lead">
+    The SOW defines seven platform pillars. Each is composed of one or more modules (§4–§22 in the SOW).
+    Think of the pillars as <i>capabilities</i>; the portals below are the <i>surfaces</i> that expose them.
+  </p>
+
+  <div class="grid grid-3">
+    <div class="card pillar-card"><div class="tag">Pillar 01</div><h4>AGI Copilot</h4><p>Conversational spine of the product. Intent capture, reasoning, multi-step planning, explanation. §4.</p></div>
+    <div class="card pillar-card p2"><div class="tag">Pillar 02</div><h4>Job Intelligence</h4><p>Visa-aware matching, CV + interview AI, readiness scoring, employer marketplace. §5.</p></div>
+    <div class="card pillar-card p3"><div class="tag">Pillar 03</div><h4>Relocation Intelligence</h4><p>Housing, schools, banking, healthcare, utilities, community. §6.</p></div>
+    <div class="card pillar-card p4"><div class="tag">Pillar 04</div><h4>Financial Intelligence</h4><p>Salary-vs-cost, tax simulation, savings projection, FX impact. §7.</p></div>
+    <div class="card pillar-card p5"><div class="tag">Pillar 05</div><h4>Life Setup Engine</h4><p>Documents, timelines, local services, cultural on-ramp — the execution layer. §8, §15, §16, §17, §18.</p></div>
+    <div class="card pillar-card p6"><div class="tag">Pillar 06</div><h4>Marketplace &amp; Payments</h4><p>Partners, bookings, subscription, escrow. §12, §13.</p></div>
+    <div class="card pillar-card p7"><div class="tag">Pillar 07</div><h4>Trust &amp; Compliance</h4><p>Partner verification, SLA scoring, fraud detection, GDPR, encryption. §14, §26.</p></div>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 3. PERSONAS                                                     -->
+<!-- ============================================================= -->
+<section id="personas">
+  <h2><span class="num">03 — Personas</span>Who uses the platform</h2>
+  <p class="section-lead">
+    Nine distinct personas interact with Glimmora Relocate. Each drives one or more portals; some share the same surface in different modes.
+  </p>
+
+  <div class="grid grid-2">
+    <div class="persona"><div class="avatar">M</div><div>
+      <div class="role">Primary user · B2C</div>
+      <h4>The Mover</h4>
+      <p>A professional who wants to relocate to a new country, with or without a job lined up. Uses the Copilot to explore, plan, and execute the entire journey.</p>
+      <div class="uses"><span class="pill">Consumer App</span><span class="pill">Marketplace</span></div>
+    </div></div>
+
+    <div class="persona p2"><div class="avatar">F</div><div>
+      <div class="role">Primary user · B2C · family mode</div>
+      <h4>The Family Unit</h4>
+      <p>A spouse and / or children moving with the Mover. Each has a twin; the spouse gets career support, children get school matching + adaptation guidance.</p>
+      <div class="uses"><span class="pill indigo">Consumer App (Family)</span></div>
+    </div></div>
+
+    <div class="persona p3"><div class="avatar">S</div><div>
+      <div class="role">Primary user · B2C · student mode</div>
+      <h4>The Student</h4>
+      <p>A student moving abroad for university. Uses a narrower Copilot profile focused on admissions, budget, student visas, housing.</p>
+      <div class="uses"><span class="pill mint">Consumer App (Student)</span></div>
+    </div></div>
+
+    <div class="persona p4"><div class="avatar">E</div><div>
+      <div class="role">B2B · hiring</div>
+      <h4>The Employer</h4>
+      <p>Company or recruiter posting visa-sponsoring roles and reviewing AI-ranked candidates. Needs visa clarity, offer management, and bulk hiring tools.</p>
+      <div class="uses"><span class="pill ochre">Employer Portal</span></div>
+    </div></div>
+
+    <div class="persona p5"><div class="avatar">P</div><div>
+      <div class="role">B2B · supply side</div>
+      <h4>The Partner Provider</h4>
+      <p>Landlord, school, bank, insurer, movers, telco, clinic, local service. Lists availability, fulfils bookings, gets paid via escrow, maintains SLAs.</p>
+      <div class="uses"><span class="pill violet">Partner Portal</span></div>
+    </div></div>
+
+    <div class="persona p6"><div class="avatar">H</div><div>
+      <div class="role">B2B · corporate mobility</div>
+      <h4>The HR / Mobility Admin</h4>
+      <p>Enterprise buyer moving many employees. Seats = employees; dashboards = compliance, status, cost per relocation, SLAs.</p>
+      <div class="uses"><span class="pill accent">Corporate Portal</span></div>
+    </div></div>
+
+    <div class="persona p7"><div class="avatar">A</div><div>
+      <div class="role">Internal · operations</div>
+      <h4>Glimmora Ops / Admin</h4>
+      <p>Onboards and verifies partners, moderates, handles escalations, manages the Country Knowledge Graph, monitors trust scores and payouts.</p>
+      <div class="uses"><span class="pill indigo">Admin Console</span></div>
+    </div></div>
+
+    <div class="persona"><div class="avatar">C</div><div>
+      <div class="role">Internal · data</div>
+      <h4>Content &amp; Data Curator</h4>
+      <p>Keeps the Country Knowledge Graph current — visa rules, tax changes, cost of living feeds, school data. Reviews AI-extracted updates.</p>
+      <div class="uses"><span class="pill">Admin Console · KG Studio</span></div>
+    </div></div>
+
+    <div class="persona p3"><div class="avatar">X</div><div>
+      <div class="role">Premium tier (optional)</div>
+      <h4>Verified Human Expert</h4>
+      <p>Licensed immigration consultant, relocation specialist, or tax advisor offered in premium plans for human review of Copilot plans.</p>
+      <div class="uses"><span class="pill mint">Expert Portal</span></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 4. PORTALS                                                      -->
+<!-- ============================================================= -->
+<section id="portals">
+  <h2><span class="num">04 — Portals</span>The six surfaces</h2>
+  <p class="section-lead">
+    Six portals expose the platform. The Consumer App is the product people see in the market; the other five
+    are the machinery that keeps the promise.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:20%">Portal</th>
+        <th style="width:22%">Primary persona</th>
+        <th>Core jobs-to-be-done</th>
+        <th style="width:18%">Surface</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Consumer App</td>
+        <td>Mover · Family · Student</td>
+        <td>Explore countries, discover jobs, build and execute the relocation plan, manage documents, pay providers, chat with Copilot, track timeline.</td>
+        <td>Web + Mobile PWA</td>
+      </tr>
+      <tr>
+        <td>Employer Portal</td>
+        <td>Employer · Recruiter</td>
+        <td>Post visa-clear roles, review AI-ranked + visa-eligible candidates, manage offers, integrate ATS, run corporate hiring campaigns.</td>
+        <td>Web</td>
+      </tr>
+      <tr>
+        <td>Partner Portal</td>
+        <td>Housing · School · Bank · Insurer · Local svc.</td>
+        <td>Onboard + verify, manage listings / inventory, receive bookings, fulfil SLAs, get paid via escrow, respond to Copilot queries.</td>
+        <td>Web</td>
+      </tr>
+      <tr>
+        <td>Corporate Mobility Portal</td>
+        <td>HR / Mobility Admin</td>
+        <td>Seat assignments per employee, aggregate dashboards (cost, status, compliance), policies, bulk immigration support.</td>
+        <td>Web</td>
+      </tr>
+      <tr>
+        <td>Admin / Ops Console</td>
+        <td>Glimmora Ops · Data Curator</td>
+        <td>Partner verification, SLA + fraud monitoring, KG studio, escalations, support, analytics, feature flags.</td>
+        <td>Web (internal)</td>
+      </tr>
+      <tr>
+        <td>Public / Comparison site</td>
+        <td>Visitor (pre-signup)</td>
+        <td>Country comparison, salary-vs-cost previews, SEO content, lead capture, trust proofs — funnel into the Consumer App.</td>
+        <td>Web</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================= -->
+<!-- 5. PORTAL ECOSYSTEM                                             -->
+<!-- ============================================================= -->
+<section id="ecosystem">
+  <h2><span class="num">05 — Ecosystem</span>How the portals connect</h2>
+  <p class="section-lead">
+    Every portal writes into the same core (Copilot, Twins, Knowledge Graph, Workflow, Payments, Trust) and reads derived state back out.
+    This is the single-platform view of cross-portal data flow.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">Portal ↔ Core ↔ Partner Ecosystem</div>
+    <pre class="mermaid">
+flowchart LR
+  classDef consumer fill:#F3DAC7,stroke:#B3542A,color:#0F1222
+  classDef emp      fill:#F4E8C7,stroke:#B48A2C,color:#0F1222
+  classDef partner  fill:#EADDF2,stroke:#6B3E8A,color:#0F1222
+  classDef corp     fill:#DBEDE6,stroke:#2F7D66,color:#0F1222
+  classDef admin    fill:#E2E3F2,stroke:#3A3F7A,color:#0F1222
+  classDef core     fill:#FFFFFF,stroke:#0F1222,color:#0F1222,stroke-width:1.5px
+  classDef ext      fill:#F2EEE6,stroke:#5E6379,color:#0F1222
+
+  subgraph Surfaces[" "]
+    direction TB
+    C[Consumer App<br/>Mover · Family · Student]:::consumer
+    E[Employer Portal]:::emp
+    P[Partner Portal]:::partner
+    H[Corporate Portal<br/>HR Admin]:::corp
+    A[Admin Console]:::admin
+    Pub[Public Comparison Site]:::consumer
+  end
+
+  subgraph Core["Core Platform"]
+    direction TB
+    CO[AGI Copilot]:::core
+    WF[Workflow Orchestrator]:::core
+    DT[Digital Twins<br/>User · Family · Job · Relocation]:::core
+    KG[Country Knowledge Graph]:::core
+    MP[Marketplace Engine]:::core
+    PAY[Payments &amp; Escrow]:::core
+    TR[Trust &amp; Verification]:::core
+    DF[Data Flywheel]:::core
+  end
+
+  subgraph External["External Integrations"]
+    direction TB
+    ATS[Employer ATS]:::ext
+    KYC[KYC / ID Providers]:::ext
+    PSP[Payment Rails / PSP]:::ext
+    GOV[Gov e-Forms / Visa Portals]:::ext
+    LLM[LLM Providers]:::ext
+    DATA[Cost · Tax · FX · Schools Data]:::ext
+  end
+
+  C  --> CO
+  Pub --> CO
+  E  --> MP
+  P  --> MP
+  H  --> DT
+  A  --> TR
+  A  --> KG
+
+  CO --> WF
+  CO --> DT
+  CO --> KG
+  CO --> LLM
+  WF --> MP
+  MP --> PAY
+  PAY --> PSP
+  TR --> MP
+  TR --> KYC
+  DT --> DF
+  DF --> KG
+  KG --> DATA
+  E --> ATS
+  WF --> GOV
+
+  MP -. booking .-> C
+  MP -. listings .-> C
+  E -. job matches .-> C
+  H -. seats .-> C
+  TR -. verified badge .-> C
+    </pre>
+  </div>
+
+  <div class="callout">
+    <b>Reading the diagram.</b> Portals on the left write into the Core (centre) and read derived state back; the Core
+    calls out to the third-party world (right) through an Integration layer. The Copilot is the <i>only</i> user-facing
+    reasoner — every other surface talks to the Core directly without a chat UI.
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 6. INFORMATION ARCHITECTURE                                     -->
+<!-- ============================================================= -->
+<section id="ia">
+  <h2><span class="num">06 — Information Architecture</span>The map of each surface</h2>
+  <p class="section-lead">
+    The Consumer App carries the weight of the IA — every other portal is narrower and task-driven.
+    Below is the full navigation tree of the Consumer App, followed by compact IAs for the other five portals.
+  </p>
+
+  <h3>Consumer App (Mover / Family / Student)</h3>
+  <div class="ia-tree">
+<span class="node l1">⌂ Home · Copilot Dashboard</span><span class="annot">— chat, next best action, progress, alerts</span>
+<span class="node l1">◎ Discover</span>
+<span class="node l2">— Country Comparison</span><span class="annot">§19 · job · cost · lifestyle · tax · FX</span>
+<span class="node l2">— Job Discovery</span><span class="annot">§5.1 · visa-aware search</span>
+<span class="node l2">— Opportunity Feed</span><span class="annot">Copilot-curated nudges</span>
+<span class="node l1">◎ My Plan</span>
+<span class="node l2">— Timeline &amp; Milestones</span><span class="annot">§15</span>
+<span class="node l2">— Tasks &amp; Dependencies</span><span class="annot">§11</span>
+<span class="node l2">— Readiness Scoreboard</span><span class="annot">§5.1.3</span>
+<span class="node l1">◎ Career</span>
+<span class="node l2">— Applications</span>
+<span class="node l2">— Resume &amp; Cover Letters</span><span class="annot">§5.1.2</span>
+<span class="node l2">— Interview AI</span><span class="annot">§5.1.4</span>
+<span class="node l2">— Offers &amp; Negotiation</span>
+<span class="node l1">◎ Life Setup</span>
+<span class="node l2">— Housing</span><span class="annot">§6.1 short · long · neighbourhood score</span>
+<span class="node l2">— Schools</span><span class="annot">§6.2 match + admissions</span>
+<span class="node l2">— Banking &amp; Insurance</span><span class="annot">§6.3</span>
+<span class="node l2">— Healthcare &amp; Fitness</span><span class="annot">§6.4</span>
+<span class="node l2">— Utilities &amp; Mobility</span><span class="annot">§6.5 SIM · transport</span>
+<span class="node l2">— Community &amp; Integration</span><span class="annot">§6.6</span>
+<span class="node l1">◎ Family</span>
+<span class="node l2">— Spouse Career Support</span><span class="annot">§18</span>
+<span class="node l2">— Children Adaptation</span>
+<span class="node l2">— Community Match</span>
+<span class="node l1">◎ Finance</span>
+<span class="node l2">— Simulator (salary vs cost)</span><span class="annot">§7 FR-40</span>
+<span class="node l2">— Tax &amp; Savings Projection</span>
+<span class="node l2">— FX &amp; Multi-currency</span>
+<span class="node l1">◎ Documents</span>
+<span class="node l2">— Dynamic Checklist</span><span class="annot">§8 FR-50</span>
+<span class="node l2">— Uploads &amp; Vault</span>
+<span class="node l2">— Validation &amp; Expiry</span><span class="annot">§8 FR-51</span>
+<span class="node l2">— Auto Form-fill</span>
+<span class="node l1">◎ Marketplace</span><span class="annot">§12 partners + bookings</span>
+<span class="node l1">◎ Cultural &amp; Language</span><span class="annot">§16 learning modules</span>
+<span class="node l1">◎ Messages</span><span class="annot">Copilot threads · partner chats · employer chats</span>
+<span class="node l1">◎ Profile &amp; Digital Twin</span><span class="annot">§9 identity · preferences · consent</span>
+<span class="node l1">◎ Subscription &amp; Billing</span>
+<span class="node l1">◎ Settings</span><span class="annot">privacy · notifications · language · region</span>
+  </div>
+
+  <div class="grid grid-2">
+    <div>
+      <h3>Employer Portal</h3>
+      <div class="ia-tree">
+<span class="node l1">⌂ Dashboard</span>
+<span class="node l1">◎ Jobs</span>
+<span class="node l2">— Post Job (visa metadata)</span>
+<span class="node l2">— Active / Closed</span>
+<span class="node l1">◎ Candidates</span>
+<span class="node l2">— AI-ranked &amp; visa-eligible</span>
+<span class="node l2">— Shortlists &amp; Pipeline</span>
+<span class="node l1">◎ Interviews</span>
+<span class="node l1">◎ Offers</span>
+<span class="node l1">◎ Company Profile</span>
+<span class="node l1">◎ ATS &amp; Integrations</span>
+<span class="node l1">◎ Billing</span>
+      </div>
+    </div>
+    <div>
+      <h3>Partner Portal</h3>
+      <div class="ia-tree">
+<span class="node l1">⌂ Dashboard</span>
+<span class="node l1">◎ Verification</span>
+<span class="node l2">— KYC / KYB · docs</span>
+<span class="node l1">◎ Listings / Inventory</span>
+<span class="node l2">— Housing units · Schools · Plans · etc.</span>
+<span class="node l1">◎ Bookings &amp; Requests</span>
+<span class="node l1">◎ Messages</span>
+<span class="node l1">◎ SLAs &amp; Reviews</span>
+<span class="node l1">◎ Payouts (Escrow)</span>
+<span class="node l1">◎ Settings</span>
+      </div>
+    </div>
+    <div>
+      <h3>Corporate Mobility Portal</h3>
+      <div class="ia-tree">
+<span class="node l1">⌂ Overview</span>
+<span class="node l1">◎ Employees</span>
+<span class="node l2">— Seats · invitations</span>
+<span class="node l2">— Individual status</span>
+<span class="node l1">◎ Policies</span>
+<span class="node l2">— Cost caps · allowed countries · benefits</span>
+<span class="node l1">◎ Pipelines</span>
+<span class="node l2">— Visa · housing · onboarding</span>
+<span class="node l1">◎ Reports</span>
+<span class="node l2">— Cost per relocation · SLAs · risk</span>
+<span class="node l1">◎ Billing &amp; Contracts</span>
+      </div>
+    </div>
+    <div>
+      <h3>Admin / Ops Console</h3>
+      <div class="ia-tree">
+<span class="node l1">⌂ Ops Dashboard</span>
+<span class="node l1">◎ Partner Verification Queue</span>
+<span class="node l1">◎ Trust &amp; Fraud</span>
+<span class="node l2">— SLA scoring</span>
+<span class="node l2">— Dispute resolution</span>
+<span class="node l1">◎ Country KG Studio</span>
+<span class="node l2">— Visa · Tax · COL sources</span>
+<span class="node l2">— AI-extracted updates queue</span>
+<span class="node l1">◎ Users &amp; Support</span>
+<span class="node l1">◎ Finance</span>
+<span class="node l2">— Escrow · payouts · refunds</span>
+<span class="node l1">◎ Feature Flags &amp; Config</span>
+<span class="node l1">◎ Analytics</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 7. FLOWS                                                        -->
+<!-- ============================================================= -->
+<section id="flows">
+  <h2><span class="num">07 — User Flows</span>How the journey moves</h2>
+  <p class="section-lead">
+    Ten flows cover the surface area of the product. Each diagram below is self-contained and
+    names the modules / portals it touches. Read in order for a chronological view of a user journey.
+  </p>
+
+  <!-- ============== 7.1 Onboarding & Intent ============== -->
+  <h3>7.1 Onboarding &amp; Intent Capture</h3>
+  <p>The first thirty minutes. The Copilot captures who the user is, the family shape, origin and likely destinations, timeline intent, and constraints. The output is a first-draft Digital Twin and a first-draft plan.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Onboarding</div>
+    <pre class="mermaid">
+flowchart TD
+  A([Landing / Public site]) --> B[Sign up / Social auth]
+  B --> C{Mode?}
+  C -->|Individual| D1[Copilot · conversational intake]
+  C -->|Family|     D2[Copilot · family intake<br/>spouse + children]
+  C -->|Student|    D3[Copilot · student intake]
+  D1 --> E[Origin + target countries]
+  D2 --> E
+  D3 --> E
+  E --> F[Constraints<br/>budget · timeline · visa history]
+  F --> G[Generate Digital Twin v0]
+  G --> H[Generate first-draft plan]
+  H --> I[Home dashboard · plan preview]
+  I --> J{Ready to commit?}
+  J -->|Yes| K[Start subscription $100/yr]
+  J -->|Not yet| L[Free exploration mode<br/>Country Comparison unlocked]
+    </pre>
+  </div>
+
+  <!-- ============== 7.2 Explore & Compare ============== -->
+  <h3>7.2 Explore &amp; Compare Countries</h3>
+  <p>The top-of-funnel behaviour. Users compare countries on jobs, cost, taxes, lifestyle — the Country Comparison Engine (§19) reads the Country Knowledge Graph (§10) and the Financial Intelligence module (§7).</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Country Comparison</div>
+    <pre class="mermaid">
+flowchart LR
+  U([User]) --> CC[Country Comparison UI]
+  CC --> FS[Filters: profession · family · budget]
+  FS --> KG[(Country Knowledge Graph)]
+  FS --> FI[Financial Intelligence]
+  KG --> RES[Ranked countries]
+  FI --> RES
+  RES --> CARD[Country Card<br/>visa · jobs · cost · tax · FX]
+  CARD --> DECIDE{Interested?}
+  DECIDE -->|Yes| PLAN[Generate relocation plan]
+  DECIDE -->|Explore| JOBS[Jump to Job Discovery]
+  PLAN --> TL[Timeline + Milestones]
+    </pre>
+  </div>
+
+  <!-- ============== 7.3 Job → Offer ============== -->
+  <h3>7.3 Job Discovery → Offer</h3>
+  <p>Visa-aware matching is the defining edge over incumbent job boards. The Copilot understands the user&rsquo;s passport, skills, and family constraints; the Employer Portal surfaces candidates already filtered to its sponsorship reality.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Job to Offer</div>
+    <pre class="mermaid">
+flowchart TD
+  U([User]) --> JD[Job Discovery]
+  JD --> VM[Visa-Aware Matching]
+  VM --> RE[Resume &amp; Cover Letter AI]
+  RE --> APP[Apply]
+  APP -->|Submitted| E[Employer Portal<br/>AI-ranked pipeline]
+  E --> SH{Shortlist?}
+  SH -->|No| END1([Rejected → feedback to Readiness])
+  SH -->|Yes| IV[Interview AI coaching]
+  IV --> LIVE[Live interview]
+  LIVE --> OFF{Offer?}
+  OFF -->|No| END2([Back to Discovery with updated twin])
+  OFF -->|Yes| NEG[Offer + negotiation assist]
+  NEG --> ACC[Accepted]
+  ACC --> SYNC[Job-Relocation Sync<br/>§5.1.6]
+  SYNC --> UPD[Update Relocation Twin<br/>location · salary · start date]
+  UPD --> RELO[Trigger Relocation Plan]
+    </pre>
+  </div>
+
+  <!-- ============== 7.4 Relocation Plan Gen ============== -->
+  <h3>7.4 Relocation Plan Generation</h3>
+  <p>Once job and country are fixed, the Copilot expands the plan into a full, dependency-aware task tree — docs, housing, schools, bank, health, utilities, community.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Relocation Plan Expansion</div>
+    <pre class="mermaid">
+flowchart LR
+  SYNC[Job-Relocation Sync] --> RT[Relocation Twin updated]
+  RT --> WF[Workflow Orchestrator]
+  WF --> T1[Docs &amp; Visa tasks]
+  WF --> T2[Housing search tasks]
+  WF --> T3[School matching<br/>if family]
+  WF --> T4[Bank + Insurance setup]
+  WF --> T5[Health + Fitness onboarding]
+  WF --> T6[Utilities · SIM · transport]
+  WF --> T7[Cultural / Language modules]
+  T1 --> DEP{Dependencies resolved?}
+  T2 --> DEP
+  T3 --> DEP
+  DEP -->|Yes| TL[Timeline with milestones]
+  DEP -->|Blocked| AL[Alert · Copilot guidance]
+  TL --> HOME[Home dashboard]
+    </pre>
+  </div>
+
+  <!-- ============== 7.5 Documents & Compliance ============== -->
+  <h3>7.5 Documents &amp; Compliance</h3>
+  <p>Dynamic per country + visa type. Form-filling, validation, and expiry tracking are all modelled as workflow tasks — not a static checklist.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Document Lifecycle</div>
+    <pre class="mermaid">
+flowchart TD
+  CTX[Country + Visa context] --> CL[Dynamic checklist generator]
+  CL --> LIST[Per-document task]
+  LIST --> USER([User upload / capture])
+  USER --> VAL[AI validator<br/>OCR · schema · anti-tamper]
+  VAL --> OK{Valid?}
+  OK -->|No| FIX[Copilot explains fix]
+  FIX --> USER
+  OK -->|Yes| VAULT[(Encrypted documents vault)]
+  VAULT --> AF[Auto form-fill<br/>gov e-forms]
+  VAULT --> EX[Expiry tracking]
+  EX --> ALERT[Proactive renewal alerts]
+  AF --> GOV[(Gov / Visa portals)]
+    </pre>
+  </div>
+
+  <!-- ============== 7.6 Financial Simulation ============== -->
+  <h3>7.6 Financial Simulation</h3>
+  <p>Runs independently (comparison-time) and ties into the plan once a country and salary are chosen. The engine projects net income, tax, savings, and FX impact over time.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Financial Intelligence</div>
+    <pre class="mermaid">
+flowchart LR
+  IN[Salary offer + country] --> FE[Financial Engine]
+  FE --> TX[Tax model]
+  FE --> COL[Cost of Living]
+  FE --> FX[FX &amp; multi-currency]
+  TX --> OUT[Net income projection]
+  COL --> OUT
+  FX --> OUT
+  OUT --> SAV[Savings projection]
+  SAV --> RC[Relocation cost offset]
+  RC --> DASH[Finance dashboard]
+  DASH -->|What-if| LOOP((adjust inputs))
+  LOOP --> FE
+    </pre>
+  </div>
+
+  <!-- ============== 7.7 Marketplace + Payments + Escrow ============== -->
+  <h3>7.7 Marketplace Booking &amp; Escrow Payments</h3>
+  <p>Where intelligence becomes execution. Every bookable item (housing, school admission, insurance, relocation services) flows through the Marketplace and Payments engines, mediated by Trust + SLAs.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Booking &amp; Escrow</div>
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant CO as Copilot
+  participant MP as Marketplace
+  participant TR as Trust
+  participant P as Partner
+  participant PAY as Escrow / PSP
+  U->>CO: "I want this apartment"
+  CO->>MP: Booking request
+  MP->>TR: Partner trust + SLA check
+  TR-->>MP: OK (score · badge)
+  MP->>P: Forward booking
+  P-->>MP: Accept · terms · price
+  MP->>U: Terms + escrow quote
+  U->>PAY: Pay into escrow
+  PAY-->>MP: Funds held
+  P->>U: Fulfil service (keys · contract)
+  U->>MP: Confirm fulfilment
+  MP->>PAY: Release funds to partner (minus fee)
+  PAY-->>P: Payout
+  MP->>TR: SLA + review updates score
+    </pre>
+  </div>
+
+  <!-- ============== 7.8 Trust & Verification ============== -->
+  <h3>7.8 Trust &amp; Partner Verification</h3>
+  <p>Partners cannot list until verified. Verification is an ongoing signal, not a one-time check — SLAs, disputes, and reviews continuously update a trust score used by the Marketplace ranker.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Trust lifecycle</div>
+    <pre class="mermaid">
+flowchart TD
+  SU([Partner signs up]) --> KYB[KYC / KYB]
+  KYB --> DOC[Business docs + licences]
+  DOC --> REV[Admin review]
+  REV --> DEC{Approved?}
+  DEC -->|No| REJ([Rejected + reason])
+  DEC -->|Yes| LIVE[Listings go live]
+  LIVE --> OPS[Ongoing: bookings · fulfilment · reviews]
+  OPS --> SC[Trust score updates]
+  SC --> RANK[Marketplace ranker]
+  SC --> RISK{Score below threshold?}
+  RISK -->|Yes| PAUSE[Auto-pause + escalation]
+  RISK -->|No| LIVE
+    </pre>
+  </div>
+
+  <!-- ============== 7.9 Family & Cultural ============== -->
+  <h3>7.9 Family Intelligence &amp; Cultural On-ramp</h3>
+  <p>What most &ldquo;relocation&rdquo; platforms skip: making a move work for a family, not just an individual. Each family member has a twin; the Copilot runs parallel plans for spouse career and children&rsquo;s adaptation while the primary plan executes.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Family execution</div>
+    <pre class="mermaid">
+flowchart LR
+  FT[Family Twin] --> SP[Spouse Twin]
+  FT --> KD[Child Twin<br/>one per child]
+  SP --> SPJ[Spouse job / re-skill plan]
+  SP --> SPC[Spouse community fit]
+  KD --> SC[School matching]
+  KD --> CH[Child adaptation coach]
+  SC --> SCH[(Schools via Marketplace)]
+  FT --> CL[Cultural &amp; Language modules]
+  CL --> MOD[Assigned learning path]
+  MOD --> TW[Twin records progress]
+  TW --> DF[Data Flywheel]
+    </pre>
+  </div>
+
+  <!-- ============== 7.10 Corporate Mobility ============== -->
+  <h3>7.10 Corporate Mobility (B2B)</h3>
+  <p>One HR admin, many employees. Each employee runs the full Consumer App experience inside a policy envelope; HR sees aggregates and status without seeing personal data beyond its need-to-know.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Corporate Mobility</div>
+    <pre class="mermaid">
+flowchart LR
+  HR([HR Admin]) --> CP[Corporate Portal]
+  CP --> POL[Policies + cost caps]
+  CP --> SEATS[Assign seats to employees]
+  SEATS --> INV[Invite employee]
+  INV --> EMP([Employee])
+  EMP --> CA[Consumer App<br/>policy-scoped]
+  CA --> PLAN[Relocation plan]
+  PLAN --> PROG[Progress events]
+  PROG --> AGG[Aggregate dashboard]
+  AGG --> CP
+  CP --> BILL[Contract + invoicing]
+    </pre>
+  </div>
+
+  <!-- ============== 7.11 Data Flywheel ============== -->
+  <h3>7.11 Data Flywheel</h3>
+  <p>Every completed journey teaches the system. The flywheel is the reason the fifty-thousandth user&rsquo;s plan is better than the first&rsquo;s.</p>
+  <div class="diagram">
+    <div class="diagram-title">Flow · Data Flywheel</div>
+    <pre class="mermaid">
+flowchart LR
+  J[Completed journeys] --> SIG[Signals<br/>matches · delays · costs · reviews]
+  SIG --> KG[Country KG updates]
+  SIG --> MATCH[Better job + housing matchers]
+  SIG --> TIME[Delay-prediction model]
+  SIG --> PRICE[Price + cost feeds]
+  KG --> CO[Copilot reasoning]
+  MATCH --> CO
+  TIME --> CO
+  PRICE --> CO
+  CO --> NEXT[Next user · sharper plan]
+  NEXT --> J
+    </pre>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 8. DATA MODEL                                                   -->
+<!-- ============================================================= -->
+<section id="data">
+  <h2><span class="num">08 — Data Model</span>Twins, entities, and the knowledge graph</h2>
+  <p class="section-lead">
+    The SOW names six core entities (§24). In practice the data model is a triangle of
+    <b>persistent identities</b> (users, partners, employers), <b>moving objects</b> (jobs, plans, bookings, payments),
+    and the <b>world</b> (Country Knowledge Graph). The Digital Twin sits on top as a user-facing projection.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">Entity-relationship sketch</div>
+    <pre class="mermaid">
+erDiagram
+  USER ||--|| USER_TWIN : has
+  USER ||--o{ FAMILY_MEMBER : includes
+  FAMILY_MEMBER ||--|| FAMILY_TWIN : has
+  USER ||--o{ APPLICATION : submits
+  APPLICATION }o--|| JOB : for
+  JOB }o--|| EMPLOYER : posted_by
+  JOB ||--|| JOB_TWIN : has
+  USER ||--o{ RELOCATION_PLAN : owns
+  RELOCATION_PLAN ||--|| RELOCATION_TWIN : has
+  RELOCATION_PLAN }o--|| COUNTRY : targets
+  RELOCATION_PLAN ||--o{ TASK : contains
+  TASK }o--|| DOCUMENT : may_need
+  DOCUMENT }o--|| USER : owned_by
+  RELOCATION_PLAN ||--o{ BOOKING : generates
+  BOOKING }o--|| PARTNER : fulfilled_by
+  BOOKING ||--|| PAYMENT : paid_via
+  PAYMENT }o--|| ESCROW : held_in
+  PARTNER ||--|| TRUST_SCORE : has
+  COUNTRY ||--o{ KG_FACT : has
+  USER ||--o{ EVENT : emits
+  EVENT }o--|| FLYWHEEL : aggregated_in
+    </pre>
+  </div>
+
+  <h4>Digital Twins (§9) — why they matter</h4>
+  <ul class="feat-list">
+    <li><b>User Twin.</b> Identity, skills, passport, family shape, preferences, consent. The Copilot reasons on the twin, not raw fields.</li>
+    <li><b>Family Twin.</b> Holds the shape of the family; each member has their own sub-twin with goals (spouse career, child schooling).</li>
+    <li><b>Job Twin.</b> Projected role: salary, visa tier, location, start date — used to drive Relocation Twin updates.</li>
+    <li><b>Relocation Twin.</b> The active plan&rsquo;s state — status, milestones, open tasks, unresolved dependencies, risk score.</li>
+  </ul>
+</section>
+
+<!-- ============================================================= -->
+<!-- 9. TECH                                                         -->
+<!-- ============================================================= -->
+<section id="tech">
+  <h2><span class="num">09 — Technical stack</span>How it is built</h2>
+  <p class="section-lead">
+    The SOW specifies FastAPI, PostgreSQL, React, and LLM orchestration with a knowledge graph.
+    The sketch below fills in the natural complements needed to make that stack work at enterprise scale.
+  </p>
+
+  <table>
+    <thead><tr><th style="width:24%">Layer</th><th>Components</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>React + TypeScript · Next.js (SSR + SEO for public + consumer) · mobile PWA (phase 1) → native later · design system · Tailwind or similar</td></tr>
+      <tr><td>Backend APIs</td><td>FastAPI (Python) · async · REST + WebSocket (for Copilot streaming) · OpenAPI contracts per portal</td></tr>
+      <tr><td>AI orchestration</td><td>LLM provider abstraction (Anthropic default, fallbacks) · tool-calling / function-calling agent runtime · prompt caching · guardrails · eval harness</td></tr>
+      <tr><td>Knowledge &amp; memory</td><td>PostgreSQL (primary) · Neo4j or PG-graph extension (Country KG) · pgvector or dedicated vector DB (RAG) · object store for documents (encrypted) · Redis (sessions · WF state cache)</td></tr>
+      <tr><td>Workflow</td><td>Temporal or durable queue (Celery + outbox) for long-running plans · cron for expiry / alerts · event bus for flywheel signals</td></tr>
+      <tr><td>Payments</td><td>Stripe (subs + standard) · Stripe Connect or equivalent for escrow / payouts · multi-currency · tax-ID collection</td></tr>
+      <tr><td>Auth &amp; identity</td><td>OIDC (Auth0 / Clerk / self-hosted) · KYC vendor · employer SSO · corporate SAML</td></tr>
+      <tr><td>Integrations</td><td>Employer ATS connectors (Greenhouse, Lever, Workday) · MLS / housing APIs · bank onboarding APIs · telco / utilities · gov e-form portals where available</td></tr>
+      <tr><td>Data / analytics</td><td>Warehouse (BigQuery / Snowflake) · event pipeline · dashboards · flywheel ML jobs</td></tr>
+      <tr><td>Compliance</td><td>GDPR tooling (consent, DSAR, retention) · encryption at rest + in transit · data residency per region · SOC2 readiness</td></tr>
+      <tr><td>DevOps</td><td>Docker · Kubernetes or managed containers · per-region deploys · feature flags · observability (traces + logs + metrics)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================= -->
+<!-- 10. ROADMAP                                                     -->
+<!-- ============================================================= -->
+<section id="roadmap">
+  <h2><span class="num">10 — Roadmap</span>Sequencing the build</h2>
+  <p class="section-lead">
+    The SOW calls a 30-day Phase 1. Below is a realistic, sequenced view — what must exist before what.
+    The rows are cumulative: each wave depends on everything above it.
+  </p>
+
+  <table>
+    <thead><tr><th style="width:12%">Wave</th><th style="width:22%">Theme</th><th>What ships</th><th style="width:16%">Portals</th></tr></thead>
+    <tbody>
+      <tr><td>W0</td><td>Foundations</td><td>Auth · user model · Twin v0 · Country KG seed (3 corridors) · Copilot runtime skeleton · design system</td><td>Consumer · Admin</td></tr>
+      <tr><td>W1</td><td>Exploration MVP</td><td>Public comparison site · Country Comparison · Financial Simulator v1 · visa-aware Job Discovery (read-only)</td><td>Public · Consumer</td></tr>
+      <tr><td>W2</td><td>Job Loop</td><td>Employer Portal (post jobs) · Applications · Resume AI · Interview AI · Offer management</td><td>+ Employer</td></tr>
+      <tr><td>W3</td><td>Relocation Plan</td><td>Workflow Orchestrator · Relocation Plan generation · Timeline · Tasks · Documents (checklist + vault + validation)</td><td>Consumer</td></tr>
+      <tr><td>W4</td><td>Marketplace + Pay</td><td>Partner Portal · Trust / KYB · Housing listings · Booking · Escrow payments · Subscription billing</td><td>+ Partner</td></tr>
+      <tr><td>W5</td><td>Full Life Setup</td><td>Schools · Banking · Insurance · Healthcare · Utilities · Community · Cultural &amp; Language</td><td>Consumer</td></tr>
+      <tr><td>W6</td><td>Family &amp; Student</td><td>Family Twin · Spouse career · Child adaptation · Student Edition</td><td>Consumer (modes)</td></tr>
+      <tr><td>W7</td><td>B2B</td><td>Corporate Mobility Portal · seats · policies · aggregate dashboards</td><td>+ Corporate</td></tr>
+      <tr><td>W8</td><td>Flywheel &amp; Scale</td><td>Delay prediction · better matchers · KG auto-update · more countries · SOC2 · residency</td><td>All</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout indigo">
+    <b>On the SOW&rsquo;s &ldquo;30 days&rdquo; for Phase 1.</b> A realistic 30-day first cut is W0 + W1 + the beginning of W2 — a working Copilot, Country Comparison, visa-aware Job Discovery, and the public funnel. Everything past that needs its own wave.
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 11. OPEN QUESTIONS                                              -->
+<!-- ============================================================= -->
+<section id="open">
+  <h2><span class="num">11 — Open questions</span>What the SOW does not yet answer</h2>
+
+  <ul class="feat-list">
+    <li><b>Launch corridors.</b> Which origin→destination country pairs do we launch with? The quality of the Country KG is bounded by this choice.</li>
+    <li><b>Data sourcing for the Country KG.</b> Build it (crawlers + curation), license it (cost-of-living, tax, schools providers), or hybrid?</li>
+    <li><b>LLM stance.</b> Which provider(s)? Any data-residency constraints? Are we fine-tuning, or pure orchestration with RAG?</li>
+    <li><b>Escrow regulation.</b> Holding customer funds per country has licensing implications — PSP-as-escrow or formal escrow partner?</li>
+    <li><b>Identity &amp; KYC.</b> Which KYC vendor(s)? How do we handle variance across jurisdictions?</li>
+    <li><b>FR coverage.</b> Only FR-1/2/3, FR-40/41, FR-50/51, FR-60/61 are named. We need full FR numbering before planning tickets.</li>
+    <li><b>Human expert tier.</b> Is the Verified Expert persona in scope for v1, or a later premium add-on?</li>
+    <li><b>Offline / documents in transit.</b> When a user is mid-move with unreliable connectivity, how much works offline? (Docs, plan, Copilot fallback.)</li>
+    <li><b>Data retention &amp; right-to-be-forgotten.</b> Twin data is sensitive — exact retention policy + deletion behaviour needs specification.</li>
+    <li><b>Success metrics.</b> What defines a &ldquo;completed&rdquo; relocation journey? We need the metric the flywheel optimises against.</li>
+  </ul>
+</section>
+
+<footer>
+  © Glimmora · Reference architecture v0.1 · Source: Final Enterprise SOW (upgraded) ·
+  Diagrams rendered with Mermaid · This document is a living reference; update as the product evolves.
+</footer>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: '14px',
+      primaryColor: '#FAF7F2',
+      primaryTextColor: '#0F1222',
+      primaryBorderColor: '#0F1222',
+      lineColor: '#5E6379',
+      secondaryColor: '#F3DAC7',
+      tertiaryColor: '#E2E3F2',
+      clusterBkg: '#F2EEE6',
+      clusterBorder: '#D6CCBB',
+      edgeLabelBackground: '#FAF7F2'
+    },
+    flowchart: { curve: 'basis', padding: 14, nodeSpacing: 40, rankSpacing: 50 },
+    sequence: { actorMargin: 40, boxMargin: 12 }
+  });
+</script>
+</body>
+</html>

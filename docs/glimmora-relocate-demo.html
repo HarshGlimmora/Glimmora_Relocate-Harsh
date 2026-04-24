@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glimmora Relocate · Demo &amp; Handoff Guide</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+
+<style>
+  :root {
+    --parchment: #FDFCF9;
+    --paper: #FFFFFF;
+    --ink-900: #11131E;
+    --ink-800: #1E2030;
+    --ink-700: #2F3244;
+    --ink-600: #43465A;
+    --ink-500: #585C6E;
+    --ink-400: #7D8193;
+    --ink-300: #B0B3C1;
+    --ink-200: #D5D7E0;
+    --ink-100: #ECEDF2;
+    --ink-50:  #F7F7FA;
+    --gilt-50:  #FDF9EE;
+    --gilt-100: #FAF0D1;
+    --gilt-200: #F5DF9B;
+    --gilt-400: #E4B538;
+    --gilt-500: #CF9B1E;
+    --gilt-700: #825E12;
+    --gilt-800: #5C420D;
+    --lagoon-50:  #EAF7F5;
+    --lagoon-100: #CDEBE6;
+    --lagoon-200: #9BD7CE;
+    --lagoon-500: #248C7C;
+    --lagoon-700: #15554B;
+    --lagoon-800: #0E3A33;
+    --danger-100: #FBD0D3;
+    --danger-500: #DC2A3F;
+    --danger-700: #8F1224;
+    --warn-100:   #FCE8C1;
+    --warn-500:   #EF8A17;
+    --warn-800:   #6E3907;
+    --plum-100:   #E8DFF0;
+    --plum-500:   #6B3E8A;
+    --moss-500:   #2F7D66;
+    --ocean-500:  #1C5FA8;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    color: var(--ink-900);
+    background: var(--parchment);
+    line-height: 1.6;
+    font-size: 15.5px;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  .serif { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+  .mono  { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  a { color: inherit; }
+
+  /* ─────────── layout ─────────── */
+  .layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  aside.toc {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 40px 28px;
+    border-right: 1px solid var(--ink-200);
+    background: var(--parchment);
+  }
+
+  .toc .brand {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 28px;
+  }
+  .toc .brand .mark {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--ink-900); color: var(--parchment);
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 13px;
+  }
+  .toc .brand .name { font-weight: 700; font-size: 14.5px; letter-spacing: -0.01em; }
+  .toc .brand .sub  { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-500); }
+
+  .toc-group {
+    margin-bottom: 22px;
+  }
+  .toc-group-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-400);
+    margin-bottom: 8px;
+    padding-left: 8px;
+  }
+  .toc a {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 8px;
+    font-size: 13px;
+    color: var(--ink-700);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.12s;
+  }
+  .toc a:hover { background: var(--ink-100); color: var(--ink-900); }
+  .toc a .n {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-400);
+    min-width: 22px;
+  }
+
+  main { padding: 64px 72px 120px; max-width: none; min-width: 0; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--ink-200); }
+    main { padding: 32px 20px 80px; }
+  }
+
+  /* ─────────── sections ─────────── */
+  section.slide {
+    min-height: 90vh;
+    padding: 40px 0;
+    border-bottom: 1px solid var(--ink-200);
+    margin-bottom: 32px;
+  }
+  section.slide:last-of-type { border-bottom: 0; }
+
+  .section-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gilt-700);
+  }
+
+  h1.hero {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 18px 0 20px;
+    color: var(--ink-900);
+  }
+  h1.hero em { font-style: italic; color: var(--gilt-700); }
+
+  h2.section-title {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: clamp(2.25rem, 4vw, 3.5rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin: 20px 0 24px;
+    color: var(--ink-900);
+  }
+  h2.section-title em { font-style: italic; color: var(--gilt-700); }
+
+  h3 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin: 36px 0 14px;
+    letter-spacing: -0.01em;
+  }
+  h4 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    font-size: 1.02rem;
+    margin: 20px 0 10px;
+    letter-spacing: -0.005em;
+  }
+
+  p.lead {
+    font-size: 1.08rem;
+    line-height: 1.65;
+    max-width: 70ch;
+    color: var(--ink-700);
+    margin: 0 0 28px;
+  }
+  p { max-width: 72ch; color: var(--ink-800); }
+
+  /* ─────────── utility blocks ─────────── */
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 600;
+  }
+  .tag.gilt  { background: var(--gilt-50);   color: var(--gilt-800);   border: 1px solid var(--gilt-200); }
+  .tag.lagoon{ background: var(--lagoon-50); color: var(--lagoon-800); border: 1px solid var(--lagoon-200); }
+  .tag.ink   { background: var(--ink-900);   color: var(--parchment);  border: 1px solid var(--ink-900); }
+  .tag.ghost { background: var(--paper);     color: var(--ink-700);    border: 1px solid var(--ink-200); }
+
+  .rule { border-top: 1px solid var(--ink-200); margin: 36px 0; }
+
+  .callout {
+    border-left: 3px solid var(--gilt-500);
+    padding: 14px 18px;
+    background: var(--gilt-50);
+    margin: 24px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .callout.demo   { border-left-color: var(--lagoon-500); background: var(--lagoon-50); }
+  .callout.warn   { border-left-color: var(--warn-500);   background: #FEF6E8; }
+  .callout .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--gilt-800);
+    margin-bottom: 6px;
+  }
+  .callout.demo .label { color: var(--lagoon-800); }
+  .callout.warn .label { color: var(--warn-800); }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 28px 0;
+  }
+  .kpi {
+    padding: 18px;
+    border: 1px solid var(--ink-200);
+    background: var(--paper);
+    border-radius: 14px;
+  }
+  .kpi .kpi-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-500);
+    font-weight: 600;
+  }
+  .kpi .kpi-value {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2.5rem; line-height: 1;
+    margin-top: 8px;
+    letter-spacing: -0.03em;
+  }
+  .kpi .kpi-sub {
+    font-size: 12px; color: var(--ink-500); margin-top: 6px;
+  }
+
+  /* ─────────── diagram card ─────────── */
+  .diagram {
+    background: var(--paper);
+    border: 1px solid var(--ink-200);
+    border-radius: 14px;
+    padding: 28px;
+    margin: 28px 0;
+    overflow-x: auto;
+  }
+  .diagram-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-500);
+    margin-bottom: 20px;
+  }
+  .mermaid { text-align: center; }
+
+  /* ─────────── IA tree card grid ─────────── */
+  .ia-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin: 20px 0 8px;
+  }
+  .ia-card {
+    border: 1px solid var(--ink-200);
+    border-radius: 12px;
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .ia-card-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ink-100);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--ink-50);
+  }
+  .ia-card-head .title {
+    font-weight: 700; font-size: 13.5px; letter-spacing: -0.005em;
+  }
+  .ia-card-head .chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    letter-spacing: 0.22em; text-transform: uppercase; font-weight: 600;
+    color: var(--ink-500);
+  }
+  .ia-card ul { list-style: none; padding: 10px 0; margin: 0; }
+  .ia-card li {
+    padding: 5px 16px;
+    font-size: 13px;
+    color: var(--ink-700);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .ia-card li + li { border-top: 1px dashed var(--ink-100); }
+  .ia-card li .badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    padding: 2px 6px; border-radius: 4px;
+    letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;
+  }
+  .badge.live { background: var(--lagoon-50); color: var(--lagoon-800); border: 1px solid var(--lagoon-200); }
+  .badge.w2   { background: var(--gilt-50);   color: var(--gilt-800);   border: 1px solid var(--gilt-200); }
+  .badge.w3   { background: var(--gilt-50);   color: var(--gilt-800);   border: 1px solid var(--gilt-200); }
+  .badge.w4   { background: var(--gilt-50);   color: var(--gilt-800);   border: 1px solid var(--gilt-200); }
+  .badge.w5   { background: var(--gilt-50);   color: var(--gilt-800);   border: 1px solid var(--gilt-200); }
+
+  /* ─────────── portal rail ─────────── */
+  .portal-rail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 24px 0;
+  }
+  .portal {
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--ink-200);
+    background: var(--paper);
+  }
+  .portal .swatch {
+    width: 28px; height: 28px; border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .portal .kind {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    letter-spacing: 0.22em; text-transform: uppercase; font-weight: 600;
+    color: var(--ink-500);
+  }
+  .portal .name {
+    font-weight: 700; font-size: 15px;
+    margin-top: 6px;
+    letter-spacing: -0.005em;
+  }
+  .portal .role {
+    font-size: 12.5px; color: var(--ink-600); margin-top: 8px; line-height: 1.5;
+  }
+  .portal .port {
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-500);
+    margin-top: 10px;
+  }
+
+  /* ─────────── cover ─────────── */
+  .cover {
+    min-height: 92vh;
+    display: flex; flex-direction: column; justify-content: center;
+    position: relative;
+  }
+  .cover .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gilt-700);
+    font-weight: 600;
+  }
+  .cover .hero-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(3.5rem, 9vw, 8rem);
+    line-height: 0.92; letter-spacing: -0.035em;
+    margin: 18px 0;
+  }
+  .cover .hero-title em { font-style: italic; color: var(--gilt-700); }
+  .cover .hero-sub {
+    font-size: 1.2rem; max-width: 62ch; color: var(--ink-600); line-height: 1.55;
+  }
+  .cover .meta {
+    margin-top: 48px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 18px;
+  }
+  .cover .meta dt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-500); font-weight: 600;
+  }
+  .cover .meta dd {
+    margin: 6px 0 0; font-weight: 600; font-size: 14px; color: var(--ink-900);
+  }
+
+  /* ─────────── journey column ─────────── */
+  .journey {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 28px;
+    align-items: start;
+    margin: 24px 0;
+  }
+  .journey .step {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-500); font-weight: 700;
+  }
+  .journey .step .n {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2.5rem; line-height: 1;
+    color: var(--gilt-700);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .journey .what { padding: 4px 0; }
+  .journey h4 { margin: 0 0 8px; }
+
+  /* ─────────── two-col ─────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin: 24px 0;
+  }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+
+  .card {
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--ink-200);
+    background: var(--paper);
+  }
+
+  /* ─────────── table ─────────── */
+  table.grid {
+    width: 100%; border-collapse: collapse; margin: 20px 0;
+    font-size: 14px;
+  }
+  table.grid th, table.grid td {
+    border-bottom: 1px solid var(--ink-100); padding: 12px 14px;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.grid th {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-500);
+    font-weight: 600;
+    background: var(--ink-50);
+  }
+  table.grid td.mono { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+
+  /* ─────────── print ─────────── */
+  @media print {
+    aside.toc { display: none; }
+    main { padding: 0; }
+    .layout { grid-template-columns: 1fr; }
+    section.slide { page-break-before: always; min-height: auto; }
+    body { font-size: 11pt; }
+  }
+
+  /* ─────────── Mermaid overrides ─────────── */
+  .mermaid svg { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<aside class="toc">
+  <div class="brand">
+    <div class="mark">G</div>
+    <div>
+      <div class="name">Glimmora</div>
+      <div class="sub">Demo guide</div>
+    </div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Context</div>
+    <a href="#cover"><span class="n">00</span> Cover</a>
+    <a href="#what"><span class="n">01</span> What this is</a>
+    <a href="#problem"><span class="n">02</span> The problem</a>
+    <a href="#solution"><span class="n">03</span> The solution</a>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Architecture</div>
+    <a href="#architecture"><span class="n">04</span> System overview</a>
+    <a href="#why-six"><span class="n">05</span> Why six portals</a>
+    <a href="#public-pages"><span class="n">06</span> Why public marketing</a>
+    <a href="#data-flow"><span class="n">07</span> Data flow map</a>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">The six portals</div>
+    <a href="#consumer"><span class="n">08</span> Consumer</a>
+    <a href="#employer"><span class="n">09</span> Employer</a>
+    <a href="#partner"><span class="n">10</span> Partner</a>
+    <a href="#corporate"><span class="n">11</span> Corporate</a>
+    <a href="#admin"><span class="n">12</span> Admin / Ops</a>
+    <a href="#public"><span class="n">13</span> Public site</a>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">User journeys</div>
+    <a href="#journey-priya"><span class="n">14</span> Priya — self-funded</a>
+    <a href="#journey-hire"><span class="n">15</span> Aarav — employer</a>
+    <a href="#journey-partner"><span class="n">16</span> Havn Housing</a>
+    <a href="#journey-corp"><span class="n">17</span> Ocenti Corp batch</a>
+    <a href="#journey-admin"><span class="n">18</span> Admin verify</a>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Handoff</div>
+    <a href="#milestones"><span class="n">19</span> Roadmap W1–W5</a>
+    <a href="#tech"><span class="n">20</span> Tech stack</a>
+    <a href="#contracts"><span class="n">21</span> API contracts</a>
+    <a href="#backend"><span class="n">22</span> Backend scope</a>
+    <a href="#demo-script"><span class="n">23</span> Demo script</a>
+  </div>
+</aside>
+
+<main>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 00 · COVER                                             -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide cover" id="cover">
+  <div class="eyebrow">Platform demo &amp; backend handoff guide</div>
+  <h1 class="hero-title">Glimmora<br><em>Relocate.</em></h1>
+  <p class="hero-sub">
+    The AI-native cross-border relocation platform. One company, six portals, every stakeholder in a person's move — candidates, employers, partners, HR teams, and the operations staff who keep the trust machine running.
+  </p>
+  <dl class="meta">
+    <div><dt>Portals</dt><dd>Six · one platform</dd></div>
+    <div><dt>Surfaces built</dt><dd>60+ pages, light theme</dd></div>
+    <div><dt>Integrations</dt><dd>Cross-portal typed APIs</dd></div>
+    <div><dt>Status</dt><dd>Frontend ready · W1</dd></div>
+    <div><dt>Audience</dt><dd>Backend team · handoff</dd></div>
+  </dl>
+
+  <div class="callout demo" style="margin-top: 64px">
+    <div class="label">How to use this document</div>
+    This guide is scroll-paced. Each section stands on its own — open the TOC, click a section, read for 60–90 seconds, then keep going. Diagrams are live Mermaid renders; flow arrows match the behaviour in the running code.
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 01 · WHAT THIS IS                                      -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="what">
+  <div class="section-number">01 · What this project is</div>
+  <h2 class="section-title">One company, <em>one operating system</em> for moving a life.</h2>
+  <p class="lead">
+    Glimmora Relocate is a multi-sided marketplace + AI copilot for cross-border professional relocation. Every time a person moves country for a job, five different kinds of user touch the process — the person, their future employer, the vendors who make life work on the ground, the HR team (if it's a corporate move), and the platform operators who keep trust intact. Glimmora is the single system that connects all of them.
+  </p>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Consumer</div>
+      <div class="kpi-value serif">01</div>
+      <div class="kpi-sub">Person planning the move — their &ldquo;digital twin&rdquo; + copilot</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Employer</div>
+      <div class="kpi-value serif">02</div>
+      <div class="kpi-sub">Visa-aware hiring pipeline</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Partner</div>
+      <div class="kpi-value serif">03</div>
+      <div class="kpi-sub">Housing, schools, legal, banking — escrow-protected</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Corporate</div>
+      <div class="kpi-value serif">04</div>
+      <div class="kpi-sub">Enterprise mobility &amp; policy control</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Admin / Ops</div>
+      <div class="kpi-value serif">05</div>
+      <div class="kpi-sub">Trust, verification, knowledge graph</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Public site</div>
+      <div class="kpi-value serif">06</div>
+      <div class="kpi-sub">Acquisition &amp; tools — compare, simulate, read</div>
+    </div>
+  </div>
+
+  <p>
+    Each portal is a separate Next.js application with its own database and its own domain (in dev: port). They interconnect through typed, Bearer-authed internal APIs and a shared identity layer. The frontend you're about to see is production-complete; the backend handoff is what this document prepares you for.
+  </p>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 02 · THE PROBLEM                                       -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="problem">
+  <div class="section-number">02 · The problem today</div>
+  <h2 class="section-title">Cross-border relocation is <em>twelve fragmented SaaS tools</em> pretending to be a workflow.</h2>
+  <p class="lead">
+    When someone moves country for work, they use: a job board, an immigration lawyer's portal, a furnished-apartment site, a bank's PDF form, a school's PDF form, a tax consultant's email thread, a moving company's spreadsheet, a forum for expat advice, and a WhatsApp group of friends who moved before. Employers use a separate ATS. Corporate HR teams run the whole thing on another separate mobility tool. Nothing talks.
+  </p>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="tag gilt">Consumer pain</div>
+      <h4 style="margin-top:14px">What the person feels</h4>
+      <ul style="padding-left:18px; color: var(--ink-700); font-size:14px; line-height:1.7">
+        <li>Six months of admin, scattered across 30+ logins</li>
+        <li>No single view of &ldquo;am I on track?&rdquo;</li>
+        <li>Re-typing the same facts into every form</li>
+        <li>Family planning happens in parallel, privately, in notes apps</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="tag lagoon">Market pain</div>
+      <h4 style="margin-top:14px">What the industry feels</h4>
+      <ul style="padding-left:18px; color: var(--ink-700); font-size:14px; line-height:1.7">
+        <li>Employers sponsor 8 nationalities but review 50</li>
+        <li>Partners fight for qualified leads — 80% of inbound is tire-kicking</li>
+        <li>HR mobility teams run on Excel + email threads</li>
+        <li>Every country change in law propagates in months, not hours</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label">The insight</div>
+    Every stakeholder already has a workflow tool. They don't need another one. They need every stakeholder's tool to know what the others are doing — in one real-time data graph, with an AI that answers the hard questions.
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 03 · THE SOLUTION                                      -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="solution">
+  <div class="section-number">03 · The solution</div>
+  <h2 class="section-title">A shared <em>digital twin</em>, a copilot that grounds in it, a marketplace that knows who qualifies.</h2>
+  <p class="lead">
+    Each consumer has a Twin — a structured model of their life, goals, family, finances, and constraints. Every feature in the platform reads from and writes to the Twin. The Copilot never hallucinates a generic answer; it grounds every response in Twin data + the Country Knowledge Graph. Every marketplace surface is visa-filtered before it renders.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">The three load-bearing concepts</div>
+    <div class="mermaid">
+flowchart LR
+  T(("Twin<br/><span style='font-size:10px'>a person's state</span>")):::gilt
+  KG(("Country KG<br/><span style='font-size:10px'>visa · tax · COL</span>")):::lagoon
+  C(("Copilot<br/><span style='font-size:10px'>grounded AI</span>")):::ink
+
+  T --> Consumer
+  T --> Employer
+  T --> Corp[Corporate]
+  T --> Partner[Partner mkt]
+
+  KG --> Consumer
+  KG --> Public[Public tools]
+
+  C --> T
+  C --> KG
+  C --> Ans([Every answer, every page])
+
+  classDef gilt   fill:#FAF0D1,stroke:#CF9B1E,color:#11131E
+  classDef lagoon fill:#CDEBE6,stroke:#248C7C,color:#11131E
+  classDef ink    fill:#11131E,stroke:#11131E,color:#FDFCF9
+    </div>
+  </div>
+
+  <p>
+    This is why the platform has to be one connected system with specialised UI per audience — not five separate SaaS tools. The data model is shared. The UI adapts to the person in front of it.
+  </p>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 04 · SYSTEM ARCHITECTURE                               -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="architecture">
+  <div class="section-number">04 · System architecture</div>
+  <h2 class="section-title">Six portals, one graph, <em>typed APIs between them.</em></h2>
+  <p class="lead">
+    Each portal is a separate Next.js 14 App Router application. Each owns its own Prisma schema and SQLite database (in dev) — this is deliberate: each audience has a fundamentally different data model, authn boundary, and deployment cadence. Portals talk to one another through internal REST APIs authenticated with shared bearer tokens, or via the Admin-side cross-DB read layer (<code class="mono">xdb.ts</code>) which lets ops staff see the whole platform in one view.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">System topology</div>
+    <div class="mermaid">
+flowchart TB
+  Public[Public site<br/>port 3001 · Consumer app]:::pub
+  Consumer[Consumer portal<br/>port 3001]:::con
+  Employer[Employer portal<br/>port 3002]:::emp
+  Admin[Admin / Ops<br/>port 3003]:::adm
+  Partner[Partner portal<br/>port 3004]:::par
+  Corporate[Corporate portal<br/>port 3005]:::cor
+
+  Public -- sign up --> Consumer
+  Public -- sign up --> Employer
+  Public -- sign up --> Partner
+  Public -- sign up --> Corporate
+
+  Consumer <-->|offer accept<br/>relocation| Employer
+  Consumer <-->|book service<br/>review| Partner
+  Consumer <-->|HR view<br/>employee twin| Corporate
+
+  Employer <-->|hire close<br/>fee invoice| Admin
+  Partner  <-->|KYB · payouts<br/>trust signals| Admin
+  Corporate <-->|invoices<br/>policy audit| Admin
+  Consumer <-->|tickets · disputes<br/>user account| Admin
+
+  classDef pub  fill:#E8DFF0,stroke:#6B3E8A,color:#11131E
+  classDef con  fill:#FDF9EE,stroke:#CF9B1E,color:#11131E
+  classDef emp  fill:#11131E,stroke:#11131E,color:#FDFCF9
+  classDef adm  fill:#E2E3F2,stroke:#3A3F7A,color:#11131E
+  classDef par  fill:#E8DFF0,stroke:#6B3E8A,color:#11131E
+  classDef cor  fill:#DBEDE6,stroke:#2F7D66,color:#11131E
+    </div>
+  </div>
+
+  <h3>Shared concerns</h3>
+  <table class="grid">
+    <tr><th>Concern</th><th>How it's shared</th></tr>
+    <tr><td>Identity</td><td>NextAuth.js v5 in each app; users in Consumer/Employer/Partner/Corporate are separate (different audiences). Admin staff sit in their own table.</td></tr>
+    <tr><td>Data types</td><td>Zod schemas at every internal API boundary. Admin reads cross-DB via typed queries.</td></tr>
+    <tr><td>Knowledge graph</td><td>Owned by Admin, consumed by Consumer/Public via a read API (currently a static file as placeholder).</td></tr>
+    <tr><td>Money</td><td>Escrow: Partner portal. Payouts: ledgered in Partner, summarised in Admin. Success fees: computed in Admin.</td></tr>
+    <tr><td>Styling</td><td>Each portal has a distinct accent: Consumer gilt, Employer ink, Partner plum, Corporate moss, Admin midnight. Same typography system.</td></tr>
+  </table>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 05 · WHY SIX PORTALS                                   -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="why-six">
+  <div class="section-number">05 · Why six portals, not one</div>
+  <h2 class="section-title">Each audience has a <em>different job to be done.</em></h2>
+  <p class="lead">
+    A consumer opens the product after dinner on their phone to worry about their kid's school. A recruiter opens it at 9am on Monday to fill a role. A partner opens it when a booking notification fires. An HR lead opens it once a month for a policy review. An ops officer opens it at 9am to clear a queue. None of these surfaces can share a sidebar, a home page, or a mental model. So they don't.
+  </p>
+
+  <h3>The portal separation logic</h3>
+  <table class="grid">
+    <tr><th>Portal</th><th>Primary user</th><th>Primary verb</th><th>Session cadence</th><th>Auth boundary</th></tr>
+    <tr><td><strong>Consumer</strong></td><td>The person moving</td><td>Plan</td><td>Daily, short</td><td>Personal</td></tr>
+    <tr><td><strong>Employer</strong></td><td>Recruiter / talent lead</td><td>Hire</td><td>Workday</td><td>Company</td></tr>
+    <tr><td><strong>Partner</strong></td><td>Vendor ops</td><td>Fulfil</td><td>Notification-driven</td><td>Business</td></tr>
+    <tr><td><strong>Corporate</strong></td><td>HR mobility lead</td><td>Govern</td><td>Weekly</td><td>Organization</td></tr>
+    <tr><td><strong>Admin</strong></td><td>Glimmora staff</td><td>Trust</td><td>Morning queue</td><td>Internal</td></tr>
+    <tr><td><strong>Public</strong></td><td>Anyone unauthenticated</td><td>Evaluate</td><td>One-shot</td><td>None</td></tr>
+  </table>
+
+  <h3>Separate applications — separate deploys</h3>
+  <p>
+    Portal-per-app means: the Consumer app can ship five times a week without affecting the Admin console. The Employer portal can have its own rate-limiting, feature flags, and release cadence. Failure domains are isolated — a bug in Partner doesn't take down hiring traffic. Each portal's bundle stays lean because it only ships the components its audience needs.
+  </p>
+
+  <div class="callout">
+    <div class="label">Why not a single monolith with role-based routes?</div>
+    Because the mental model, navigation, empty states, and information density differ too much. Forcing one app to serve &ldquo;Priya worrying about Ananya's school&rdquo; <em>and</em> &ldquo;Reya approving a €35k expense&rdquo; produces a worse experience for both. The cost of maintaining separate apps is small; the cost of a confused user is permanent.
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 06 · WHY PUBLIC MARKETING                              -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="public-pages">
+  <div class="section-number">06 · Why every portal has its own public marketing page</div>
+  <h2 class="section-title">Acquisition is a <em>different product</em> from the product.</h2>
+  <p class="lead">
+    A signed-in dashboard is optimised for depth: many inputs, many widgets, low ceremony. A public landing page is optimised for the opposite: convert a stranger into a believer in 40 seconds. Same brand, same data eventually, completely different intent — so they live as different surfaces with different layouts, different metadata, different SEO concerns, and often different A/B testing.
+  </p>
+
+  <div class="portal-rail">
+    <div class="portal" style="background: var(--plum-100); border-color: var(--plum-500)">
+      <div class="swatch" style="background: var(--plum-500)"></div>
+      <div class="kind">Public · <span class="mono">/</span></div>
+      <div class="name">Glimmora.ai</div>
+      <div class="role">Acquisition for movers. Hero, country compare, salary simulator, guides, pricing. Converts to the Consumer portal sign-up.</div>
+    </div>
+    <div class="portal" style="background: var(--ink-50); border-color: var(--ink-900)">
+      <div class="swatch" style="background: var(--ink-900)"></div>
+      <div class="kind">Public · <span class="mono">/for-employers</span></div>
+      <div class="name">For employers</div>
+      <div class="role">Landing page for recruiters. Positioning, value props, &ldquo;post your first role&rdquo; → Employer portal sign-up.</div>
+    </div>
+    <div class="portal" style="background: var(--plum-100); border-color: var(--plum-500)">
+      <div class="swatch" style="background: var(--plum-500)"></div>
+      <div class="kind">Public · <span class="mono">/for-partners</span></div>
+      <div class="name">For partners</div>
+      <div class="role">KYB pitch. Who qualifies, what categories, how payouts work. Converts to Partner portal KYB.</div>
+    </div>
+    <div class="portal" style="background: #DBEDE6; border-color: var(--moss-500)">
+      <div class="swatch" style="background: var(--moss-500)"></div>
+      <div class="kind">Public · <span class="mono">/for-companies</span></div>
+      <div class="name">For companies</div>
+      <div class="role">Enterprise mobility pitch. Policy-first. Converts to a sales-led Corporate deal.</div>
+    </div>
+  </div>
+
+  <h3>Why all four public pages live inside the Consumer app</h3>
+  <p>
+    The public site shares the Consumer codebase because it shares the same font stack, the same country knowledge graph, the same marketing imagery, and the same SEO domain. The public page is <code class="mono">/</code>, and <code class="mono">/for-employers</code> is a sibling route — but the CTA on that page points to the separate Employer app's sign-up URL. So the user never re-authenticates, they never land in a generic &ldquo;pick your role&rdquo; funnel, and each audience gets a tailored onboarding.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">Acquisition → portal handoff</div>
+    <div class="mermaid">
+flowchart LR
+  Google[Google search]:::g
+  G[glimmora.ai/]:::pub
+  E[glimmora.ai/for-employers]:::pub
+  P[glimmora.ai/for-partners]:::pub
+  Co[glimmora.ai/for-companies]:::pub
+
+  CSignup[app.glimmora.ai/sign-up]:::con
+  ESignup[employer.glimmora.ai/sign-up]:::emp
+  PSignup[partner.glimmora.ai/sign-up]:::par
+  CoSales[sales@glimmora]:::cor
+
+  Google --> G & E & P & Co
+  G -->|Start your plan| CSignup
+  E -->|Post your first role| ESignup
+  P -->|Apply to join| PSignup
+  Co -->|Talk to sales| CoSales
+
+  classDef g     fill:#F7F7FA,stroke:#B0B3C1,color:#11131E
+  classDef pub   fill:#FDF9EE,stroke:#CF9B1E,color:#11131E
+  classDef con   fill:#FAF0D1,stroke:#CF9B1E,color:#11131E
+  classDef emp   fill:#11131E,stroke:#11131E,color:#FDFCF9
+  classDef par   fill:#E8DFF0,stroke:#6B3E8A,color:#11131E
+  classDef cor   fill:#DBEDE6,stroke:#2F7D66,color:#11131E
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 07 · DATA FLOW                                         -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="data-flow">
+  <div class="section-number">07 · Data flow across portals</div>
+  <h2 class="section-title">One person's move <em>lights up four databases.</em></h2>
+  <p class="lead">
+    When a candidate accepts an offer, the row starts in the Employer database, propagates as a Relocation into the Consumer database, generates booking activity in the Partner database, and surfaces as a fee event in the Admin audit log. This diagram shows the canonical write flow for that single event.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">Offer acceptance — write propagation across four databases</div>
+    <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant C  as Consumer
+  participant E  as Employer DB
+  participant CB as Consumer DB
+  participant P  as Partner DB
+  participant A  as Admin (read-only)
+
+  Note over C,E: Candidate accepts offer
+  C->>E: POST /api/offer/accept
+  E->>E: Offer.status = ACCEPTED<br/>Application.stage = HIRED
+
+  E->>CB: POST /api/internal/relocation (Bearer)
+  CB->>CB: Create Relocation<br/>+ 8 RelocationMilestones
+
+  Note over CB,P: Consumer books a housing service
+  CB->>P: POST /api/internal/booking (Bearer)
+  P->>P: Booking.status = REQUESTED<br/>escrowState = HELD
+
+  Note over P,A: Admin sees everything live
+  A-->>E: SELECT hires
+  A-->>CB: SELECT relocations
+  A-->>P: SELECT bookings, payouts
+    </div>
+  </div>
+
+  <h3>Cross-DB read pattern — <code class="mono">admin/lib/xdb.ts</code></h3>
+  <p>
+    Admin doesn't own user-facing writes on employer/consumer/partner rows. Instead it reads directly from their SQLite files in dev (in prod, replaces with read replicas or a warehouse) using <code class="mono">better-sqlite3</code> opened in <code class="mono">readonly</code> mode. Verification decisions (approving KYB, toggling employer verified) use a separate write handle on the target DB, journaled with WAL so they don't contend with the owning portal's writes. All of this is encapsulated in 14 typed functions — <strong>this file is the single source of truth for how data flows into Ops</strong>.
+  </p>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 08 · CONSUMER PORTAL                                   -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="consumer">
+  <div class="section-number">08 · Consumer portal</div>
+  <h2 class="section-title">The home of the <em>person moving.</em></h2>
+  <div class="portal-rail" style="grid-template-columns: 1fr;">
+    <div class="portal" style="background: var(--gilt-50); border-color: var(--gilt-500)">
+      <div class="swatch" style="background: var(--gilt-500)"></div>
+      <div class="kind">Portal 01 · port 3001 · accent gilt</div>
+      <div class="name">Consumer — app.glimmora.ai</div>
+      <div class="role">Every individual (and family) going through a cross-border move. 14 signed-in surfaces, grouped by intent.</div>
+    </div>
+  </div>
+
+  <h3>Information architecture</h3>
+  <div class="ia-grid">
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Home</span><span class="chip">01</span></div>
+      <ul>
+        <li>Dashboard <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Explore</span><span class="chip">02</span></div>
+      <ul>
+        <li>Discover <span class="badge live">live</span></li>
+        <li>My Plan <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Build your life</span><span class="chip">03</span></div>
+      <ul>
+        <li>Career <span class="badge live">live</span></li>
+        <li>Life Setup <span class="badge live">live</span></li>
+        <li>Family <span class="badge live">live</span></li>
+        <li>Finance <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Execute</span><span class="chip">04</span></div>
+      <ul>
+        <li>Documents <span class="badge w3">W3</span></li>
+        <li>Marketplace <span class="badge live">live</span></li>
+        <li>Culture &amp; Language <span class="badge w4">W4</span></li>
+        <li>Messages (Copilot) <span class="badge w2">W2</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Account</span><span class="chip">05</span></div>
+      <ul>
+        <li>Profile &amp; Twin <span class="badge live">live</span></li>
+        <li>Settings <span class="badge live">live</span></li>
+        <li>Billing <span class="badge w4">W4</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Consumer flow — from sign-up to settled</div>
+    <div class="mermaid">
+flowchart LR
+  S([Sign up]) --> T[Build Twin<br/>profile · goals · family]:::s
+  T --> D[Discover:<br/>countries · jobs · services]:::s
+  D --> P[Generate Plan<br/>9-month timeline]:::s
+  P --> A[Career: apply to visa-matched roles]:::s
+  A --> O{Offer?}
+  O -->|yes| R[Relocation plan created]:::done
+  O -->|no| A
+  R --> Doc[Documents · upload + track]:::s
+  R --> Mkt[Marketplace · book housing/school/bank]:::s
+  R --> Fam[Family: spouse plan · school matching]:::s
+  R --> Cul[Culture: daily 15-min modules]:::s
+  Doc & Mkt & Fam & Cul --> Arr([Arrived · settling])
+
+  classDef s    fill:#FDF9EE,stroke:#CF9B1E,color:#11131E
+  classDef done fill:#CDEBE6,stroke:#248C7C,color:#11131E
+    </div>
+  </div>
+
+  <div class="callout demo">
+    <div class="label">Demo tip</div>
+    The Consumer Twin is the most important concept. Open <code class="mono">/app/profile</code> first, then show how every other surface (Dashboard, Finance, Family) reads from the same Twin. This is the data-sharing story in visible form.
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 09 · EMPLOYER PORTAL                                   -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="employer">
+  <div class="section-number">09 · Employer portal</div>
+  <h2 class="section-title">Visa-aware hiring, <em>pipeline-to-close.</em></h2>
+  <div class="portal-rail" style="grid-template-columns: 1fr;">
+    <div class="portal" style="background: var(--ink-900); color: var(--parchment); border-color: var(--ink-900)">
+      <div class="swatch" style="background: var(--gilt-500)"></div>
+      <div class="kind" style="color: var(--gilt-400)">Portal 02 · port 3002 · accent ink</div>
+      <div class="name" style="color: var(--parchment)">Employer — employer.glimmora.ai</div>
+      <div class="role" style="color: rgba(255,255,255,0.7)">A visa-filtered ATS. Post a role → only candidates your passport policy can sponsor see it → AI-ranked pipeline → close → auto-invoice.</div>
+    </div>
+  </div>
+
+  <h3>Information architecture</h3>
+  <div class="ia-grid">
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Overview</span><span class="chip">01</span></div>
+      <ul>
+        <li>Dashboard <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Hiring</span><span class="chip">02</span></div>
+      <ul>
+        <li>Jobs <span class="badge live">live</span></li>
+        <li>Candidates <span class="badge live">live</span></li>
+        <li>Interviews <span class="badge live">live</span></li>
+        <li>Offers <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Policy &amp; team</span><span class="chip">03</span></div>
+      <ul>
+        <li>Sponsorship policy <span class="badge live">live</span></li>
+        <li>Team <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Account</span><span class="chip">04</span></div>
+      <ul>
+        <li>Billing <span class="badge live">live</span></li>
+        <li>Settings <span class="badge live">live</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Employer flow — role to paid invoice</div>
+    <div class="mermaid">
+flowchart LR
+  Set[Sponsorship policy<br/>countries · tiers]:::e --> Post[Post role<br/>inherits policy]:::e
+  Post --> Dis[Visa-filtered<br/>discovery in Consumer]:::con
+  Dis --> App([Candidate applies]):::con
+  App --> Pipe[Pipeline stages]:::e
+  Pipe --> Int[Interviews<br/>scorecards]:::e
+  Int --> Off[Offer sent]:::e
+  Off --> Acc{Accepted?}
+  Acc -->|yes| Close[Hire closed<br/>Application.stage=HIRED]:::done
+  Acc -->|no| Pipe
+  Close --> Reloc[Relocation created in Consumer]:::con
+  Close --> Fee[8% success fee<br/>visible in Admin ledger]:::adm
+
+  classDef e    fill:#11131E,stroke:#11131E,color:#FDFCF9
+  classDef con  fill:#FDF9EE,stroke:#CF9B1E,color:#11131E
+  classDef done fill:#CDEBE6,stroke:#248C7C,color:#11131E
+  classDef adm  fill:#E2E3F2,stroke:#3A3F7A,color:#11131E
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 10 · PARTNER PORTAL                                    -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="partner">
+  <div class="section-number">10 · Partner portal</div>
+  <h2 class="section-title">Housing, schools, legal, banking — <em>escrow-protected, quality-ranked.</em></h2>
+  <div class="portal-rail" style="grid-template-columns: 1fr;">
+    <div class="portal" style="background: var(--plum-100); border-color: var(--plum-500)">
+      <div class="swatch" style="background: var(--plum-500)"></div>
+      <div class="kind">Portal 03 · port 3004 · accent plum</div>
+      <div class="name">Partner — partner.glimmora.ai</div>
+      <div class="role">Verified vendors in five categories: housing, schools, legal/visa, banking, local services. KYB-gated. Escrow-protected. Ranked by responsiveness and review scores.</div>
+    </div>
+  </div>
+
+  <h3>Information architecture</h3>
+  <div class="ia-grid">
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Overview</span><span class="chip">01</span></div>
+      <ul>
+        <li>Dashboard <span class="badge live">live</span></li>
+        <li>Verification (KYB status) <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Supply</span><span class="chip">02</span></div>
+      <ul>
+        <li>Listings · new / edit <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Demand</span><span class="chip">03</span></div>
+      <ul>
+        <li>Bookings · detail <span class="badge live">live</span></li>
+        <li>Messages (per booking) <span class="badge w2">W2</span></li>
+        <li>Reviews <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Money &amp; team</span><span class="chip">04</span></div>
+      <ul>
+        <li>Payouts <span class="badge live">live</span></li>
+        <li>Team <span class="badge live">live</span></li>
+        <li>Settings <span class="badge live">live</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Partner lifecycle — sign-up to paid</div>
+    <div class="mermaid">
+flowchart LR
+  SU([KYB sign-up]):::p --> Q[Admin KYB queue]:::adm
+  Q --> Dec{Approve?}
+  Dec -->|no| Rej[Rejected · reason]:::rej
+  Dec -->|yes| Live[Listings unlocked]:::done
+  Live --> Create[Create listing]:::p
+  Create --> Pub[Published to marketplace]:::con
+  Pub --> Book[Consumer books]:::con
+  Book --> Resp{Confirm ≤ 24h?}
+  Resp -->|no| Qual[Quality score drops]:::rej
+  Resp -->|yes| InProg[In progress · escrow HELD]:::p
+  InProg --> Ful[Mark fulfilled]:::p
+  Ful --> Pay[Escrow RELEASED<br/>Payout batch]:::done
+
+  classDef p    fill:#E8DFF0,stroke:#6B3E8A,color:#11131E
+  classDef adm  fill:#E2E3F2,stroke:#3A3F7A,color:#11131E
+  classDef con  fill:#FDF9EE,stroke:#CF9B1E,color:#11131E
+  classDef done fill:#CDEBE6,stroke:#248C7C,color:#11131E
+  classDef rej  fill:#FBD0D3,stroke:#DC2A3F,color:#11131E
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 11 · CORPORATE PORTAL                                  -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="corporate">
+  <div class="section-number">11 · Corporate portal</div>
+  <h2 class="section-title">Enterprise mobility — <em>policy, budget, approvals.</em></h2>
+  <div class="portal-rail" style="grid-template-columns: 1fr;">
+    <div class="portal" style="background: #DBEDE6; border-color: var(--moss-500)">
+      <div class="swatch" style="background: var(--moss-500)"></div>
+      <div class="kind">Portal 04 · port 3005 · accent moss</div>
+      <div class="name">Corporate — corporate.glimmora.ai</div>
+      <div class="role">HR mobility team. Tracks every relocating employee, applies policy budgets, processes approvals, consolidates invoices. Each employee's Twin sits inside the company's policy envelope.</div>
+    </div>
+  </div>
+
+  <h3>Information architecture</h3>
+  <div class="ia-grid">
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Overview</span><span class="chip">01</span></div>
+      <ul>
+        <li>Dashboard <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">People</span><span class="chip">02</span></div>
+      <ul>
+        <li>Employees · detail <span class="badge live">live</span></li>
+        <li>Pipelines (Kanban) <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Governance</span><span class="chip">03</span></div>
+      <ul>
+        <li>Policies · new / edit <span class="badge live">live</span></li>
+        <li>Approvals <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Finance &amp; team</span><span class="chip">04</span></div>
+      <ul>
+        <li>Reports <span class="badge live">live</span></li>
+        <li>Billing (invoices) <span class="badge live">live</span></li>
+        <li>Team <span class="badge live">live</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Corporate flow — provisioning &amp; governance</div>
+    <div class="mermaid">
+flowchart LR
+  Sale[Sales-led contract] --> Prov[Admin provisions<br/>Corporate account]:::adm
+  Prov --> Pol[HR creates policies:<br/>Standard / Exec / Early Career]:::cor
+  Pol --> Add[Add employees]:::cor
+  Add --> Emp[Employee's Twin linked<br/>to org + policy]:::cor
+  Emp --> Exec[Employee goes through<br/>normal Consumer flow]:::con
+  Exec --> Budget{Within cap?}
+  Budget -->|yes| Done[Auto-approved<br/>costs logged]:::done
+  Budget -->|no| Appr[Approval queue<br/>HR decides]:::cor
+  Appr --> Inv[Monthly invoice<br/>consolidates spend]:::cor
+  Inv --> Ledg[Admin audit]:::adm
+
+  classDef cor  fill:#DBEDE6,stroke:#2F7D66,color:#11131E
+  classDef adm  fill:#E2E3F2,stroke:#3A3F7A,color:#11131E
+  classDef con  fill:#FDF9EE,stroke:#CF9B1E,color:#11131E
+  classDef done fill:#CDEBE6,stroke:#248C7C,color:#11131E
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 12 · ADMIN PORTAL                                      -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="admin">
+  <div class="section-number">12 · Admin / Ops console</div>
+  <h2 class="section-title">Where Glimmora <em>runs the platform.</em></h2>
+  <div class="portal-rail" style="grid-template-columns: 1fr;">
+    <div class="portal" style="background: #E2E3F2; border-color: #3A3F7A">
+      <div class="swatch" style="background: #3A3F7A"></div>
+      <div class="kind">Portal 05 · port 3003 · accent midnight</div>
+      <div class="name">Admin — ops.glimmora.ai</div>
+      <div class="role">Staff-only. Five parallel workflows: verification, trust/fraud, knowledge, finance, support. Every cross-portal decision that needs human judgment flows through here.</div>
+    </div>
+  </div>
+
+  <h3>Information architecture — four groups, 16 surfaces</h3>
+  <div class="ia-grid">
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Overview</span><span class="chip">platform KPIs</span></div>
+      <ul>
+        <li>Dashboard <span class="badge live">live</span></li>
+        <li>Hires (ledger) <span class="badge live">live</span></li>
+        <li>Companies <span class="badge live">live</span></li>
+        <li>Relocations <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Verification &amp; Trust</span><span class="chip">4 workflows</span></div>
+      <ul>
+        <li>Partner KYB queue <span class="badge live">live</span></li>
+        <li>Employer verify <span class="badge live">live</span></li>
+        <li>Trust &amp; fraud <span class="badge live">live</span></li>
+        <li>Disputes <span class="badge w4">W4</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Knowledge &amp; Support</span><span class="chip">curation</span></div>
+      <ul>
+        <li>Country KG <span class="badge live">live</span></li>
+        <li>AI updates <span class="badge w4">W4</span></li>
+        <li>Users &amp; support <span class="badge live">live</span></li>
+        <li>Corporate accounts <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Finance &amp; Config</span><span class="chip">money + platform</span></div>
+      <ul>
+        <li>Escrow &amp; refunds <span class="badge live">live</span></li>
+        <li>Partner payouts <span class="badge live">live</span></li>
+        <li>Feature flags <span class="badge w5">W5</span></li>
+        <li>Analytics &amp; audit <span class="badge live">live</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Admin — the five parallel workflows</div>
+    <div class="mermaid">
+flowchart LR
+  D([Ops Dashboard<br/>queues by age]):::adm
+  D --> V[Partner verification]:::w
+  D --> T[Trust + fraud]:::w
+  D --> K[KG curation]:::w
+  D --> R[Refunds / disputes]:::w
+  D --> S[Support tickets]:::w
+
+  V --> V1[Approve / reject / in-review]:::act
+  T --> T1[Investigate incident<br/>auto-pause partner]:::act
+  K --> K1[Promote AI update<br/>to live KG]:::act
+  R --> R1[Refund / release / split]:::act
+  S --> S1[Respond / escalate]:::act
+
+  classDef adm fill:#E2E3F2,stroke:#3A3F7A,color:#11131E,stroke-width:2px
+  classDef w   fill:#FFFFFF,stroke:#585C6E,color:#11131E
+  classDef act fill:#CDEBE6,stroke:#248C7C,color:#11131E
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label">Separation of duties — enforced in roles</div>
+    Support agents can respond to users but cannot approve partners or release money. Trust officers can approve KYB but cannot change feature flags. Super-admin is the only role that can change platform config. The role matrix lives in the Feature Flags surface.
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 13 · PUBLIC SITE                                       -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="public">
+  <div class="section-number">13 · Public site</div>
+  <h2 class="section-title">Acquisition, tools, <em>SEO surfaces.</em></h2>
+  <p class="lead">
+    The public site is a sibling route group inside the Consumer app. Ten routes. Four are landing pages per audience; three are tools any anonymous visitor can use; three are company pages. Every landing page has one primary CTA: sign up into the right portal. The tools (compare, salary simulator, guides) are fully functional and read from the same Country KG the signed-in experience will use.
+  </p>
+
+  <div class="ia-grid">
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Marketing / acquisition</span><span class="chip">4 pages</span></div>
+      <ul>
+        <li>Home <span class="badge live">live</span></li>
+        <li>For employers <span class="badge live">live</span></li>
+        <li>For partners <span class="badge live">live</span></li>
+        <li>For companies <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Open tools</span><span class="chip">3 pages</span></div>
+      <ul>
+        <li>/compare — countries, sortable <span class="badge live">live</span></li>
+        <li>/salary — simulator <span class="badge live">live</span></li>
+        <li>/guides, /guides/[slug] <span class="badge live">live</span></li>
+      </ul>
+    </div>
+    <div class="ia-card">
+      <div class="ia-card-head"><span class="title">Company pages</span><span class="chip">3 pages</span></div>
+      <ul>
+        <li>/pricing <span class="badge live">live</span></li>
+        <li>About · Careers · Contact <span class="badge w5">W5</span></li>
+        <li>Legal (privacy, terms, cookies) <span class="badge w5">W5</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 14 · JOURNEY · PRIYA                                   -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="journey-priya">
+  <div class="section-number">14 · User journey</div>
+  <h2 class="section-title">Priya · <em>self-funded</em> move from Bangalore to Berlin.</h2>
+  <p class="lead">
+    The main persona. Priya is a senior backend engineer with her husband and one child. She's moving on her own initiative — no employer relocation package, no HR team behind her. Every portal lights up in her story.
+  </p>
+
+  <div class="journey">
+    <div class="step"><span class="n">01</span>discover</div>
+    <div class="what">
+      <h4>Public site · Compare &amp; simulate</h4>
+      <p>She lands on <code class="mono">glimmora.ai</code> from a Google search. Opens <code class="mono">/compare</code>, sorts corridors by tax + savings. Runs <code class="mono">/salary</code> for €85k gross IN→DE. Reads the Germany Guide. Signs up.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">02</span>plan</div>
+    <div class="what">
+      <h4>Consumer · Twin + Dashboard</h4>
+      <p>Onboarding builds her Twin: 28, senior engineer, married, one child, target Germany, 6-month runway. Copilot proposes a 9-month plan. Every subsequent surface (Finance, Family, Documents) reads the Twin.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">03</span>apply</div>
+    <div class="what">
+      <h4>Consumer · Career → Employer portal</h4>
+      <p>In <code class="mono">/app/discover</code> she sees only jobs whose employer's sponsorship policy accepts Indian passports. Applies to a role at Kontra GmbH. On the Employer side, her application lands visa-prequalified.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">04</span>interview</div>
+    <div class="what">
+      <h4>Employer · Interviews &amp; Offers</h4>
+      <p>Kontra runs the loop inside the Employer portal. Scorecards, offer sent, Priya accepts. <code class="mono">Application.stage=HIRED</code> fires.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">05</span>relocate</div>
+    <div class="what">
+      <h4>Consumer · Relocation created</h4>
+      <p>Internal API propagates a Relocation row into Consumer DB with 8 milestones. Priya's Dashboard now shows Berlin as destination. Plan timeline becomes executable.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">06</span>execute</div>
+    <div class="what">
+      <h4>Consumer · Marketplace → Partner portal</h4>
+      <p>She books a furnished apartment from Havn Housing (partner), an international school seat from Nordic Schools, a legal package from Pathway Legal. Each booking creates a row in Partner DB with <code class="mono">escrowState=HELD</code>.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">07</span>settle</div>
+    <div class="what">
+      <h4>Partner marks fulfilled · escrow releases</h4>
+      <p>Landlord confirms move-in. Havn marks fulfilled. Escrow RELEASED in Partner DB. Payout queued. Priya's Dashboard shows that milestone complete.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">08</span>observed</div>
+    <div class="what">
+      <h4>Admin sees the whole story</h4>
+      <p>Admin/Ops console shows: 1 new hire at Kontra, €7,600 success fee owed, Priya's relocation at 60% progress, 3 bookings settled, Havn trust score +1.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 15 · JOURNEY · HIRE                                    -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="journey-hire">
+  <div class="section-number">15 · User journey</div>
+  <h2 class="section-title">Aarav · <em>employer-driven</em> close.</h2>
+  <p>Short version of the employer flow — to prove the offer→hire→invoice cycle works end-to-end through the Admin ledger.</p>
+
+  <div class="diagram">
+    <div class="diagram-title">Hire &amp; fee — sequence</div>
+    <div class="mermaid">
+sequenceDiagram
+  participant R as Recruiter (Employer)
+  participant A as Aarav (Consumer)
+  participant E as Employer DB
+  participant CB as Consumer DB
+  participant Adm as Admin
+
+  R->>E: Post role (Senior Backend)
+  A->>E: Apply (visa-prequalified: EU Blue Card)
+  R->>E: Interview → scorecards
+  R->>E: Offer · €95k base
+  A->>E: Accept
+  E->>E: Offer.status=ACCEPTED<br/>Application.stage=HIRED
+  E->>CB: Create Relocation
+  Adm-->>E: Hire ledger<br/>fee = €95k × 8% = €7,600
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 16 · JOURNEY · PARTNER                                 -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="journey-partner">
+  <div class="section-number">16 · User journey</div>
+  <h2 class="section-title">Havn Housing · <em>booking → escrow → payout.</em></h2>
+
+  <div class="diagram">
+    <div class="diagram-title">Partner cycle — sequence</div>
+    <div class="mermaid">
+sequenceDiagram
+  participant H as Havn (Partner)
+  participant P as Partner DB
+  participant C as Consumer
+  participant Esc as Escrow
+  participant Adm as Admin
+
+  H->>P: Publish listing (Prenzlauer Berg 2BR)
+  C->>P: Request booking (€4,000 for 2 months)
+  P->>Esc: Hold €4,000
+  H->>P: Confirm within 24h
+  Note over H,C: Move-in happens
+  H->>P: Mark fulfilled
+  P->>Esc: Release €3,800 to Havn<br/>€200 platform fee
+  Adm-->>P: Payouts ledger<br/>Havn YTD: 3 × €3,800
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="label">Dispute branch</div>
+    If consumer raises a dispute before fulfilment, escrow freezes and the booking flows into Admin/Disputes. Resolution (refund user · release partner · split) updates Partner's trust score proportionally.
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 17 · JOURNEY · CORPORATE                               -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="journey-corp">
+  <div class="section-number">17 · User journey</div>
+  <h2 class="section-title">Ocenti Corp · <em>8 engineers in parallel.</em></h2>
+  <p>Enterprise mobility: a single HR lead manages eight active relocations under three policy tiers, with auto-approvals within budget and human approvals for overrides.</p>
+
+  <div class="diagram">
+    <div class="diagram-title">Corporate batch flow</div>
+    <div class="mermaid">
+flowchart LR
+  HR[HR lead · Reya]:::cor --> Pol[3 policies<br/>Standard · Exec · Early Career]:::cor
+  Pol --> Add[Add 16 employees]:::cor
+  Add --> Act[8 Active<br/>3 Settled · 2 Planned · 3 Home]:::cor
+  Act --> Cons[Each employee uses<br/>Consumer portal normally]:::con
+  Cons --> Spend[Spend tracked<br/>against policy cap]:::cor
+  Spend --> Approve{Budget exceeded?}
+  Approve -->|no| OK[Auto-approved]:::done
+  Approve -->|yes| AppQ[Approval queue<br/>HR reviews with AI flag]:::cor
+  AppQ --> Inv[Monthly invoice<br/>consolidated]:::cor
+  Inv --> Ledger[Admin · Corporate<br/>&amp; Audit]:::adm
+
+  classDef cor  fill:#DBEDE6,stroke:#2F7D66,color:#11131E
+  classDef con  fill:#FDF9EE,stroke:#CF9B1E,color:#11131E
+  classDef done fill:#CDEBE6,stroke:#248C7C,color:#11131E
+  classDef adm  fill:#E2E3F2,stroke:#3A3F7A,color:#11131E
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 18 · JOURNEY · ADMIN                                   -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="journey-admin">
+  <div class="section-number">18 · User journey</div>
+  <h2 class="section-title">Reya · Trust Officer · <em>morning queue.</em></h2>
+  <p>9 AM. Reya opens Admin. She has five queues to clear. The one non-trivial case today:</p>
+
+  <div class="journey">
+    <div class="step"><span class="n">01</span>open</div>
+    <div class="what">
+      <h4>Dashboard · platform state</h4>
+      <p>Sees: 1 partner pending KYB, 3 at-risk partners, 5 AI-extracted KG updates, 0 open disputes, 2 support tickets. Clicks Partner KYB.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">02</span>review</div>
+    <div class="what">
+      <h4>Partner KYB queue</h4>
+      <p>Nordic Schools International (DE) submitted 5 days ago. Three documents: certificate of incorporation, VAT, proof of address. Opens each, verifies against Companies House API (W4). Everything clean.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">03</span>decide</div>
+    <div class="what">
+      <h4>Approve · writes propagate</h4>
+      <p>Clicks Approve. Server action writes <code class="mono">Partner.verificationStatus = APPROVED</code> in Partner DB. Listings unlock. Nordic Schools is now live in the marketplace. Toast confirms. Audit log records the action.</p>
+    </div>
+  </div>
+
+  <div class="journey">
+    <div class="step"><span class="n">04</span>next</div>
+    <div class="what">
+      <h4>Moves to next queue</h4>
+      <p>Trust &amp; fraud → investigates Havn's SLA dip. Confirms it was a one-off weekend, notes it. KG curation → promotes the Beckham Law update (W4). Done by 10 AM.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 19 · MILESTONES                                        -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="milestones">
+  <div class="section-number">19 · Roadmap</div>
+  <h2 class="section-title">Milestones <em>W1 → W5.</em></h2>
+  <p class="lead">
+    Every disabled button in the product carries one of these badges. This is the ordered backend backlog — each milestone is a set of services the frontend is ready to consume the instant they exist.
+  </p>
+
+  <table class="grid">
+    <tr><th>Milestone</th><th>Theme</th><th>Scope</th><th>Frontend status</th></tr>
+    <tr>
+      <td><span class="tag gilt">W1</span></td>
+      <td>Frontend platform</td>
+      <td>All six portals, UI complete, mock data, typed API surfaces</td>
+      <td><strong>Done</strong></td>
+    </tr>
+    <tr>
+      <td><span class="tag gilt">W2</span></td>
+      <td>Copilot integration</td>
+      <td>Anthropic API for streaming chat, plan generation, prompt-chip commands in Consumer /messages + Partner /messages</td>
+      <td>UI ready · disabled</td>
+    </tr>
+    <tr>
+      <td><span class="tag gilt">W3</span></td>
+      <td>Auth &amp; documents</td>
+      <td>Email verification, password reset, KMS-encrypted document vault, OCR, family/spouse invites, support ticket inbox</td>
+      <td>UI ready · disabled</td>
+    </tr>
+    <tr>
+      <td><span class="tag gilt">W4</span></td>
+      <td>Payments &amp; real workflows</td>
+      <td>Stripe Connect (subscriptions + partner payouts), dispute resolution workflow, KG inline editing + AI update promotion, interview AI, escalations</td>
+      <td>UI ready · disabled</td>
+    </tr>
+    <tr>
+      <td><span class="tag gilt">W5</span></td>
+      <td>Policy, legal, scale</td>
+      <td>Real tax engine per jurisdiction, feature-flag service, audit log CSV export, legal pages (privacy/terms/cookies/security), About/Careers/Contact</td>
+      <td>UI ready · disabled</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 20 · TECH STACK                                        -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="tech">
+  <div class="section-number">20 · Tech stack</div>
+  <h2 class="section-title">The stack — <em>opinionated, boring, fast.</em></h2>
+
+  <table class="grid">
+    <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Framework</td><td>Next.js 14 App Router</td><td>Server Components for data-heavy pages, client islands for interactive pieces. Streaming ready for Copilot.</td></tr>
+    <tr><td>Language</td><td>TypeScript · strict</td><td>Types are the contract. Zero <code class="mono">any</code> policy at API boundaries.</td></tr>
+    <tr><td>DB (dev)</td><td>SQLite · one per app</td><td>Portable, fast, realistic schemas. Swap to Postgres per app in prod.</td></tr>
+    <tr><td>ORM</td><td>Prisma</td><td>Schema-first. Migration story + typed client.</td></tr>
+    <tr><td>Cross-DB reads</td><td><code class="mono">better-sqlite3</code> in <code class="mono">readonly</code> mode</td><td>Admin reads Employer/Consumer/Partner/Corporate directly. Replaces with replicas in prod.</td></tr>
+    <tr><td>Auth</td><td>NextAuth.js v5</td><td>Credentials provider per portal, separate user tables. Session = JWT.</td></tr>
+    <tr><td>Validation</td><td>Zod</td><td>At every API boundary, form submission, and cross-portal client.</td></tr>
+    <tr><td>Styling</td><td>Tailwind CSS + custom tokens</td><td>Per-portal accent colors. Shared type/spacing scales.</td></tr>
+    <tr><td>UI primitives</td><td>Radix UI + lucide-react</td><td>Accessible by default. Headless, restylable.</td></tr>
+    <tr><td>Toasts</td><td>sonner</td><td>Used consistently across server-action responses.</td></tr>
+    <tr><td>State</td><td><code class="mono">useTransition</code> + server actions</td><td>No global store. Server is the state.</td></tr>
+    <tr><td>Cross-portal HTTP</td><td>Bearer token · <code class="mono">INTERNAL_API_KEY</code> env</td><td>Simple, stateless, easy to rotate.</td></tr>
+  </table>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 21 · API CONTRACTS                                     -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="contracts">
+  <div class="section-number">21 · Integration contracts</div>
+  <h2 class="section-title">How portals <em>talk to each other.</em></h2>
+  <p class="lead">
+    Two patterns: synchronous HTTP for writes that cross portal boundaries (e.g. Employer tells Consumer about a hire), and direct cross-DB reads for Admin-side aggregation. Both are typed with Zod.
+  </p>
+
+  <h3>Pattern A — internal HTTP with Bearer auth</h3>
+  <p>Example: when an Employer accepts an offer, Employer's server action calls Consumer's internal API to create a Relocation.</p>
+
+  <div class="diagram">
+    <div class="diagram-title">Example — Employer → Consumer internal call</div>
+    <div class="mermaid">
+sequenceDiagram
+  participant EApp as Employer action
+  participant EClient as employer/lib/consumer-api.ts
+  participant CAPI as Consumer /api/internal/relocation
+  participant CDB as Consumer DB
+
+  EApp->>EClient: createRelocation({userEmail, jobTitle, destCountry})
+  EClient->>CAPI: POST /api/internal/relocation<br/>Authorization: Bearer INTERNAL_API_KEY
+  CAPI->>CAPI: Zod.parse(body)
+  CAPI->>CDB: prisma.relocation.create
+  CAPI-->>EClient: {id, milestones}
+  EClient-->>EApp: RelocationSchema parsed
+    </div>
+  </div>
+
+  <h3>Pattern B — Admin cross-DB direct read</h3>
+  <p>Admin's <code class="mono">xdb.ts</code> opens each portal's SQLite in <code class="mono">readonly</code> and executes typed SQL. Fourteen exported functions cover every Admin surface.</p>
+
+  <div class="diagram">
+    <div class="diagram-title">The xdb.ts surface</div>
+    <div class="mermaid">
+flowchart LR
+  Admin[Admin pages]:::adm --> XDB[xdb.ts · typed reads]:::adm
+
+  XDB -->|readonly| EDB[(Employer DB)]:::e
+  XDB -->|readonly| CDB[(Consumer DB)]:::c
+  XDB -->|readonly| PDB[(Partner DB)]:::p
+  XDB -->|readonly| CoDB[(Corporate DB)]:::co
+
+  XDB -->|WAL write| EDB
+  XDB -->|WAL write| PDB
+
+  classDef adm fill:#E2E3F2,stroke:#3A3F7A,color:#11131E
+  classDef e   fill:#11131E,stroke:#11131E,color:#FDFCF9
+  classDef c   fill:#FDF9EE,stroke:#CF9B1E,color:#11131E
+  classDef p   fill:#E8DFF0,stroke:#6B3E8A,color:#11131E
+  classDef co  fill:#DBEDE6,stroke:#2F7D66,color:#11131E
+    </div>
+  </div>
+
+  <h3>Production swap-in</h3>
+  <p>
+    In production, pattern A stays the same (HTTP + Bearer), backed by real service endpoints. Pattern B swaps from <code class="mono">better-sqlite3</code> on shared files to read replicas or a warehouse (BigQuery / ClickHouse). The <code class="mono">xdb.ts</code> function signatures stay stable — the implementation changes.
+  </p>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 22 · BACKEND SCOPE                                     -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="backend">
+  <div class="section-number">22 · Backend scope at handoff</div>
+  <h2 class="section-title">What exists, <em>what's yours to build.</em></h2>
+
+  <h3>Built on the frontend side (you inherit)</h3>
+  <ul style="font-size: 15px; line-height: 1.8; max-width: 72ch;">
+    <li>Six running apps with complete UIs and mock seed data</li>
+    <li>Prisma schemas per portal — these are the v1 data model</li>
+    <li>Cross-portal internal API endpoints with Zod-validated inputs</li>
+    <li>NextAuth v5 integration per portal (credentials provider)</li>
+    <li>Server actions for every write operation — business logic colocated with UI</li>
+    <li>Admin read/write surface (<code class="mono">xdb.ts</code>) covering 4 databases</li>
+    <li>Seed scripts that produce realistic state across every portal</li>
+  </ul>
+
+  <h3>To build on the backend side (W2+)</h3>
+  <table class="grid">
+    <tr><th>W</th><th>Service</th><th>Consumed by</th></tr>
+    <tr><td><span class="tag gilt">W2</span></td><td>Anthropic streaming proxy · rate-limited</td><td>Consumer /messages, Partner /messages, Copilot prompts everywhere</td></tr>
+    <tr><td><span class="tag gilt">W2</span></td><td>Plan generation service (Twin → 9-month plan)</td><td>Consumer Dashboard</td></tr>
+    <tr><td><span class="tag gilt">W3</span></td><td>Email verification · password reset</td><td>All four user-facing portals</td></tr>
+    <tr><td><span class="tag gilt">W3</span></td><td>Document vault — KMS-encrypted · OCR · metadata extraction</td><td>Consumer /documents</td></tr>
+    <tr><td><span class="tag gilt">W3</span></td><td>Support ticket inbox (Zendesk-style)</td><td>Admin /support</td></tr>
+    <tr><td><span class="tag gilt">W4</span></td><td>Stripe Connect — subscriptions · partner payouts · escrow release</td><td>Consumer /billing · Partner /payouts · Admin /escrow</td></tr>
+    <tr><td><span class="tag gilt">W4</span></td><td>Dispute resolution workflow (state machine, evidence store)</td><td>Admin /disputes</td></tr>
+    <tr><td><span class="tag gilt">W4</span></td><td>KG editor + AI update promotion pipeline</td><td>Admin /kg · Admin /ai-updates</td></tr>
+    <tr><td><span class="tag gilt">W4</span></td><td>Interview AI · mock rounds against Twin</td><td>Consumer /career</td></tr>
+    <tr><td><span class="tag gilt">W5</span></td><td>Tax engine — accurate per-jurisdiction</td><td>Consumer /finance · Public /salary</td></tr>
+    <tr><td><span class="tag gilt">W5</span></td><td>Feature-flag service (LaunchDarkly or OpenFeature)</td><td>Admin /flags · every gated feature</td></tr>
+    <tr><td><span class="tag gilt">W5</span></td><td>Audit log (append-only store) + CSV export</td><td>Admin /audit</td></tr>
+  </table>
+
+  <div class="callout demo">
+    <div class="label">Starting point</div>
+    Read <code class="mono">apps/admin/lib/xdb.ts</code> end-to-end. It's the single clearest map of what the platform knows. Then read each portal's <code class="mono">prisma/schema.prisma</code>. Those two documents plus this guide are the complete mental model.
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- 23 · DEMO SCRIPT                                       -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="slide" id="demo-script">
+  <div class="section-number">23 · Demo script</div>
+  <h2 class="section-title">What to click, <em>in what order.</em></h2>
+  <p class="lead">
+    A 15-minute demo that hits every portal and proves the cross-portal story. Each step lists the URL, the demo credential, and the talking point.
+  </p>
+
+  <table class="grid">
+    <tr><th>#</th><th>Where</th><th>What to show</th><th>Talking point</th></tr>
+    <tr><td>01</td><td><code class="mono">:3001/</code></td><td>Public home + <code class="mono">/compare</code> + <code class="mono">/salary</code></td><td>&ldquo;This is Priya's front door.&rdquo;</td></tr>
+    <tr><td>02</td><td><code class="mono">:3001/sign-in</code> → demo@glimmora.ai</td><td>Consumer dashboard, Plan, Profile/Twin</td><td>&ldquo;The Twin is the shared state.&rdquo;</td></tr>
+    <tr><td>03</td><td><code class="mono">:3001/app/marketplace</code></td><td>Listings → detail → Book</td><td>&ldquo;Real Partner data, visa-filtered.&rdquo;</td></tr>
+    <tr><td>04</td><td><code class="mono">:3002/sign-in</code> → demo@kontra.de</td><td>Employer pipeline · offer detail · accepted Aarav</td><td>&ldquo;Visa-gated applications only.&rdquo;</td></tr>
+    <tr><td>05</td><td><code class="mono">:3004/sign-in</code> → ops@havnhousing.de</td><td>Partner dashboard · booking detail · payouts</td><td>&ldquo;Escrow released on fulfilment.&rdquo;</td></tr>
+    <tr><td>06</td><td><code class="mono">:3005/sign-in</code> → reya@ocenti.com</td><td>Corporate overview · 8 active relocations · policy tiers</td><td>&ldquo;Enterprise mobility with guardrails.&rdquo;</td></tr>
+    <tr><td>07</td><td><code class="mono">:3003/sign-in</code> → admin@glimmora.ai</td><td>Admin dashboard · hires ledger</td><td>&ldquo;Every cross-portal event visible here.&rdquo;</td></tr>
+    <tr><td>08</td><td><code class="mono">:3003/app/verification/partners</code></td><td><strong>Click Approve on the pending partner</strong></td><td>&ldquo;Server action writes to Partner DB live.&rdquo;</td></tr>
+    <tr><td>09</td><td><code class="mono">:3003/app/audit</code></td><td>Cross-portal audit feed</td><td>&ldquo;Every write-bearing action, one timeline.&rdquo;</td></tr>
+    <tr><td>10</td><td>Close</td><td>Return to this guide's handoff section</td><td>&ldquo;W2→W5 is the backend backlog.&rdquo;</td></tr>
+  </table>
+
+  <div class="rule"></div>
+
+  <h3>Demo credentials</h3>
+  <table class="grid">
+    <tr><th>Portal</th><th>Email</th><th>Password</th></tr>
+    <tr><td>Consumer</td><td class="mono">demo@glimmora.ai</td><td class="mono">demo1234</td></tr>
+    <tr><td>Employer</td><td class="mono">demo@kontra.de</td><td class="mono">kontra1234</td></tr>
+    <tr><td>Partner</td><td class="mono">ops@havnhousing.de</td><td class="mono">havn1234</td></tr>
+    <tr><td>Corporate</td><td class="mono">reya@ocenti.com</td><td class="mono">ocenti1234</td></tr>
+    <tr><td>Admin</td><td class="mono">admin@glimmora.ai</td><td class="mono">admin1234</td></tr>
+  </table>
+
+  <div class="rule"></div>
+
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--ink-300);">
+    <div>
+      <div class="mono" style="font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color: var(--ink-500); font-weight:700">Glimmora Relocate</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 24px; margin-top: 4px; font-style: italic; color: var(--ink-700);">Handoff · W1 complete</div>
+    </div>
+    <div style="text-align:right">
+      <div class="mono" style="font-size:10.5px; color: var(--ink-500);">docs/glimmora-relocate-demo.html</div>
+      <div class="mono" style="font-size:10.5px; color: var(--ink-500); margin-top: 4px;">print-friendly · scroll-paced</div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#FDFCF9',
+      primaryTextColor: '#11131E',
+      primaryBorderColor: '#2F3244',
+      lineColor: '#585C6E',
+      secondaryColor: '#ECEDF2',
+      tertiaryColor: '#FFFFFF',
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
+      fontSize: '13px',
+    },
+    flowchart: {
+      htmlLabels: true,
+      curve: 'basis',
+      padding: 14,
+    },
+    sequence: {
+      diagramMarginX: 24,
+      diagramMarginY: 24,
+      actorMargin: 40,
+      width: 150,
+      height: 50,
+      boxMargin: 8,
+      boxTextMargin: 4,
+      noteMargin: 8,
+      messageMargin: 28,
+      mirrorActors: true,
+    },
+  });
+</script>
+</body>
+</html>

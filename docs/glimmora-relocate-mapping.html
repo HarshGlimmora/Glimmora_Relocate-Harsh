@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glimmora Relocate — Personas × Portals × Roles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --ink:#0F1222;
+    --ink-2:#2B2E44;
+    --paper:#FAF7F2;
+    --paper-2:#F2EEE6;
+    --line:#E4DDD1;
+    --rule:#D6CCBB;
+    --slate:#5E6379;
+
+    --consumer:#B3542A;      --consumer-soft:#F3DAC7;
+    --employer:#B48A2C;      --employer-soft:#F4E8C7;
+    --partner:#6B3E8A;       --partner-soft:#EADDF2;
+    --corporate:#2F7D66;     --corporate-soft:#DBEDE6;
+    --admin:#3A3F7A;         --admin-soft:#E2E3F2;
+    --public:#5E6379;        --public-soft:#E8E4DC;
+    --expert:#2F7D66;        --expert-soft:#DBEDE6;
+
+    --shadow: 0 1px 2px rgba(15,18,34,.05), 0 8px 24px rgba(15,18,34,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;
+    font-size:16px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:56px 40px 140px}
+
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.22em;text-transform:uppercase;
+    color:var(--consumer);margin-bottom:18px;
+  }
+  h1{
+    font-family:"Fraunces",Georgia,serif;font-weight:500;
+    font-size:clamp(42px,5.2vw,62px);
+    line-height:1.04;letter-spacing:-.025em;margin:0 0 20px;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--consumer)}
+  .lede{
+    font-family:"Fraunces",Georgia,serif;font-size:22px;
+    color:var(--ink-2);line-height:1.5;max-width:68ch;margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;gap:40px;flex-wrap:wrap;
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;
+  }
+  .meta-row span b{color:var(--ink);font-weight:500}
+
+  header.cover{border-bottom:1px solid var(--rule);padding-bottom:48px;margin-bottom:56px}
+
+  h2{
+    font-family:"Fraunces",Georgia,serif;font-weight:500;
+    font-size:36px;letter-spacing:-.02em;line-height:1.12;
+    margin:96px 0 10px;
+  }
+  h2 .num{
+    display:block;font-family:"JetBrains Mono",monospace;
+    font-size:12px;letter-spacing:.22em;color:var(--consumer);
+    margin-bottom:10px;font-weight:500;
+  }
+  h3{font-family:"Fraunces",Georgia,serif;font-weight:500;font-size:22px;margin:40px 0 12px;letter-spacing:-.005em}
+  p{margin:0 0 16px;max-width:74ch}
+  code{font-family:"JetBrains Mono",monospace;font-size:.88em;background:var(--paper-2);padding:1px 6px;border-radius:4px}
+
+  .section-lede{
+    font-family:"Fraunces",Georgia,serif;font-style:italic;
+    font-size:19px;color:var(--ink-2);max-width:66ch;
+    margin:0 0 28px;line-height:1.5;
+  }
+
+  /* ---------- Three concepts ---------- */
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:28px 0 8px}
+  @media (max-width:900px){.three{grid-template-columns:1fr}}
+  .concept{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:24px 26px;box-shadow:var(--shadow);
+    border-top:4px solid var(--consumer);
+  }
+  .concept.p{border-top-color:var(--partner)}
+  .concept.a{border-top-color:var(--admin)}
+  .concept .label{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--slate);
+    margin-bottom:6px;
+  }
+  .concept .count{
+    font-family:"Fraunces",serif;font-size:52px;font-weight:500;
+    color:var(--consumer);line-height:1;letter-spacing:-.03em;margin-bottom:12px;
+  }
+  .concept.p .count{color:var(--partner)}
+  .concept.a .count{color:var(--admin)}
+  .concept h3{margin:0 0 8px;font-size:22px}
+  .concept p{margin:0;font-size:14.5px;color:var(--ink-2)}
+
+  /* ---------- Matrix ---------- */
+  .matrix-wrap{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    box-shadow:var(--shadow);padding:4px;margin:24px 0;overflow-x:auto;
+  }
+  .matrix{
+    width:100%;min-width:1050px;border-collapse:separate;border-spacing:0;
+    font-size:13px;
+  }
+  .matrix th,.matrix td{
+    padding:14px 12px;text-align:center;vertical-align:top;
+    border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .matrix thead th{
+    background:var(--paper-2);
+    font-family:"Fraunces",serif;font-size:16px;font-weight:500;
+    letter-spacing:-.005em;color:var(--ink);
+    border-bottom:1px solid var(--rule);
+    position:sticky;top:0;
+  }
+  .matrix thead th small{
+    display:block;font-family:"JetBrains Mono",monospace;
+    font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--slate);font-weight:400;margin-top:3px;
+  }
+  .matrix thead th.h-public{border-top:4px solid var(--public)}
+  .matrix thead th.h-consumer{border-top:4px solid var(--consumer)}
+  .matrix thead th.h-employer{border-top:4px solid var(--employer)}
+  .matrix thead th.h-partner{border-top:4px solid var(--partner)}
+  .matrix thead th.h-corporate{border-top:4px solid var(--corporate)}
+  .matrix thead th.h-admin{border-top:4px solid var(--admin)}
+  .matrix thead th.h-expert{border-top:4px solid var(--expert)}
+  .matrix tbody th{
+    text-align:left;background:#fff;
+    font-family:"Fraunces",serif;font-size:15px;font-weight:500;
+    color:var(--ink);width:180px;letter-spacing:-.005em;
+    padding-left:18px;
+  }
+  .matrix tbody th small{
+    display:block;font-family:"JetBrains Mono",monospace;
+    font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--slate);font-weight:400;margin-top:2px;
+  }
+  .matrix tbody tr:nth-child(even) th{background:var(--paper)}
+  .matrix tbody tr:nth-child(even) td{background:var(--paper)}
+
+  .rcell{
+    display:flex;flex-direction:column;gap:4px;align-items:center;
+  }
+  .rc{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    padding:2px 7px;border-radius:4px;
+    background:var(--paper-2);color:var(--ink-2);
+    border:1px solid var(--line);letter-spacing:.04em;
+    white-space:nowrap;
+  }
+  .rc.consumer{background:var(--consumer-soft);color:var(--consumer);border-color:var(--consumer-soft)}
+  .rc.employer{background:var(--employer-soft);color:var(--employer);border-color:var(--employer-soft)}
+  .rc.partner{background:var(--partner-soft);color:var(--partner);border-color:var(--partner-soft)}
+  .rc.corporate{background:var(--corporate-soft);color:var(--corporate);border-color:var(--corporate-soft)}
+  .rc.admin{background:var(--admin-soft);color:var(--admin);border-color:var(--admin-soft)}
+  .rc.public{background:var(--public-soft);color:var(--public);border-color:var(--public-soft)}
+  .rc.expert{background:var(--expert-soft);color:var(--expert);border-color:var(--expert-soft)}
+  .dot{color:var(--line);font-size:14px;user-select:none}
+
+  /* ---------- Portal cards ---------- */
+  .pcards{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin:24px 0}
+  @media (max-width:900px){.pcards{grid-template-columns:1fr}}
+  .pcard{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:24px 26px;box-shadow:var(--shadow);
+  }
+  .pcard header{
+    display:flex;align-items:center;gap:14px;margin-bottom:14px;
+    padding-bottom:12px;border-bottom:1px solid var(--line);
+  }
+  .pcard .badge{
+    width:40px;height:40px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Fraunces",serif;font-size:20px;font-weight:500;
+    flex:0 0 40px;
+  }
+  .pcard h3{margin:0;font-size:20px}
+  .pcard .sub{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--slate);
+    margin-top:2px;
+  }
+  .pcard .kv{display:grid;grid-template-columns:110px 1fr;gap:8px 16px;font-size:14px}
+  .pcard .kv dt{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--slate);
+    padding-top:4px;
+  }
+  .pcard .kv dd{margin:0;color:var(--ink-2)}
+  .pcard .chip-row{display:flex;flex-wrap:wrap;gap:6px}
+  .pcard.consumer{border-top:4px solid var(--consumer)}
+  .pcard.consumer .badge{background:var(--consumer-soft);color:var(--consumer)}
+  .pcard.employer{border-top:4px solid var(--employer)}
+  .pcard.employer .badge{background:var(--employer-soft);color:var(--employer)}
+  .pcard.partner{border-top:4px solid var(--partner)}
+  .pcard.partner .badge{background:var(--partner-soft);color:var(--partner)}
+  .pcard.corporate{border-top:4px solid var(--corporate)}
+  .pcard.corporate .badge{background:var(--corporate-soft);color:var(--corporate)}
+  .pcard.admin{border-top:4px solid var(--admin)}
+  .pcard.admin .badge{background:var(--admin-soft);color:var(--admin)}
+  .pcard.public{border-top:4px solid var(--public)}
+  .pcard.public .badge{background:var(--public-soft);color:var(--public)}
+  .pcard.expert{border-top:4px solid var(--expert)}
+  .pcard.expert .badge{background:var(--expert-soft);color:var(--expert)}
+
+  /* ---------- Role index ---------- */
+  .roles-idx{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    box-shadow:var(--shadow);padding:28px;margin:24px 0;
+  }
+  .roles-idx .g{margin-bottom:22px}
+  .roles-idx .g:last-child{margin-bottom:0}
+  .roles-idx .g header{
+    display:flex;align-items:baseline;gap:12px;
+    padding-bottom:8px;margin-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .roles-idx .g header h4{
+    margin:0;font-family:"Fraunces",serif;font-size:18px;font-weight:500;
+    text-transform:none;letter-spacing:-.005em;color:var(--ink);
+  }
+  .roles-idx .g header .c{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--slate);
+  }
+  .roles-idx .row{
+    display:grid;grid-template-columns:200px 1fr;
+    gap:10px 20px;padding:8px 0;font-size:14px;
+    border-top:1px solid var(--line);
+  }
+  .roles-idx .row:first-of-type{border-top:none}
+  .roles-idx .row .name{font-weight:500;color:var(--ink)}
+  .roles-idx .row .name code{display:block;color:var(--consumer);font-size:12px;margin-top:2px;background:transparent;padding:0}
+  .roles-idx .row .desc{color:var(--ink-2)}
+
+  /* ---------- Callout ---------- */
+  .callout{
+    background:#fff;border:1px solid var(--line);border-left:3px solid var(--consumer);
+    padding:18px 22px;border-radius:0 10px 10px 0;
+    margin:24px 0;color:var(--ink-2);font-size:15px;
+    box-shadow:var(--shadow);
+  }
+  .callout b{color:var(--ink)}
+
+  /* ---------- Diagram ---------- */
+  .diagram{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:28px;margin:20px 0;box-shadow:var(--shadow);overflow-x:auto;
+  }
+  .diagram-title{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--slate);
+    margin-bottom:16px;
+  }
+
+  footer{
+    margin-top:100px;padding-top:24px;border-top:1px solid var(--rule);
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;letter-spacing:.05em;
+  }
+
+  @media print{
+    body{font-size:12px}
+    h2{page-break-before:always}
+    .diagram,.matrix-wrap{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <div class="eyebrow">Reference · Mapping · v0.1 · 2026-04-22</div>
+  <h1>Personas<em>×</em>Portals<em>×</em>Roles.</h1>
+  <p class="lede">
+    Three different questions, three different counts. This document shows — in one view — which persona uses which portal and holds which role, so the numbers never trip anyone again.
+  </p>
+  <div class="meta-row">
+    <span><b>Personas</b> &nbsp; 9</span>
+    <span><b>Portals</b> &nbsp; 6 (+1 optional)</span>
+    <span><b>Human roles</b> &nbsp; 22</span>
+    <span><b>System accounts</b> &nbsp; 2</span>
+  </div>
+</header>
+
+<!-- =========== 01 THE THREE DIMENSIONS =========== -->
+<section>
+  <h2><span class="num">01 — Three dimensions</span>What each count is measuring.</h2>
+
+  <p class="section-lede">
+    Personas, portals, and roles answer three different questions. Confusing them is the single most common source of mis-communication on this project.
+  </p>
+
+  <div class="three">
+    <div class="concept">
+      <div class="label">Persona</div>
+      <div class="count">9</div>
+      <h3>Who shows up?</h3>
+      <p>A kind of real-world person with motivations and constraints. A product concept. Used for thinking about &ldquo;who would want this?&rdquo; Mover, Family Unit, Student, Employer, Partner, HR Admin, Ops, Curator, Verified Expert.</p>
+    </div>
+    <div class="concept p">
+      <div class="label">Portal</div>
+      <div class="count">6</div>
+      <h3>Where do they log in?</h3>
+      <p>A software surface — a web or mobile app. A product / design concept. Consumer App, Employer Portal, Partner Portal, Corporate Portal, Admin Console, Public Site. (An optional 7th Expert Portal ships with the premium tier.)</p>
+    </div>
+    <div class="concept a">
+      <div class="label">Role</div>
+      <div class="count">22</div>
+      <h3>What can they do once logged in?</h3>
+      <p>A named set of permissions inside the software. An engineering concept. Used for &ldquo;who is allowed to call this API, see this screen, approve this action?&rdquo; Plus 2 non-human system accounts (Copilot, Integration).</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Why the counts differ.</b> A single portal can serve multiple personas (three personas share the Consumer App). A single persona can hold multiple roles (an Employer company has an Owner, Recruiters, and Hiring Managers — all one persona, five roles). A single role can be used by multiple personas (the Ops and Curator personas both work inside the Admin Console, but with different role codes). The three dimensions are independent on purpose.
+  </div>
+</section>
+
+<!-- =========== 02 MASTER MATRIX =========== -->
+<section>
+  <h2><span class="num">02 — The master matrix</span>Every persona, every portal, every role, in one grid.</h2>
+
+  <p class="section-lede">
+    Rows are the nine personas. Columns are the seven portals (six at launch plus the optional Expert Portal). Each cell lists the role codes that persona holds inside that portal — or a dot if the persona does not use that portal.
+  </p>
+
+  <div class="matrix-wrap">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th style="background:#fff;border-top:none">Persona ↓  ·  Portal →</th>
+          <th class="h-public">Public<small>Pre-signup</small></th>
+          <th class="h-consumer">Consumer<small>App</small></th>
+          <th class="h-employer">Employer<small>Portal</small></th>
+          <th class="h-partner">Partner<small>Portal</small></th>
+          <th class="h-corporate">Corporate<small>Portal</small></th>
+          <th class="h-admin">Admin<small>Console</small></th>
+          <th class="h-expert">Expert<small>Portal · opt.</small></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>The Mover<small>Consumer · B2C</small></th>
+          <td><span class="rc public">visitor</span></td>
+          <td><span class="rc consumer">consumer.primary</span></td>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+        </tr>
+        <tr>
+          <th>The Family Unit<small>Consumer · family mode</small></th>
+          <td><span class="rc public">visitor</span></td>
+          <td><div class="rcell"><span class="rc consumer">consumer.primary</span><span class="rc consumer">consumer.family</span></div></td>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+        </tr>
+        <tr>
+          <th>The Student<small>Consumer · student mode</small></th>
+          <td><span class="rc public">visitor</span></td>
+          <td><span class="rc consumer">consumer.student</span></td>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+        </tr>
+        <tr>
+          <th>The Employer<small>B2B · hiring side</small></th>
+          <td><span class="rc public">visitor</span></td>
+          <td><span class="dot">·</span></td>
+          <td><div class="rcell">
+            <span class="rc employer">employer.owner</span>
+            <span class="rc employer">employer.recruiter</span>
+            <span class="rc employer">employer.hm</span>
+            <span class="rc employer">employer.interviewer</span>
+            <span class="rc employer">employer.finance</span>
+          </div></td>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+        </tr>
+        <tr>
+          <th>The Partner Provider<small>B2B · supply side</small></th>
+          <td><span class="rc public">visitor</span></td>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+          <td><div class="rcell">
+            <span class="rc partner">partner.owner</span>
+            <span class="rc partner">partner.listing</span>
+            <span class="rc partner">partner.fulfil</span>
+            <span class="rc partner">partner.finance</span>
+          </div></td>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+        </tr>
+        <tr>
+          <th>HR / Mobility Admin<small>B2B · corporate</small></th>
+          <td><span class="rc public">visitor</span></td>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+          <td><div class="rcell">
+            <span class="rc corporate">corp.admin</span>
+            <span class="rc corporate">corp.mobility</span>
+            <span class="rc corporate">corp.finance</span>
+            <span class="rc corporate">corp.viewer</span>
+          </div></td>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+        </tr>
+        <tr>
+          <th>Glimmora Ops / Admin<small>Internal · operations</small></th>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+          <td><div class="rcell">
+            <span class="rc admin">ops.super</span>
+            <span class="rc admin">ops.trust</span>
+            <span class="rc admin">ops.support</span>
+            <span class="rc admin">ops.finance</span>
+          </div></td>
+          <td><span class="dot">·</span></td>
+        </tr>
+        <tr>
+          <th>Content &amp; Data Curator<small>Internal · knowledge</small></th>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+          <td><span class="rc admin">ops.curator</span></td>
+          <td><span class="dot">·</span></td>
+        </tr>
+        <tr>
+          <th>Verified Human Expert<small>Premium · optional</small></th>
+          <td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td><td><span class="dot">·</span></td>
+          <td><span class="rc expert">expert.verified</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="font-size:13.5px;color:var(--slate)">
+    <b>How to read a row.</b> The Employer row has five role chips in the Employer column — one real-world Employer company maps to one persona but to five <i>roles</i> (Owner, Recruiter, HM, Interviewer, Finance). That is why the 9/22 count gap exists.
+  </p>
+  <p style="font-size:13.5px;color:var(--slate)">
+    <b>How to read a column.</b> The Consumer App column has three filled cells — three different personas (Mover, Family, Student) share the same portal. That is why the 9/6 count gap exists.
+  </p>
+</section>
+
+<!-- =========== 03 FLOW DIAGRAM =========== -->
+<section>
+  <h2><span class="num">03 — Flow view</span>Persona → Portal → Roles.</h2>
+
+  <p class="section-lede">
+    The same mapping as a flow diagram, for readers who prefer lines to cells.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">Persona to portal to roles</div>
+    <pre class="mermaid">
+flowchart LR
+  classDef persona fill:#FFFFFF,stroke:#0F1222,color:#0F1222,stroke-width:1.5px
+  classDef consumer fill:#F3DAC7,stroke:#B3542A,color:#0F1222
+  classDef employer fill:#F4E8C7,stroke:#B48A2C,color:#0F1222
+  classDef partner  fill:#EADDF2,stroke:#6B3E8A,color:#0F1222
+  classDef corp     fill:#DBEDE6,stroke:#2F7D66,color:#0F1222
+  classDef admin    fill:#E2E3F2,stroke:#3A3F7A,color:#0F1222
+  classDef expert   fill:#DBEDE6,stroke:#2F7D66,color:#0F1222
+  classDef role     fill:#FAF7F2,stroke:#5E6379,color:#0F1222
+
+  P1[Mover]:::persona
+  P2[Family Unit]:::persona
+  P3[Student]:::persona
+  P4[Employer]:::persona
+  P5[Partner Provider]:::persona
+  P6[HR / Mobility]:::persona
+  P7[Ops / Admin]:::persona
+  P8[Data Curator]:::persona
+  P9[Verified Expert]:::persona
+
+  PC[Consumer App]:::consumer
+  PE[Employer Portal]:::employer
+  PP[Partner Portal]:::partner
+  PO[Corporate Portal]:::corp
+  PA[Admin Console]:::admin
+  PX[Expert Portal]:::expert
+
+  P1 --> PC
+  P2 --> PC
+  P3 --> PC
+  P4 --> PE
+  P5 --> PP
+  P6 --> PO
+  P7 --> PA
+  P8 --> PA
+  P9 --> PX
+
+  PC --> R1[consumer.primary]:::role
+  PC --> R2[consumer.family]:::role
+  PC --> R3[consumer.student]:::role
+
+  PE --> R4[employer.owner]:::role
+  PE --> R5[employer.recruiter]:::role
+  PE --> R6[employer.hm]:::role
+  PE --> R7[employer.interviewer]:::role
+  PE --> R8[employer.finance]:::role
+
+  PP --> R9[partner.owner]:::role
+  PP --> R10[partner.listing]:::role
+  PP --> R11[partner.fulfil]:::role
+  PP --> R12[partner.finance]:::role
+
+  PO --> R13[corp.admin]:::role
+  PO --> R14[corp.mobility]:::role
+  PO --> R15[corp.finance]:::role
+  PO --> R16[corp.viewer]:::role
+
+  PA --> R17[ops.super]:::role
+  PA --> R18[ops.trust]:::role
+  PA --> R19[ops.curator]:::role
+  PA --> R20[ops.support]:::role
+  PA --> R21[ops.finance]:::role
+
+  PX --> R22[expert.verified]:::role
+    </pre>
+  </div>
+</section>
+
+<!-- =========== 04 PORTAL CARDS =========== -->
+<section>
+  <h2><span class="num">04 — Portal by portal</span>Each portal, its personas, its roles.</h2>
+
+  <p class="section-lede">
+    The reverse view — by portal instead of by persona. Useful when you are designing inside one surface and need to know who it serves and what permissions it supports.
+  </p>
+
+  <div class="pcards">
+    <div class="pcard public">
+      <header><div class="badge">W</div><div><h3>Public Site</h3><div class="sub">Portal 01 · Pre-signup</div></div></header>
+      <dl class="kv">
+        <dt>Personas</dt><dd>All six human-facing personas can visit before signup — anonymous.</dd>
+        <dt>Roles</dt><dd><span class="chip-row"><span class="rc public">visitor</span></span></dd>
+        <dt>Count</dt><dd>1 role · serves anonymous visitors</dd>
+      </dl>
+    </div>
+
+    <div class="pcard consumer">
+      <header><div class="badge">C</div><div><h3>Consumer App</h3><div class="sub">Portal 02 · B2C</div></div></header>
+      <dl class="kv">
+        <dt>Personas</dt><dd>Mover · Family Unit · Student <span style="color:var(--slate)">(3)</span></dd>
+        <dt>Roles</dt><dd><span class="chip-row">
+          <span class="rc consumer">consumer.primary</span>
+          <span class="rc consumer">consumer.family</span>
+          <span class="rc consumer">consumer.student</span>
+        </span></dd>
+        <dt>Count</dt><dd>3 personas → 3 roles</dd>
+      </dl>
+    </div>
+
+    <div class="pcard employer">
+      <header><div class="badge">E</div><div><h3>Employer Portal</h3><div class="sub">Portal 03 · B2B hiring</div></div></header>
+      <dl class="kv">
+        <dt>Personas</dt><dd>Employer <span style="color:var(--slate)">(1)</span></dd>
+        <dt>Roles</dt><dd><span class="chip-row">
+          <span class="rc employer">employer.owner</span>
+          <span class="rc employer">employer.recruiter</span>
+          <span class="rc employer">employer.hm</span>
+          <span class="rc employer">employer.interviewer</span>
+          <span class="rc employer">employer.finance</span>
+        </span></dd>
+        <dt>Count</dt><dd>1 persona → 5 roles</dd>
+      </dl>
+    </div>
+
+    <div class="pcard partner">
+      <header><div class="badge">P</div><div><h3>Partner Portal</h3><div class="sub">Portal 04 · B2B supply</div></div></header>
+      <dl class="kv">
+        <dt>Personas</dt><dd>Partner Provider <span style="color:var(--slate)">(1)</span></dd>
+        <dt>Roles</dt><dd><span class="chip-row">
+          <span class="rc partner">partner.owner</span>
+          <span class="rc partner">partner.listing</span>
+          <span class="rc partner">partner.fulfil</span>
+          <span class="rc partner">partner.finance</span>
+        </span></dd>
+        <dt>Count</dt><dd>1 persona → 4 roles</dd>
+      </dl>
+    </div>
+
+    <div class="pcard corporate">
+      <header><div class="badge">H</div><div><h3>Corporate Portal</h3><div class="sub">Portal 05 · B2B mobility</div></div></header>
+      <dl class="kv">
+        <dt>Personas</dt><dd>HR / Mobility Admin <span style="color:var(--slate)">(1)</span></dd>
+        <dt>Roles</dt><dd><span class="chip-row">
+          <span class="rc corporate">corp.admin</span>
+          <span class="rc corporate">corp.mobility</span>
+          <span class="rc corporate">corp.finance</span>
+          <span class="rc corporate">corp.viewer</span>
+        </span></dd>
+        <dt>Count</dt><dd>1 persona → 4 roles</dd>
+      </dl>
+    </div>
+
+    <div class="pcard admin">
+      <header><div class="badge">A</div><div><h3>Admin / Ops Console</h3><div class="sub">Portal 06 · Internal</div></div></header>
+      <dl class="kv">
+        <dt>Personas</dt><dd>Glimmora Ops · Data Curator <span style="color:var(--slate)">(2)</span></dd>
+        <dt>Roles</dt><dd><span class="chip-row">
+          <span class="rc admin">ops.super</span>
+          <span class="rc admin">ops.trust</span>
+          <span class="rc admin">ops.curator</span>
+          <span class="rc admin">ops.support</span>
+          <span class="rc admin">ops.finance</span>
+        </span></dd>
+        <dt>Count</dt><dd>2 personas → 5 roles</dd>
+      </dl>
+    </div>
+
+    <div class="pcard expert">
+      <header><div class="badge">X</div><div><h3>Expert Portal</h3><div class="sub">Portal 07 · Optional · premium</div></div></header>
+      <dl class="kv">
+        <dt>Personas</dt><dd>Verified Human Expert <span style="color:var(--slate)">(1)</span></dd>
+        <dt>Roles</dt><dd><span class="chip-row"><span class="rc expert">expert.verified</span></span></dd>
+        <dt>Count</dt><dd>1 persona → 1 role</dd>
+        <dt>Status</dt><dd>Ships with the premium tier (~W8). May launch as a restricted mode of the Admin Console.</dd>
+      </dl>
+    </div>
+
+    <div class="pcard">
+      <header><div class="badge" style="background:var(--paper-2);color:var(--slate)">S</div><div><h3>System (non-human)</h3><div class="sub">Infra-only · no login</div></div></header>
+      <dl class="kv">
+        <dt>Actors</dt><dd>The Copilot agent · integration service accounts</dd>
+        <dt>Roles</dt><dd><span class="chip-row">
+          <span class="rc">system.copilot</span>
+          <span class="rc">system.integration</span>
+        </span></dd>
+        <dt>Count</dt><dd>2 non-human accounts (not included in the 22 human-role total)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- =========== 05 ROLE INDEX =========== -->
+<section>
+  <h2><span class="num">05 — Complete role index</span>All 22 human roles, plus 2 system accounts.</h2>
+
+  <p class="section-lede">
+    Every role in one list, with what it means. Use this when modelling permissions or writing auth code.
+  </p>
+
+  <div class="roles-idx">
+    <div class="g">
+      <header><h4>Consumer App</h4><span class="c">3 roles</span></header>
+      <div class="row"><div class="name">Primary User <code>consumer.primary</code></div><div class="desc">Full owner of a relocation plan. Subscribes, books, pays, manages documents.</div></div>
+      <div class="row"><div class="name">Linked Family Member <code>consumer.family</code></div><div class="desc">Spouse or adult child invited by a Primary. Own login and twin; shared view of the plan.</div></div>
+      <div class="row"><div class="name">Student <code>consumer.student</code></div><div class="desc">Primary in student mode — narrower Copilot, different plan templates.</div></div>
+    </div>
+
+    <div class="g">
+      <header><h4>Employer Portal</h4><span class="c">5 roles</span></header>
+      <div class="row"><div class="name">Employer Owner <code>employer.owner</code></div><div class="desc">Creates the company account, controls billing, invites other users.</div></div>
+      <div class="row"><div class="name">Recruiter <code>employer.recruiter</code></div><div class="desc">Posts jobs, manages candidate pipelines, coordinates interviews.</div></div>
+      <div class="row"><div class="name">Hiring Manager <code>employer.hm</code></div><div class="desc">Reviews candidates, gives feedback, approves offers.</div></div>
+      <div class="row"><div class="name">Interviewer <code>employer.interviewer</code></div><div class="desc">Reads candidate profile, submits interview feedback. Scoped to the interviews they run.</div></div>
+      <div class="row"><div class="name">Employer Finance <code>employer.finance</code></div><div class="desc">Invoices, subscriptions, cost allocation. No candidate PII.</div></div>
+    </div>
+
+    <div class="g">
+      <header><h4>Partner Portal</h4><span class="c">4 roles</span></header>
+      <div class="row"><div class="name">Partner Owner <code>partner.owner</code></div><div class="desc">Creates the partner account, completes KYC/KYB, controls bank details.</div></div>
+      <div class="row"><div class="name">Listing Manager <code>partner.listing</code></div><div class="desc">Publishes and updates listings or inventory.</div></div>
+      <div class="row"><div class="name">Booking / Fulfilment Agent <code>partner.fulfil</code></div><div class="desc">Handles bookings, communicates with users, marks services fulfilled.</div></div>
+      <div class="row"><div class="name">Partner Finance <code>partner.finance</code></div><div class="desc">Views payouts and statements; updates bank details.</div></div>
+    </div>
+
+    <div class="g">
+      <header><h4>Corporate Mobility Portal</h4><span class="c">4 roles</span></header>
+      <div class="row"><div class="name">Corporate Admin <code>corp.admin</code></div><div class="desc">Owner of the corporate account. Buys seats, signs contracts, configures global policies.</div></div>
+      <div class="row"><div class="name">HR / Mobility Manager <code>corp.mobility</code></div><div class="desc">Assigns seats, watches dashboards, handles escalations.</div></div>
+      <div class="row"><div class="name">Corporate Finance <code>corp.finance</code></div><div class="desc">Invoices, cost-per-relocation reports, policy budgets. No employee PII.</div></div>
+      <div class="row"><div class="name">Read-only Viewer <code>corp.viewer</code></div><div class="desc">Business-unit leaders or auditors. Aggregate view only.</div></div>
+    </div>
+
+    <div class="g">
+      <header><h4>Admin / Ops Console</h4><span class="c">5 roles</span></header>
+      <div class="row"><div class="name">Super Admin <code>ops.super</code></div><div class="desc">Full access. Break-glass role, limited to a handful of staff.</div></div>
+      <div class="row"><div class="name">Trust &amp; Verification Officer <code>ops.trust</code></div><div class="desc">Reviews KYB, approves or rejects partners, handles SLA breaches and disputes.</div></div>
+      <div class="row"><div class="name">Data Curator <code>ops.curator</code></div><div class="desc">Maintains the Country Knowledge Graph. Reviews AI-extracted updates. No user PII, no money.</div></div>
+      <div class="row"><div class="name">Support Agent <code>ops.support</code></div><div class="desc">Handles user tickets. Cannot move money or approve partners.</div></div>
+      <div class="row"><div class="name">Finance Ops <code>ops.finance</code></div><div class="desc">Escrow exceptions, refunds, payouts, reconciliation.</div></div>
+    </div>
+
+    <div class="g">
+      <header><h4>Expert Portal <span style="font-weight:400;color:var(--slate)">(optional / premium)</span></h4><span class="c">1 role</span></header>
+      <div class="row"><div class="name">Verified Expert <code>expert.verified</code></div><div class="desc">Licensed external professional (immigration, tax, relocation). Reads consenting users&rsquo; plans, provides guidance, gets paid through the platform.</div></div>
+    </div>
+
+    <div class="g">
+      <header><h4>System accounts <span style="font-weight:400;color:var(--slate)">(not counted in the 22)</span></h4><span class="c">2 accounts</span></header>
+      <div class="row"><div class="name">Copilot Agent <code>system.copilot</code></div><div class="desc">The AI, acting on behalf of a user under explicit consent. Actions are logged and scoped like any other actor.</div></div>
+      <div class="row"><div class="name">Integration Service Account <code>system.integration</code></div><div class="desc">Tokens for ATS sync, payment webhooks, KYC callbacks, gov portal submissions, etc. Scoped per integration.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- =========== 06 QUICK REFERENCE =========== -->
+<section>
+  <h2><span class="num">06 — Quick reference</span>When the count question comes up again.</h2>
+
+  <div class="callout">
+    <b>The three canonical numbers.</b><br/>
+    <code>9 personas</code> — Mover, Family, Student, Employer, Partner, HR, Ops, Curator, Expert.<br/>
+    <code>6 portals</code> at launch (plus the optional Expert Portal when the premium tier ships).<br/>
+    <code>22 human roles</code>, spread across portals as 3 · 5 · 4 · 4 · 5 · 1. Plus 2 non-human system accounts.
+  </div>
+
+  <p style="margin-top:18px">
+    <b>The rule of thumb.</b> Personas are product language, portals are design language, roles are engineering language. When someone asks &ldquo;how many X are there?&rdquo;, clarify which dimension they mean before answering.
+  </p>
+</section>
+
+<footer>
+  © Glimmora · Personas × Portals × Roles · v0.1 · 2026-04-22 · Companion to <code>architecture.html</code> · <code>handbook.html</code> · <code>portal-flows.html</code>
+</footer>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: '13px',
+      primaryColor: '#FFFFFF',
+      primaryTextColor: '#0F1222',
+      primaryBorderColor: '#2B2E44',
+      lineColor: '#5E6379',
+      clusterBkg: '#FAF7F2',
+      clusterBorder: '#D6CCBB',
+      edgeLabelBackground: '#FAF7F2'
+    },
+    flowchart: { curve: 'basis', padding: 14, nodeSpacing: 36, rankSpacing: 70, useMaxWidth: true }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glimmora Relocate — The Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F1222;
+    --ink-2:#2B2E44;
+    --paper:#FAF7F2;
+    --paper-2:#F2EEE6;
+    --line:#E4DDD1;
+    --rule:#D6CCBB;
+    --accent:#B3542A;
+    --accent-soft:#F3DAC7;
+    --indigo:#3A3F7A;
+    --indigo-soft:#E2E3F2;
+    --mint:#2F7D66;
+    --mint-soft:#DBEDE6;
+    --ochre:#B48A2C;
+    --ochre-soft:#F4E8C7;
+    --violet:#6B3E8A;
+    --violet-soft:#EADDF2;
+    --slate:#5E6379;
+    --shadow: 0 1px 2px rgba(15,18,34,.05), 0 8px 24px rgba(15,18,34,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Inter","Helvetica Neue",system-ui,sans-serif;
+    font-size:16.5px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:56px 40px 140px}
+
+  nav.toc{
+    position:sticky;top:0;
+    background:rgba(250,247,242,0.92);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--rule);
+    z-index:10;
+    margin:-56px -40px 56px;
+    padding:14px 40px;
+  }
+  nav.toc .toc-inner{
+    max-width:880px;margin:0 auto;
+    display:flex;gap:4px;flex-wrap:wrap;align-items:center;
+    font-family:"JetBrains Mono",monospace;
+    font-size:11.5px;letter-spacing:.08em;
+  }
+  nav.toc .brand{
+    color:var(--ink);font-weight:600;letter-spacing:.18em;
+    margin-right:16px;text-transform:uppercase;
+  }
+  nav.toc a{
+    color:var(--slate);padding:4px 8px;border-radius:4px;
+    text-transform:uppercase;text-decoration:none;
+  }
+  nav.toc a:hover{background:var(--paper-2);color:var(--ink)}
+
+  header.cover{
+    border-bottom:1px solid var(--rule);
+    padding-bottom:56px;
+    margin-bottom:64px;
+  }
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:18px;
+  }
+  h1{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:500;
+    font-size:clamp(42px,5.5vw,68px);
+    line-height:1.04;letter-spacing:-.025em;
+    margin:0 0 20px;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--accent)}
+  .lede{
+    font-family:"Fraunces",Georgia,serif;
+    font-size:22px;font-weight:400;
+    color:var(--ink-2);
+    line-height:1.5;max-width:68ch;margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;gap:40px;flex-wrap:wrap;
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;
+  }
+  .meta-row span b{color:var(--ink);font-weight:500}
+
+  h2{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:500;
+    font-size:38px;letter-spacing:-.02em;
+    line-height:1.12;
+    margin:96px 0 10px;
+  }
+  h2 .num{
+    display:block;
+    font-family:"JetBrains Mono",monospace;
+    font-size:12.5px;letter-spacing:.2em;
+    color:var(--accent);margin-bottom:8px;font-weight:500;
+  }
+  h3{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:500;
+    font-size:24px;letter-spacing:-.01em;
+    margin:44px 0 12px;line-height:1.25;
+  }
+  h4{
+    font-family:"Inter",sans-serif;font-weight:600;
+    font-size:13px;text-transform:uppercase;
+    letter-spacing:.12em;color:var(--ink-2);
+    margin:32px 0 10px;
+  }
+  p{margin:0 0 18px}
+  ul,ol{margin:0 0 18px;padding-left:24px}
+  li{margin-bottom:6px}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+  a:hover{border-bottom-color:var(--accent)}
+  code{
+    font-family:"JetBrains Mono",monospace;font-size:.9em;
+    background:var(--paper-2);padding:1px 6px;border-radius:4px;
+  }
+
+  .section-lede{
+    font-family:"Fraunces",Georgia,serif;
+    font-size:20px;font-style:italic;color:var(--ink-2);
+    max-width:64ch;margin:0 0 28px;line-height:1.5;
+  }
+
+  .pull{
+    font-family:"Fraunces",Georgia,serif;
+    font-size:26px;font-weight:500;
+    color:var(--ink);
+    border-left:3px solid var(--accent);
+    padding:12px 0 12px 24px;
+    margin:32px 0;
+    line-height:1.35;
+  }
+
+  .callout{
+    background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    padding:18px 22px;border-radius:0 8px 8px 0;
+    margin:28px 0;color:var(--ink-2);
+    font-size:15.5px;box-shadow:var(--shadow);
+  }
+  .callout b{color:var(--ink)}
+  .callout.indigo{border-left-color:var(--indigo)}
+  .callout.mint{border-left-color:var(--mint)}
+  .callout.ochre{border-left-color:var(--ochre)}
+
+  .pill{
+    display:inline-flex;align-items:center;
+    font-family:"JetBrains Mono",monospace;
+    font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    padding:2px 8px;border-radius:999px;
+    background:var(--paper-2);color:var(--ink-2);
+    border:1px solid var(--line);
+  }
+  .pill.accent{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+  .pill.indigo{background:var(--indigo-soft);color:var(--indigo);border-color:var(--indigo-soft)}
+  .pill.mint{background:var(--mint-soft);color:var(--mint);border-color:var(--mint-soft)}
+  .pill.ochre{background:var(--ochre-soft);color:var(--ochre);border-color:var(--ochre-soft)}
+  .pill.violet{background:var(--violet-soft);color:var(--violet);border-color:var(--violet-soft)}
+
+  /* Persona + role cards */
+  .persona{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:24px 26px;box-shadow:var(--shadow);margin:16px 0;
+  }
+  .persona header{
+    display:flex;gap:16px;align-items:center;margin-bottom:14px;
+    border:none;padding:0;
+  }
+  .persona .avatar{
+    width:46px;height:46px;border-radius:50%;
+    background:var(--accent-soft);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Fraunces",serif;font-size:22px;font-weight:600;
+    flex:0 0 46px;
+  }
+  .persona.p2 .avatar{background:var(--indigo-soft);color:var(--indigo)}
+  .persona.p3 .avatar{background:var(--mint-soft);color:var(--mint)}
+  .persona.p4 .avatar{background:var(--ochre-soft);color:var(--ochre)}
+  .persona.p5 .avatar{background:var(--violet-soft);color:var(--violet)}
+  .persona.p6 .avatar{background:var(--accent-soft);color:var(--accent)}
+  .persona h3{
+    margin:0;font-family:"Fraunces",serif;font-size:22px;
+    font-weight:500;color:var(--ink);line-height:1.2;letter-spacing:-.01em;
+  }
+  .persona .role{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    color:var(--slate);letter-spacing:.12em;text-transform:uppercase;
+    margin-top:2px;
+  }
+  .persona .rows{display:grid;grid-template-columns:140px 1fr;gap:8px 18px;font-size:14.5px}
+  .persona .rows dt{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--slate);
+    padding-top:4px;
+  }
+  .persona .rows dd{margin:0;color:var(--ink-2)}
+  .persona .scene{
+    margin-top:14px;padding:12px 16px;background:var(--paper-2);
+    border-radius:6px;font-size:14px;color:var(--ink-2);font-style:italic;
+    border-left:2px solid var(--accent);
+  }
+  .persona.p2 .scene{border-left-color:var(--indigo)}
+  .persona.p3 .scene{border-left-color:var(--mint)}
+  .persona.p4 .scene{border-left-color:var(--ochre)}
+  .persona.p5 .scene{border-left-color:var(--violet)}
+
+  table{
+    width:100%;border-collapse:collapse;
+    background:#fff;border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+    font-size:14.5px;margin:20px 0;
+  }
+  th,td{padding:12px 16px;text-align:left;vertical-align:top}
+  thead th{
+    background:var(--paper-2);font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-2);font-weight:500;border-bottom:1px solid var(--rule);
+  }
+  tbody tr+tr td{border-top:1px solid var(--line)}
+  tbody td:first-child{font-weight:500;color:var(--ink)}
+
+  /* Role group */
+  .role-group{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:22px 26px;box-shadow:var(--shadow);margin:18px 0;
+  }
+  .role-group header{
+    display:flex;justify-content:space-between;align-items:baseline;
+    border:none;padding:0 0 12px;margin-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .role-group h3{margin:0;font-size:20px}
+  .role-group .count{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;color:var(--slate);letter-spacing:.12em;text-transform:uppercase;
+  }
+  .role-row{
+    display:grid;grid-template-columns:220px 1fr;gap:14px 20px;
+    padding:10px 0;border-top:1px solid var(--line);font-size:14.5px;
+  }
+  .role-row:first-of-type{border-top:none}
+  .role-row .name{
+    font-weight:500;color:var(--ink);
+  }
+  .role-row .name code{font-size:12px;display:block;color:var(--accent);margin-top:2px;background:transparent;padding:0}
+  .role-row .desc{color:var(--ink-2)}
+
+  /* Journey steps */
+  .journey{counter-reset:step;margin:24px 0}
+  .journey .step{
+    counter-increment:step;
+    position:relative;padding:18px 22px 18px 72px;
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    box-shadow:var(--shadow);margin-bottom:12px;
+  }
+  .journey .step::before{
+    content:counter(step,decimal-leading-zero);
+    position:absolute;left:22px;top:18px;
+    font-family:"Fraunces",serif;font-size:26px;font-weight:500;
+    color:var(--accent);line-height:1;
+  }
+  .journey .step h4{margin:0 0 6px;font-family:"Fraunces",serif;font-size:18px;text-transform:none;letter-spacing:-.005em;font-weight:500;color:var(--ink)}
+  .journey .step p{margin:0;font-size:14.5px;color:var(--ink-2)}
+  .journey .step .who{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--slate);letter-spacing:.12em;text-transform:uppercase;margin-top:8px}
+
+  /* Glossary */
+  dl.glossary{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:4px 24px;box-shadow:var(--shadow);
+  }
+  dl.glossary dt{
+    font-family:"Fraunces",serif;font-size:17px;font-weight:500;
+    color:var(--ink);margin-top:18px;
+  }
+  dl.glossary dt:first-child{margin-top:12px}
+  dl.glossary dd{
+    margin:4px 0 14px;color:var(--ink-2);font-size:14.5px;
+    border-bottom:1px solid var(--line);padding-bottom:14px;
+  }
+  dl.glossary dd:last-child{border:none}
+
+  /* Pillar cards */
+  .pillar{
+    background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0;
+    padding:20px 24px;margin:12px 0;box-shadow:var(--shadow);
+  }
+  .pillar h3{margin:0 0 6px;font-size:20px}
+  .pillar .meta{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--slate);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+  .pillar p{margin:0;font-size:15px;color:var(--ink-2)}
+  .pillar.p2{border-left-color:var(--indigo)}
+  .pillar.p3{border-left-color:var(--mint)}
+  .pillar.p4{border-left-color:var(--ochre)}
+  .pillar.p5{border-left-color:var(--violet)}
+  .pillar.p6{border-left-color:var(--accent)}
+  .pillar.p7{border-left-color:var(--indigo)}
+
+  /* Key fact tiles */
+  .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+  .fact{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px;box-shadow:var(--shadow);
+  }
+  .fact .n{
+    font-family:"Fraunces",serif;font-size:40px;font-weight:500;
+    color:var(--accent);line-height:1;letter-spacing:-.02em;
+  }
+  .fact .l{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--slate);
+    margin-top:6px;
+  }
+  @media (max-width:900px){
+    .facts{grid-template-columns:repeat(2,1fr)}
+    .role-row{grid-template-columns:1fr}
+    .persona .rows{grid-template-columns:1fr}
+    .wrap{padding:40px 22px 80px}
+    nav.toc{margin:-40px -22px 40px;padding:12px 22px}
+  }
+
+  footer{
+    margin-top:100px;padding-top:24px;
+    border-top:1px solid var(--rule);
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;letter-spacing:.05em;
+  }
+
+  @media print{
+    nav.toc{display:none}
+    body{font-size:12px}
+    h2{page-break-before:always}
+    .wrap{padding:20px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc">
+  <div class="toc-inner">
+    <span class="brand">Handbook</span>
+    <a href="#what">What</a>
+    <a href="#problem">Problem</a>
+    <a href="#idea">Idea</a>
+    <a href="#how">How</a>
+    <a href="#pillars">Pillars</a>
+    <a href="#personas">Personas</a>
+    <a href="#roles">Roles</a>
+    <a href="#portals">Portals</a>
+    <a href="#day">Day in the Life</a>
+    <a href="#parts">Parts</a>
+    <a href="#money">Money</a>
+    <a href="#tech">Tech</a>
+    <a href="#today">Today</a>
+    <a href="#glossary">Glossary</a>
+  </div>
+</nav>
+
+<header class="cover">
+  <div class="eyebrow">The Handbook · v0.1 · 2026-04-22</div>
+  <h1>Glimmora Relocate<em>™</em><br/>An introduction for newcomers.</h1>
+  <p class="lede">
+    If you have just joined this project and know nothing about it, this document will
+    take you from zero to a full working picture. Read it end-to-end; no prior context is assumed.
+  </p>
+  <div class="meta-row">
+    <span><b>Read time</b> &nbsp; ~25 min</span>
+    <span><b>Audience</b> &nbsp; Any new team member</span>
+    <span><b>Companion</b> &nbsp; <code>glimmora-relocate-architecture.html</code></span>
+  </div>
+</header>
+
+<!-- ============================================================= -->
+<!-- 01 WHAT                                                         -->
+<!-- ============================================================= -->
+<section id="what">
+  <h2><span class="num">01 — What this project is</span>A platform that moves a life across borders.</h2>
+
+  <p class="section-lede">
+    Glimmora Relocate is a software platform that helps a person move to a new country and build a complete life there — with an AI assistant that stays with them from the first thought of moving to the day they are fully settled.
+  </p>
+
+  <p>
+    Think of it as three products fused into one: a job platform that only shows you jobs you can actually take given your visa situation; a relocation service that helps you find a home, school, bank, doctor, and community in your new country; and a financial planner that tells you honestly whether the move makes sense on paper. Binding all three is an AI Copilot that understands your full situation — you, your family, your skills, your money, your constraints — and guides you through every decision and task.
+  </p>
+
+  <p>
+    It is not a set of disconnected tools. Every recommendation the Copilot makes is bookable, payable, and trackable inside the same platform. The same system that tells you &ldquo;this apartment scores 92 in your neighbourhood&rdquo; is the one that lets you book it, pay the deposit into escrow, and have the landlord&rsquo;s SLA monitored until you get the keys.
+  </p>
+
+  <p class="pull">
+    One sentence: Glimmora Relocate takes a person from the decision to move abroad all the way to being fully settled — with one AI Copilot doing the thinking and one platform doing the execution.
+  </p>
+</section>
+
+<!-- ============================================================= -->
+<!-- 02 PROBLEM                                                      -->
+<!-- ============================================================= -->
+<section id="problem">
+  <h2><span class="num">02 — The problem we solve</span>Moving abroad is broken into twenty pieces.</h2>
+
+  <p class="section-lede">
+    Today, relocating to another country means assembling twenty different services on your own — and hoping none of them drop the ball.
+  </p>
+
+  <p>
+    Someone who wants to move from India to Germany has to talk to a job board, a visa consultant, a tax advisor, a bank, a school search firm, a housing site, an insurance broker, a telco, a movers company, a language tutor, and a dozen government portals. None of these talk to each other. None of them understand the full picture of her life. Each one makes her re-explain who she is, what her passport is, how many children she has, what her salary target is. Each one solves a slice of the problem and leaves the joins to her.
+  </p>
+
+  <p>
+    The result: most people who want to move abroad never do. The ones who try often pick the wrong country, miss critical document deadlines, underestimate the true cost of living, or arrive and discover their family has no support. The process rewards people with money, time, and contacts — and penalises everyone else.
+  </p>
+
+  <p>
+    Glimmora Relocate exists because the fundamental problem is not a missing service. It is <b>a missing intelligence</b>. Nothing today reasons across jobs, visas, finance, family, and logistics as one coherent system. That is what we are building.
+  </p>
+</section>
+
+<!-- ============================================================= -->
+<!-- 03 IDEA                                                         -->
+<!-- ============================================================= -->
+<section id="idea">
+  <h2><span class="num">03 — The core idea</span>Intelligence plus execution, on one thread.</h2>
+
+  <p class="section-lede">
+    An AI Copilot that knows you, plans for you, and executes through a marketplace that actually delivers.
+  </p>
+
+  <p>
+    The product has two halves and they work together.
+  </p>
+
+  <p>
+    <b>The intelligence half.</b> An AI Copilot sits on top of a model of you — your <i>Digital Twin</i> — and a model of the world: a <i>Country Knowledge Graph</i> that encodes visa rules, tax rules, housing markets, school systems, cost of living, and the thousand little details that differ country to country. When you ask &ldquo;can I afford to move to Berlin with my family?&rdquo;, the Copilot does not search the web — it reasons over your twin and the graph and gives you a grounded, personalised answer with the numbers behind it.
+  </p>
+
+  <p>
+    <b>The execution half.</b> Every recommendation translates into a concrete task with a deadline. Every task that requires a third party — a landlord, a school, a bank, a mover, a tutor — is fulfilled through a <i>Marketplace</i> of verified partners. Payments for those services flow through <i>Escrow</i>: your money is held until the service is delivered. Partner performance is continuously scored, and bad actors are removed. What the Copilot plans, the platform actually delivers.
+  </p>
+
+  <p class="pull">
+    Recommend, book, pay, track, verify — all on the same thread, for the same user, by the same system.
+  </p>
+
+  <p>
+    This is why the SOW calls the product &ldquo;AGI-native&rdquo;. The AI is not a sidebar or a feature. It is the central organising principle: the Copilot is the user&rsquo;s single point of contact with the entire machine.
+  </p>
+</section>
+
+<!-- ============================================================= -->
+<!-- 04 HOW IT WORKS                                                 -->
+<!-- ============================================================= -->
+<section id="how">
+  <h2><span class="num">04 — How it works, end to end</span>One user&rsquo;s journey, from first curiosity to settled life.</h2>
+
+  <p class="section-lede">
+    To understand the platform, follow a single user through it. Everything in the product exists to support one of these steps.
+  </p>
+
+  <div class="journey">
+    <div class="step">
+      <h4>Curiosity</h4>
+      <p>A working professional reads about moving abroad and lands on the Glimmora Relocate public site. She plays with a country comparison tool, puts in her profession and family shape, and sees a first glimpse of what life in Portugal or Germany could look like financially.</p>
+      <div class="who">Public site · Country Comparison · Financial Simulator</div>
+    </div>
+    <div class="step">
+      <h4>Signup &amp; intake</h4>
+      <p>She signs up. Instead of a dull form, the AI Copilot has a short conversation with her — who she is, her family, her passport, her skills, her timeline, her budget. From this conversation, the platform builds her first <i>Digital Twin</i>: a living model of her that the system will reason with from now on.</p>
+      <div class="who">Copilot · Digital Twin</div>
+    </div>
+    <div class="step">
+      <h4>Exploration</h4>
+      <p>Free mode lets her compare countries in depth, look at visa-aware jobs she could actually apply for, and run financial simulations for different salaries. The Copilot keeps explaining the trade-offs: &ldquo;Portugal is cheaper but salaries are lower; Germany taxes more but schools are free&rdquo;.</p>
+      <div class="who">Country Comparison · Job Discovery · Financial Intelligence</div>
+    </div>
+    <div class="step">
+      <h4>Commitment</h4>
+      <p>She picks a subscription ($100/year base) and unlocks the full plan. The platform now has permission to execute on her behalf — document vault, marketplace bookings, payments.</p>
+      <div class="who">Billing · Subscription</div>
+    </div>
+    <div class="step">
+      <h4>Job hunt</h4>
+      <p>The Job Intelligence module surfaces only jobs where the employer is open to sponsoring her visa situation. The Copilot writes tailored CVs and cover letters from her twin, coaches her through mock interviews, and tracks every application.</p>
+      <div class="who">Visa-aware matching · Resume AI · Interview AI</div>
+    </div>
+    <div class="step">
+      <h4>Offer</h4>
+      <p>An employer in Berlin makes an offer. The Copilot helps her evaluate it against her financial model, negotiate the number, and sign. The moment she accepts, her destination, salary, and start date are locked into her Relocation Twin.</p>
+      <div class="who">Offer management · Job-Relocation Sync</div>
+    </div>
+    <div class="step">
+      <h4>Plan expansion</h4>
+      <p>The platform explodes the offer into a full, dependency-aware plan: visa paperwork, housing, schools for her daughter, a bank account, health insurance, a local SIM, movers, a language module. Each task has a deadline; the system knows which tasks block which.</p>
+      <div class="who">Workflow Orchestrator · Timeline Intelligence · Documents</div>
+    </div>
+    <div class="step">
+      <h4>Bookings</h4>
+      <p>The Marketplace surfaces verified landlords, schools, banks, and insurers. She books an apartment; her deposit goes into escrow. She books a school interview for her daughter. She opens a bank account remotely. Every partner is verified and trust-scored; every payment is held until fulfilment.</p>
+      <div class="who">Marketplace · Trust &amp; Verification · Payments &amp; Escrow</div>
+    </div>
+    <div class="step">
+      <h4>Pre-departure</h4>
+      <p>The Copilot runs her through culture and language modules, helps her prepare her daughter for a new school, supports her spouse&rsquo;s job search in the new country, and auto-fills the visa forms from her document vault.</p>
+      <div class="who">Cultural &amp; Language AI · Family Intelligence · Document Auto-fill</div>
+    </div>
+    <div class="step">
+      <h4>Arrival</h4>
+      <p>She lands. The apartment escrow releases to the landlord after key handover. A first-week checklist guides her through registration, utilities, and transport passes. The Copilot introduces her to a local community with similar profiles.</p>
+      <div class="who">Local Services · Community · Timeline milestones</div>
+    </div>
+    <div class="step">
+      <h4>Settlement</h4>
+      <p>Over the next months, the platform keeps tracking document expiries, tax deadlines, spouse&rsquo;s career progress, daughter&rsquo;s school adaptation. Renewal alerts fire before problems happen. The Copilot is a permanent resident on her phone.</p>
+      <div class="who">Expiry tracking · Family Intelligence · Data Flywheel</div>
+    </div>
+    <div class="step">
+      <h4>Flywheel</h4>
+      <p>Her journey — what worked, what was late, which partner delivered, which number she actually spent — feeds the Data Flywheel. The next user moving India→Germany with one child gets a sharper plan because of her.</p>
+      <div class="who">Data Flywheel · Country KG updates</div>
+    </div>
+  </div>
+
+  <div class="callout indigo">
+    <b>Why the ordering matters.</b> Every module in the SOW has a place in this journey. When you come across a capability — &ldquo;Interview AI&rdquo;, &ldquo;Document Validation&rdquo;, &ldquo;Trust Scoring&rdquo; — trace it back to which step of this journey it supports. If it doesn&rsquo;t support one, it probably doesn&rsquo;t belong.
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 05 PILLARS                                                      -->
+<!-- ============================================================= -->
+<section id="pillars">
+  <h2><span class="num">05 — The seven pillars</span>Capabilities, not surfaces.</h2>
+
+  <p class="section-lede">
+    The SOW defines seven pillars. Each is a <i>capability</i> of the platform — a thing the system can do on the user&rsquo;s behalf — not a page or a screen. Several pillars show up on the same screen; one pillar shows up on many screens.
+  </p>
+
+  <div class="pillar"><div class="meta">Pillar 01 · SOW §4</div><h3>AGI Copilot</h3><p>The conversational spine of the product. Understands intent, reasons about options, plans multi-step execution, and explains its decisions. This is what the user perceives as &ldquo;Glimmora&rdquo;; everything else is what the Copilot uses.</p></div>
+
+  <div class="pillar p2"><div class="meta">Pillar 02 · SOW §5</div><h3>Job Intelligence</h3><p>Finds jobs the user can actually take, not just jobs they could theoretically do. Visa-aware matching, CV and cover-letter generation, interview coaching, readiness scoring, and a marketplace where employers meet visa-ready candidates.</p></div>
+
+  <div class="pillar p3"><div class="meta">Pillar 03 · SOW §6</div><h3>Relocation Intelligence</h3><p>Everything a life needs on arrival: housing, schools, banking, insurance, healthcare, utilities, transport, and community. Each sub-module is both an advisor (&ldquo;this neighbourhood fits you&rdquo;) and an executor (&ldquo;here is the apartment, book it&rdquo;).</p></div>
+
+  <div class="pillar p4"><div class="meta">Pillar 04 · SOW §7</div><h3>Financial Intelligence</h3><p>The truth-telling layer. Projects net salary, taxes, savings, and currency impact for any country under consideration. Turns vague hope (&ldquo;Germany sounds nice&rdquo;) into concrete numbers (&ldquo;here is what you&rsquo;ll take home after tax and rent&rdquo;).</p></div>
+
+  <div class="pillar p5"><div class="meta">Pillar 05 · SOW §8, §15, §16, §17, §18</div><h3>Life Setup Engine</h3><p>The execution layer. Turns plans into tasks, tracks documents and their expiries, teaches language and culture, connects to local services, and runs parallel plans for the spouse and the children.</p></div>
+
+  <div class="pillar p6"><div class="meta">Pillar 06 · SOW §12, §13</div><h3>Marketplace &amp; Payments</h3><p>The commercial surface. Verified partners list real inventory; users book; payments flow through escrow; subscriptions and commissions power the business.</p></div>
+
+  <div class="pillar p7"><div class="meta">Pillar 07 · SOW §14, §26</div><h3>Trust &amp; Compliance</h3><p>The reason any of this is safe. Partners are verified before they can list. SLAs are scored continuously. Fraud is detected. Data is encrypted, access is controlled, GDPR is respected.</p></div>
+
+  <div class="callout mint">
+    <b>The three silent pillars.</b> Three capabilities are invisible to the user but load-bearing for the platform: the <b>Digital Twin</b> (§9), the <b>Country Knowledge Graph</b> (§10), and the <b>Data Flywheel</b> (§20). They are not user-facing pillars — they are the substrate the seven pillars stand on.
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 06 PERSONAS                                                     -->
+<!-- ============================================================= -->
+<section id="personas">
+  <h2><span class="num">06 — Personas</span>Nine kinds of people who use the platform.</h2>
+
+  <p class="section-lede">
+    A <b>persona</b> is a kind of person in the real world — a mover, an employer, an HR manager. It describes <i>who</i> someone is, <i>what</i> they want, and <i>why</i> they show up. (Roles, covered in the next section, are a different thing: they describe what someone is <i>permitted to do</i> in the software.)
+  </p>
+
+  <div class="facts">
+    <div class="fact"><div class="n">9</div><div class="l">Personas</div></div>
+    <div class="fact"><div class="n">3</div><div class="l">Consumer-side</div></div>
+    <div class="fact"><div class="n">3</div><div class="l">Business-side</div></div>
+    <div class="fact"><div class="n">3</div><div class="l">Internal / expert</div></div>
+  </div>
+
+  <!-- P1 Mover -->
+  <div class="persona">
+    <header><div class="avatar">M</div><div><h3>The Mover</h3><div class="role">Consumer · primary user</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>A working professional — typically 25–45 — who wants or needs to relocate to another country. May be a solo traveller or a family earner.</dd>
+      <dt>Wants</dt><dd>A better job, a better life, a career jump, a fresh start. Often already has a shortlist of countries in mind.</dd>
+      <dt>Fears</dt><dd>Visa rejection, picking the wrong country, hidden costs, leaving family worse off, wasted time.</dd>
+      <dt>Where</dt><dd>Consumer App, web and mobile. Heavy Copilot user.</dd>
+    </dl>
+    <div class="scene">Priya, a senior developer in Bangalore, wants to move to Germany. She signs up, spends a weekend running simulations, and applies to five visa-friendly roles through Glimmora.</div>
+  </div>
+
+  <!-- P2 Family -->
+  <div class="persona p2">
+    <header><div class="avatar">F</div><div><h3>The Family Unit</h3><div class="role">Consumer · primary user · family mode</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>A Mover plus a spouse and/or children. The primary earner usually initiates the account; spouses join as linked members.</dd>
+      <dt>Wants</dt><dd>The move to work for everyone — not just the earner. Kids in good schools, spouse in meaningful work, family not isolated.</dd>
+      <dt>Fears</dt><dd>Spouse career stalling, children struggling, family resenting the move.</dd>
+      <dt>Where</dt><dd>Consumer App in Family mode. Each family member has a Twin; the spouse may have their own login.</dd>
+    </dl>
+    <div class="scene">Priya brings her husband Rohan and their 8-year-old daughter into her plan. The platform runs Rohan&rsquo;s parallel job search in Berlin and finds an English-language primary school for their daughter.</div>
+  </div>
+
+  <!-- P3 Student -->
+  <div class="persona p3">
+    <header><div class="avatar">S</div><div><h3>The Student</h3><div class="role">Consumer · primary user · student mode</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>A student planning to study abroad, usually 17–28, often first-generation international.</dd>
+      <dt>Wants</dt><dd>University admission, student visa, affordable housing, a budget that actually works, part-time work rules understood.</dd>
+      <dt>Fears</dt><dd>Running out of money, visa refusal, isolation, missed deadlines.</dd>
+      <dt>Where</dt><dd>Consumer App in Student mode — narrower Copilot focused on admissions, budget, student-visa tasks.</dd>
+    </dl>
+    <div class="scene">Arjun, 19, wants to study computer science in Canada. The platform compares three universities on total cost, walks him through the student-visa paperwork, and finds him shared housing near campus.</div>
+  </div>
+
+  <!-- P4 Employer -->
+  <div class="persona p4">
+    <header><div class="avatar">E</div><div><h3>The Employer</h3><div class="role">Business · hiring side</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>A company or recruiter actively hiring across borders — either occasional sponsor or high-volume global hirer.</dd>
+      <dt>Wants</dt><dd>Great candidates whose visas they can actually sponsor. Cleaner pipeline, less visa surprise, faster time-to-hire.</dd>
+      <dt>Fears</dt><dd>Offers falling through over visa issues, legal risk, wasted interview cycles.</dd>
+      <dt>Where</dt><dd>Employer Portal. ATS integration optional.</dd>
+    </dl>
+    <div class="scene">A Berlin-based fintech uses the Employer Portal to post two senior engineer roles. Every candidate surfaced is already pre-qualified for Germany&rsquo;s EU Blue Card path.</div>
+  </div>
+
+  <!-- P5 Partner -->
+  <div class="persona p5">
+    <header><div class="avatar">P</div><div><h3>The Partner Provider</h3><div class="role">Business · supply side</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>A provider of a real-world service the Mover needs: landlord, real-estate agency, school, bank, insurer, mover, telco, clinic, language school, local service.</dd>
+      <dt>Wants</dt><dd>Qualified international customers they wouldn&rsquo;t otherwise reach; reliable payment; visibility to the Copilot&rsquo;s recommendations.</dd>
+      <dt>Fears</dt><dd>No-show bookings, fraud, getting bad reviews unfairly, slow payouts.</dd>
+      <dt>Where</dt><dd>Partner Portal, multi-category. Verified via KYC/KYB. Paid through escrow after fulfilment.</dd>
+    </dl>
+    <div class="scene">A Lisbon property manager onboards to list twelve furnished apartments, answers Copilot questions about each unit, and gets paid automatically when tenants confirm keys received.</div>
+  </div>
+
+  <!-- P6 HR -->
+  <div class="persona p6">
+    <header><div class="avatar">H</div><div><h3>The HR / Mobility Admin</h3><div class="role">Business · corporate mobility</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>Corporate HR or Global Mobility lead responsible for relocating employees — sometimes dozens at a time.</dd>
+      <dt>Wants</dt><dd>A managed platform where each employee runs their own relocation inside the company&rsquo;s policy — with dashboards and cost controls.</dd>
+      <dt>Fears</dt><dd>Compliance failures, runaway costs, employees falling through the cracks, painful procurement.</dd>
+      <dt>Where</dt><dd>Corporate Mobility Portal. Each employee still uses the Consumer App under a policy envelope.</dd>
+    </dl>
+    <div class="scene">A global HR lead rolls out Glimmora to 40 employees moving from the US to the UK. She sees each employee&rsquo;s milestone progress, cost to date, and SLA status on one dashboard.</div>
+  </div>
+
+  <!-- P7 Ops -->
+  <div class="persona p2">
+    <header><div class="avatar">A</div><div><h3>Glimmora Ops / Admin</h3><div class="role">Internal · operations</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>A Glimmora employee who runs the live platform — vets partners, handles escalations, moderates disputes, watches money flows.</dd>
+      <dt>Wants</dt><dd>A trustworthy ecosystem. Bad partners off. Users rescued fast when something goes wrong.</dd>
+      <dt>Where</dt><dd>Admin / Ops Console.</dd>
+    </dl>
+    <div class="scene">An Ops agent sees a housing partner&rsquo;s SLA score drop below threshold after three late key handovers; the Console auto-pauses new listings and opens an investigation.</div>
+  </div>
+
+  <!-- P8 Curator -->
+  <div class="persona">
+    <header><div class="avatar">C</div><div><h3>Content &amp; Data Curator</h3><div class="role">Internal · knowledge</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>A Glimmora employee (or contractor) who keeps the Country Knowledge Graph current — visa rule changes, tax updates, cost-of-living feeds, school data, local services.</dd>
+      <dt>Wants</dt><dd>Fresh, accurate, trustworthy world knowledge. AI-extracted updates that are easy to verify.</dd>
+      <dt>Where</dt><dd>Admin Console · KG Studio.</dd>
+    </dl>
+    <div class="scene">A Curator reviews an AI-extracted change to Germany&rsquo;s Blue Card income threshold and promotes it to the live graph after cross-checking the official source.</div>
+  </div>
+
+  <!-- P9 Expert -->
+  <div class="persona p3">
+    <header><div class="avatar">X</div><div><h3>Verified Human Expert</h3><div class="role">Premium tier · optional</div></div></header>
+    <dl class="rows">
+      <dt>Who</dt><dd>A licensed immigration consultant, tax advisor, or relocation specialist — not a Glimmora employee, but vetted to advise users on the platform.</dd>
+      <dt>Wants</dt><dd>Qualified client flow, clean case notes from the Copilot, predictable pay.</dd>
+      <dt>Where</dt><dd>Expert Portal (optional, premium feature — may be W8+).</dd>
+    </dl>
+    <div class="scene">A UK-based immigration lawyer reviews a user&rsquo;s Copilot-generated visa plan for edge cases and files on their behalf when the user upgrades to the premium tier.</div>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 07 ROLES                                                        -->
+<!-- ============================================================= -->
+<section id="roles">
+  <h2><span class="num">07 — Roles</span>Who is permitted to do what.</h2>
+
+  <p class="section-lede">
+    A <b>role</b> is a set of permissions inside the software. One persona may map to several roles (an Employer could be an Admin or a Recruiter); one role may be used by several personas (an Expert and a Curator might share some read-only rights). The list below is the canonical set the platform needs.
+  </p>
+
+  <div class="facts">
+    <div class="fact"><div class="n">22</div><div class="l">Roles total</div></div>
+    <div class="fact"><div class="n">6</div><div class="l">Portals</div></div>
+    <div class="fact"><div class="n">9</div><div class="l">Personas</div></div>
+    <div class="fact"><div class="n">1</div><div class="l">System (non-human)</div></div>
+  </div>
+
+  <!-- Consumer roles -->
+  <div class="role-group">
+    <header><h3>Consumer App</h3><span class="count">3 roles</span></header>
+    <div class="role-row">
+      <div class="name">Primary User <code>consumer.primary</code></div>
+      <div class="desc">Full owner of a relocation plan. Can create a Twin, run the Copilot, buy a subscription, book services, pay, manage documents. One per account.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Linked Family Member <code>consumer.family</code></div>
+      <div class="desc">Spouse (or adult child) invited by a Primary User. Has their own login and twin; sees the shared plan but only the data the Primary chooses to share. May run their own Copilot thread.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Student <code>consumer.student</code></div>
+      <div class="desc">A Primary User in student mode: narrower Copilot, different plan templates, student-visa workflows. Functionally a sub-type of Primary.</div>
+    </div>
+  </div>
+
+  <!-- Employer roles -->
+  <div class="role-group">
+    <header><h3>Employer Portal</h3><span class="count">5 roles</span></header>
+    <div class="role-row">
+      <div class="name">Employer Owner <code>employer.owner</code></div>
+      <div class="desc">Creates the company account, controls billing, invites other employer users, approves integrations. One per company (can be more than one at scale).</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Recruiter <code>employer.recruiter</code></div>
+      <div class="desc">Posts jobs, manages candidate pipelines, runs outreach, coordinates interviews. The most common employer role.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Hiring Manager <code>employer.hm</code></div>
+      <div class="desc">Reviews candidates surfaced by recruiters, gives feedback, approves offers. Does not manage the job postings themselves.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Interviewer <code>employer.interviewer</code></div>
+      <div class="desc">Limited access: read a candidate&rsquo;s profile, submit interview feedback. Cannot access the full pipeline.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Employer Finance <code>employer.finance</code></div>
+      <div class="desc">Manages invoices, subscriptions, and cost allocation. Cannot see candidate personal data.</div>
+    </div>
+  </div>
+
+  <!-- Partner roles -->
+  <div class="role-group">
+    <header><h3>Partner Portal</h3><span class="count">4 roles</span></header>
+    <div class="role-row">
+      <div class="name">Partner Owner <code>partner.owner</code></div>
+      <div class="desc">Creates the partner account, completes KYC/KYB, controls bank details for payouts, invites staff. One per partner company.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Listing Manager <code>partner.listing</code></div>
+      <div class="desc">Publishes and updates listings or inventory (apartments, school slots, insurance plans, service packages).</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Booking / Fulfilment Agent <code>partner.fulfil</code></div>
+      <div class="desc">Handles inbound bookings, communicates with users, marks services fulfilled (which releases escrow).</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Partner Finance <code>partner.finance</code></div>
+      <div class="desc">Views payouts and statements; updates bank details; cannot modify listings or bookings.</div>
+    </div>
+  </div>
+
+  <!-- Corporate roles -->
+  <div class="role-group">
+    <header><h3>Corporate Mobility Portal</h3><span class="count">4 roles</span></header>
+    <div class="role-row">
+      <div class="name">Corporate Admin <code>corp.admin</code></div>
+      <div class="desc">Owner of the corporate account. Buys seats, signs the contract, configures global policies.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">HR / Mobility Manager <code>corp.mobility</code></div>
+      <div class="desc">Assigns seats to employees, watches aggregate dashboards, handles escalations. The day-to-day driver of the portal.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Corporate Finance / Procurement <code>corp.finance</code></div>
+      <div class="desc">Reviews invoices, cost-per-relocation reports, and policy budgets. No PII of employees beyond status.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Read-only Viewer <code>corp.viewer</code></div>
+      <div class="desc">Business-unit leaders or auditors who need to see progress but not act. Aggregate view only.</div>
+    </div>
+  </div>
+
+  <!-- Admin roles -->
+  <div class="role-group">
+    <header><h3>Admin / Ops Console (internal)</h3><span class="count">5 roles</span></header>
+    <div class="role-row">
+      <div class="name">Super Admin <code>ops.super</code></div>
+      <div class="desc">Full access; tightly restricted to a handful of Glimmora employees. Break-glass role.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Trust &amp; Verification Officer <code>ops.trust</code></div>
+      <div class="desc">Reviews partner KYC/KYB, approves or rejects new partners, handles disputes and SLA breaches.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Data Curator (KG Editor) <code>ops.curator</code></div>
+      <div class="desc">Maintains the Country Knowledge Graph. Reviews AI-extracted updates. Cannot touch user PII or money.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Support Agent <code>ops.support</code></div>
+      <div class="desc">Handles user tickets and escalations. Can assist users but cannot approve refunds or change money flows.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Finance Ops <code>ops.finance</code></div>
+      <div class="desc">Manages escrow exceptions, refunds, payouts, and reconciliation with the payment processor.</div>
+    </div>
+  </div>
+
+  <!-- Expert -->
+  <div class="role-group">
+    <header><h3>Expert Portal (premium tier)</h3><span class="count">1 role</span></header>
+    <div class="role-row">
+      <div class="name">Verified Expert <code>expert.verified</code></div>
+      <div class="desc">Licensed external professional (immigration, tax, relocation). Reads consenting users&rsquo; plans, provides guidance, can be paid through the platform.</div>
+    </div>
+  </div>
+
+  <!-- System -->
+  <div class="role-group">
+    <header><h3>System (non-human)</h3><span class="count">Infra only</span></header>
+    <div class="role-row">
+      <div class="name">Copilot Agent <code>system.copilot</code></div>
+      <div class="desc">The AI itself, acting on behalf of a user with that user&rsquo;s explicit consent. Not a human role; included here because its actions must be logged, scoped, and auditable like any other actor.</div>
+    </div>
+    <div class="role-row">
+      <div class="name">Integration Service Account <code>system.integration</code></div>
+      <div class="desc">Tokens for ATS sync, payment webhooks, KYC callbacks, gov portal submissions, etc. Scoped per integration.</div>
+    </div>
+  </div>
+
+  <div class="callout ochre">
+    <b>Personas vs roles — the short rule.</b> A persona tells you <i>who wakes up and logs in</i>. A role tells you <i>what the system lets them do once they are logged in</i>. Product decisions (&ldquo;who would want this?&rdquo;) are about personas; engineering decisions (&ldquo;who is allowed to call this API?&rdquo;) are about roles.
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 08 PORTALS                                                      -->
+<!-- ============================================================= -->
+<section id="portals">
+  <h2><span class="num">08 — Portals</span>Six places people log in.</h2>
+
+  <p class="section-lede">
+    A portal is a surface — the web or mobile application a given persona uses. Six portals cover the whole platform. Each one is narrow and task-driven except the Consumer App, which carries the product&rsquo;s complete story.
+  </p>
+
+  <table>
+    <thead><tr><th style="width:24%">Portal</th><th style="width:28%">Primary personas</th><th>What it&rsquo;s for</th></tr></thead>
+    <tbody>
+      <tr><td>Consumer App</td><td>Mover · Family · Student</td><td>The end-to-end product. Copilot, plan, life setup, marketplace, payments, documents — the user&rsquo;s whole journey lives here.</td></tr>
+      <tr><td>Employer Portal</td><td>Employer</td><td>Post visa-aware roles, see AI-ranked candidates, manage offers, integrate an ATS.</td></tr>
+      <tr><td>Partner Portal</td><td>Partner Provider</td><td>Get verified, list inventory, receive bookings, fulfil services, get paid via escrow.</td></tr>
+      <tr><td>Corporate Mobility Portal</td><td>HR / Mobility Admin</td><td>Move many employees at once — seats, policies, aggregate dashboards, reports.</td></tr>
+      <tr><td>Admin / Ops Console</td><td>Ops · Curator</td><td>Run the live platform — verify partners, manage trust, maintain the Country Knowledge Graph, handle escalations.</td></tr>
+      <tr><td>Public &amp; Comparison Site</td><td>Visitors (pre-signup)</td><td>Country comparison tools, SEO content, simulators that work without an account, lead capture into the Consumer App.</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    The Expert Portal is listed separately in the role section; in practice it may ship as a restricted mode of the Admin Console at launch, or as its own surface once the premium tier is formalised.
+  </p>
+</section>
+
+<!-- ============================================================= -->
+<!-- 09 DAY IN THE LIFE                                              -->
+<!-- ============================================================= -->
+<section id="day">
+  <h2><span class="num">09 — A day in the life</span>Four people, one platform, the same Tuesday.</h2>
+
+  <p class="section-lede">
+    A useful way to see how the pieces connect is to watch four personas use the platform on the same day.
+  </p>
+
+  <h3>09:14 · Priya (Mover, Bangalore → Berlin)</h3>
+  <p>Opens the Consumer App on her phone. The Copilot greets her: &ldquo;Your visa appointment is in 9 days. You still need proof of health insurance and a translated birth certificate.&rdquo; She taps through to the document task, uploads the translation, the validator accepts it, and the task closes itself.</p>
+
+  <h3>10:02 · Marta (Recruiter, Berlin fintech)</h3>
+  <p>Logs into the Employer Portal. She sees two new applicants ranked by fit — both already pre-qualified for EU Blue Card sponsorship. One of them is Priya. Marta schedules an interview in two clicks; the invitation flows back to Priya&rsquo;s Copilot timeline.</p>
+
+  <h3>13:48 · Joao (Partner, Lisbon property manager)</h3>
+  <p>A booking lands in his Partner Portal for a short-term flat, with the user&rsquo;s deposit already in escrow. He confirms the keys hand-off date; on the user&rsquo;s arrival and confirmation, the escrow will release automatically.</p>
+
+  <h3>16:22 · Elena (Glimmora Ops, London)</h3>
+  <p>Opens the Admin Console. A partner&rsquo;s SLA score has dropped after three late bookings. The system has auto-paused new listings; Elena reviews the case, messages the partner, and flags the account for a recovery plan. Meanwhile a curator update to the Portugal tax table is in her review queue — she verifies it against the official source and promotes it.</p>
+
+  <p>
+    Four separate people, four separate portals, one shared core. This is the point: the system appears as four simple tools, but underneath, every action they take updates the same Twins, Knowledge Graph, and Trust scores.
+  </p>
+</section>
+
+<!-- ============================================================= -->
+<!-- 10 PARTS                                                        -->
+<!-- ============================================================= -->
+<section id="parts">
+  <h2><span class="num">10 — How the parts cooperate</span>The conductor and the orchestra.</h2>
+
+  <p class="section-lede">
+    The Copilot is the conductor. Every other module is an instrument it calls on — and the cooperation is choreographed, not improvised.
+  </p>
+
+  <p>
+    When a user asks the Copilot to do something non-trivial (&ldquo;plan my move to Berlin&rdquo;), the Copilot does not answer directly. It consults the user&rsquo;s <b>Digital Twin</b> to understand context, queries the <b>Country Knowledge Graph</b> for rules and facts, uses the <b>Financial Intelligence</b> module for money math, and then hands a plan to the <b>Workflow Orchestrator</b>.
+  </p>
+
+  <p>
+    The Workflow Orchestrator breaks that plan into tasks with dependencies and deadlines. Tasks that need a third party are routed to the <b>Marketplace</b>. The Marketplace asks the <b>Trust &amp; Verification</b> layer which partners are eligible to serve this user, and presents them in ranked order. When a user books, <b>Payments &amp; Escrow</b> takes over — the money is held, the partner fulfils, the user confirms, funds release, the Trust score updates.
+  </p>
+
+  <p>
+    Underneath all of this, the <b>Data Flywheel</b> is watching every event and feeding signals back to the Knowledge Graph (&ldquo;average time to get a Blue Card appointment in Berlin this quarter was 21 days, up from 14&rdquo;) and to the matchers (&ldquo;this landlord&rsquo;s bookings convert worse for families than individuals&rdquo;). The next user benefits without anyone writing new code.
+  </p>
+
+  <p class="pull">
+    Plan flows downward (Copilot → Workflow → Marketplace → Payment). Signals flow upward (Fulfilment → Trust → Flywheel → Copilot&rsquo;s next answer).
+  </p>
+</section>
+
+<!-- ============================================================= -->
+<!-- 11 BUSINESS MODEL                                               -->
+<!-- ============================================================= -->
+<section id="money">
+  <h2><span class="num">11 — How the business makes money</span>Four revenue streams, one product.</h2>
+
+  <p class="section-lede">
+    The same platform serves consumers and businesses, and earns from both. Diversity of revenue is on purpose: no single line dominates, and the B2B and B2C sides reinforce each other.
+  </p>
+
+  <ol>
+    <li><b>Consumer subscription.</b> A base plan at $100/year unlocks the full Copilot experience, document vault, and timeline execution. This is the entry point and the anchor.</li>
+    <li><b>Premium tiers.</b> Access to Verified Human Experts, priority support, additional family members, expedited services. Typical upsell once a user is deep in their journey.</li>
+    <li><b>Marketplace commissions.</b> A take-rate on fulfilled partner bookings (housing, schools, insurance, local services). Directly tied to execution — we earn when the user actually lands a service.</li>
+    <li><b>Enterprise (B2B) mobility.</b> Seats sold to corporates through the Corporate Mobility Portal. Higher price per user, contracted annually, with SLAs.</li>
+  </ol>
+
+  <p>
+    Fairness and trust are part of the business model, not just the product. Escrow protects the user; partner vetting protects the platform; SLA scoring protects both. If we push too hard on commissions, trust collapses — so the model is calibrated around repeatability, not one-shot extraction.
+  </p>
+</section>
+
+<!-- ============================================================= -->
+<!-- 12 TECH                                                         -->
+<!-- ============================================================= -->
+<section id="tech">
+  <h2><span class="num">12 — The technical backbone, in plain English</span>What&rsquo;s inside, explained without jargon.</h2>
+
+  <p class="section-lede">
+    You do not need to write code to be productive on this project, but you should know the shape of what is inside.
+  </p>
+
+  <ul>
+    <li><b>A Python backend (FastAPI).</b> Python is where the AI and data libraries live; FastAPI is a modern, fast framework for building web APIs. Everything behind the scenes is a network of FastAPI services.</li>
+    <li><b>A React frontend.</b> React is the world&rsquo;s most common framework for building web apps. The Consumer App and all portals are built on it.</li>
+    <li><b>PostgreSQL as the main database.</b> The industry-standard database for anything serious. Every user, job, partner, payment, and task lives here.</li>
+    <li><b>A knowledge graph for country data.</b> Not a table of facts, but a network — &ldquo;Germany&rdquo; is connected to &ldquo;Blue Card&rdquo; is connected to &ldquo;minimum income threshold&rdquo; is connected to &ldquo;software engineer&rdquo;. This is how the Copilot reasons about the world.</li>
+    <li><b>Large Language Models (LLMs) behind the Copilot.</b> We use commercial LLMs (Anthropic&rsquo;s Claude is the default) to power the conversational layer, with guardrails and retrieval so the answers are grounded in our data — not the LLM&rsquo;s guesses.</li>
+    <li><b>A workflow engine.</b> Plans are long-running — some tasks take months. A durable workflow system runs them, retries what fails, and survives restarts without losing progress.</li>
+    <li><b>A payments processor with escrow.</b> Likely Stripe or a comparable provider with Connect-style escrow, handling subscriptions, bookings, and payouts across currencies.</li>
+    <li><b>KYC/KYB for identity.</b> Third-party services verify that people and businesses are who they claim to be, before any money or listing flows.</li>
+    <li><b>Event pipeline + analytics warehouse.</b> Everything interesting that happens gets logged as an event; those events feed dashboards and the Data Flywheel&rsquo;s learning jobs.</li>
+    <li><b>Cloud infrastructure with regional deployments.</b> So a European user&rsquo;s data can stay in Europe, satisfying GDPR and local regulations.</li>
+  </ul>
+</section>
+
+<!-- ============================================================= -->
+<!-- 13 TODAY                                                        -->
+<!-- ============================================================= -->
+<section id="today">
+  <h2><span class="num">13 — Where the project is today</span>Greenfield, with a map.</h2>
+
+  <p class="section-lede">
+    As of 22 April 2026, nothing has been built yet. The repository contains only version control. What does exist is the plan.
+  </p>
+
+  <p>
+    The Statement of Work (SOW) is the contract on scope. The companion document <code>glimmora-relocate-architecture.html</code> is the reference architecture: information architecture, portal connections, detailed user flows, data model, and a sequenced roadmap. This handbook is the onboarding lens.
+  </p>
+
+  <p>
+    The first wave of real work, W0, is the foundations: authentication, the initial Digital Twin schema, a Country Knowledge Graph seeded with three launch corridors, and the Copilot runtime skeleton. From there the product expands outward through exploration (W1), jobs (W2), relocation plans (W3), marketplace and payments (W4), full life setup (W5), family and student modes (W6), enterprise (W7), and the flywheel at scale (W8).
+  </p>
+
+  <p>
+    Several open questions still need answers before execution — which countries we launch with, how we source world data, which LLM provider we commit to, how escrow licensing works in each jurisdiction. Those are detailed in section 11 of the architecture document.
+  </p>
+
+  <div class="callout">
+    <b>Short version of status.</b> We know what we are building. We have a reference architecture and a wave-based roadmap. We have not written code. The next real milestone is closing the open questions and standing up W0.
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- 14 GLOSSARY                                                     -->
+<!-- ============================================================= -->
+<section id="glossary">
+  <h2><span class="num">14 — Glossary</span>Terms you will hear, defined.</h2>
+
+  <p class="section-lede">
+    Anything in this list, you can use in conversation without further explanation.
+  </p>
+
+  <dl class="glossary">
+    <dt>AGI Copilot</dt>
+    <dd>The AI assistant at the centre of the product. &ldquo;AGI-native&rdquo; is aspirational wording in the SOW; in practice the Copilot is an orchestrated LLM with memory, tools, and guardrails. It is how users talk to the platform.</dd>
+
+    <dt>Digital Twin</dt>
+    <dd>A structured, evolving model of a user (or a family member, a job, or a relocation plan) that the Copilot reasons about. The twin is not a record — it is an interpreted, live representation of who the user is and where their journey stands.</dd>
+
+    <dt>Country Knowledge Graph (KG)</dt>
+    <dd>The platform&rsquo;s model of the world. Encodes visa rules, tax rules, housing data, schools, cost of living, and the relationships between them. Enables reasoning, not just lookup.</dd>
+
+    <dt>Workflow Orchestrator</dt>
+    <dd>The component that turns a plan into a running sequence of tasks with dependencies, deadlines, and durable state. Survives restarts and can run for months.</dd>
+
+    <dt>Marketplace</dt>
+    <dd>The catalogue of verified partners (housing, schools, banks, insurers, services) whose inventory is bookable through the platform. Ranked by fit and trust.</dd>
+
+    <dt>Escrow</dt>
+    <dd>A payment pattern where a user&rsquo;s money is held by a neutral party and only released to the partner after the service is confirmed delivered. Protects both sides.</dd>
+
+    <dt>SLA (Service-Level Agreement)</dt>
+    <dd>The commitment a partner makes about how fast and how well they will deliver. The platform measures each booking against its SLA and uses the results to update trust scores.</dd>
+
+    <dt>Trust Score</dt>
+    <dd>A continuously updated number representing how reliable a partner has been. Feeds the Marketplace ranker and can auto-pause listings if it falls too low.</dd>
+
+    <dt>KYC / KYB</dt>
+    <dd>Know Your Customer / Know Your Business. The legal process of verifying the identity of a user or a partner company before letting them transact on the platform.</dd>
+
+    <dt>Visa-aware matching</dt>
+    <dd>Filtering jobs so that a given user only sees opportunities where the employer&rsquo;s sponsorship reality matches the user&rsquo;s visa eligibility. The defining edge of the Job Intelligence module.</dd>
+
+    <dt>Job-Relocation Sync</dt>
+    <dd>The coupling that ensures a job offer immediately updates the relocation plan — destination city, salary, start date — so the whole plan follows the employment decision.</dd>
+
+    <dt>Data Flywheel</dt>
+    <dd>The feedback loop that takes signals from every completed journey and improves the Knowledge Graph, matchers, and predictions for the next user. The reason the product gets better over time on its own.</dd>
+
+    <dt>Timeline Intelligence</dt>
+    <dd>The module that predicts how long each milestone will take for this specific user in this specific country corridor — and alerts on likely delays before they happen.</dd>
+
+    <dt>FR (Functional Requirement)</dt>
+    <dd>A numbered requirement in the SOW (e.g. FR-1, FR-40). Used as anchors in planning documents so we can trace what we built back to what was asked.</dd>
+
+    <dt>Persona</dt>
+    <dd>A type of real-world user with motivations and constraints. Used for product thinking. There are nine in this system.</dd>
+
+    <dt>Role</dt>
+    <dd>A set of permissions inside the software. Used for engineering thinking. There are twenty-two in this system.</dd>
+
+    <dt>Portal</dt>
+    <dd>A dedicated application or surface for one set of personas (Consumer, Employer, Partner, Corporate, Admin, Public). There are six.</dd>
+
+    <dt>Corridor</dt>
+    <dd>A supported origin→destination country pair (e.g. India→Germany). The richness of the platform is measured in corridors supported to depth.</dd>
+
+    <dt>Pillar</dt>
+    <dd>One of the seven capability groups defined in the SOW (Copilot, Job, Relocation, Financial, Life Setup, Marketplace &amp; Payments, Trust &amp; Compliance).</dd>
+
+    <dt>Wave (W0–W8)</dt>
+    <dd>A step in the delivery roadmap. Waves are cumulative — each depends on everything above it. W0 is foundations; W8 is scale.</dd>
+  </dl>
+</section>
+
+<footer>
+  © Glimmora · The Handbook v0.1 · 2026-04-22 · Companion to <code>glimmora-relocate-architecture.html</code>
+</footer>
+
+</div>
+</body>
+</html>

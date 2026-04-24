@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glimmora Relocate — Technical Stack Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F1222;
+    --ink-2:#2B2E44;
+    --paper:#FAF7F2;
+    --paper-2:#F2EEE6;
+    --line:#E4DDD1;
+    --rule:#D6CCBB;
+    --slate:#5E6379;
+
+    --accent:#B3542A;
+    --accent-soft:#F3DAC7;
+    --indigo:#3A3F7A;
+    --indigo-soft:#E2E3F2;
+    --mint:#2F7D66;
+    --mint-soft:#DBEDE6;
+    --ochre:#B48A2C;
+    --ochre-soft:#F4E8C7;
+    --violet:#6B3E8A;
+    --violet-soft:#EADDF2;
+    --red:#B34545;
+    --red-soft:#F3D4D4;
+
+    --shadow: 0 1px 2px rgba(15,18,34,.05), 0 8px 24px rgba(15,18,34,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;
+    font-size:16px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 40px 140px}
+
+  /* nav */
+  nav.toc{
+    position:sticky;top:0;
+    background:rgba(250,247,242,0.92);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--rule);
+    z-index:10;margin:-56px -40px 56px;padding:14px 40px;
+  }
+  nav.toc .toc-inner{
+    max-width:1080px;margin:0 auto;
+    display:flex;gap:4px;flex-wrap:wrap;align-items:center;
+    font-family:"JetBrains Mono",monospace;
+    font-size:11.5px;letter-spacing:.08em;
+  }
+  nav.toc .brand{
+    color:var(--ink);font-weight:600;letter-spacing:.18em;
+    margin-right:16px;text-transform:uppercase;
+  }
+  nav.toc a{
+    color:var(--slate);padding:4px 8px;border-radius:4px;
+    text-transform:uppercase;text-decoration:none;
+  }
+  nav.toc a:hover{background:var(--paper-2);color:var(--ink)}
+
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:18px;
+  }
+  h1{
+    font-family:"Fraunces",Georgia,serif;font-weight:500;
+    font-size:clamp(42px,5.2vw,62px);
+    line-height:1.04;letter-spacing:-.025em;margin:0 0 20px;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--accent)}
+  .lede{
+    font-family:"Fraunces",Georgia,serif;font-size:21px;
+    color:var(--ink-2);line-height:1.5;max-width:68ch;margin:0 0 28px;
+  }
+  .meta-row{
+    display:flex;gap:36px;flex-wrap:wrap;
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;
+  }
+  .meta-row span b{color:var(--ink);font-weight:500}
+  header.cover{border-bottom:1px solid var(--rule);padding-bottom:48px;margin-bottom:56px}
+
+  h2{
+    font-family:"Fraunces",Georgia,serif;font-weight:500;
+    font-size:36px;letter-spacing:-.02em;line-height:1.12;
+    margin:96px 0 10px;
+  }
+  h2 .num{
+    display:block;font-family:"JetBrains Mono",monospace;
+    font-size:12px;letter-spacing:.22em;color:var(--accent);
+    margin-bottom:10px;font-weight:500;
+  }
+  h3{
+    font-family:"Fraunces",Georgia,serif;font-weight:500;
+    font-size:24px;letter-spacing:-.01em;
+    margin:48px 0 12px;line-height:1.2;
+  }
+  h4{
+    font-family:"Inter",sans-serif;font-weight:600;
+    font-size:12.5px;text-transform:uppercase;
+    letter-spacing:.14em;color:var(--ink-2);
+    margin:24px 0 10px;
+  }
+  p{margin:0 0 16px;max-width:72ch}
+  ul,ol{margin:0 0 16px;padding-left:22px}
+  li{margin-bottom:5px}
+  code{
+    font-family:"JetBrains Mono",monospace;font-size:.88em;
+    background:var(--paper-2);padding:1px 6px;border-radius:4px;
+  }
+
+  .section-lede{
+    font-family:"Fraunces",Georgia,serif;font-style:italic;
+    font-size:19px;color:var(--ink-2);max-width:64ch;
+    margin:0 0 28px;line-height:1.5;
+  }
+
+  /* Status pills */
+  .tag{
+    display:inline-flex;align-items:center;gap:4px;
+    font-family:"JetBrains Mono",monospace;font-size:10px;
+    letter-spacing:.14em;text-transform:uppercase;
+    padding:2px 8px;border-radius:999px;
+    background:var(--paper-2);color:var(--ink-2);
+    border:1px solid var(--line);white-space:nowrap;
+  }
+  .tag.propose{background:var(--mint-soft);color:var(--mint);border-color:var(--mint-soft)}
+  .tag.open{background:var(--ochre-soft);color:var(--ochre);border-color:var(--ochre-soft)}
+  .tag.nnfr{background:var(--red-soft);color:var(--red);border-color:var(--red-soft)}
+  .tag.info{background:var(--indigo-soft);color:var(--indigo);border-color:var(--indigo-soft)}
+  .tag.sow{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+
+  /* Status strip explainer */
+  .legend{
+    display:flex;gap:10px;flex-wrap:wrap;
+    margin:12px 0 28px;
+    font-size:13px;color:var(--slate);
+  }
+
+  /* Layer card */
+  .layer{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:26px 28px;box-shadow:var(--shadow);margin:20px 0 32px;
+  }
+  .layer header{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    gap:20px;padding:0 0 14px;margin-bottom:14px;
+    border-bottom:1px solid var(--line);border-radius:0;
+  }
+  .layer header h3{margin:0;font-size:24px}
+  .layer header .status{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+
+  .layer .kv{
+    display:grid;grid-template-columns:150px 1fr;gap:12px 20px;
+    font-size:14.5px;
+  }
+  .layer .kv dt{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.14em;text-transform:uppercase;
+    color:var(--slate);padding-top:4px;
+  }
+  .layer .kv dd{margin:0;color:var(--ink-2)}
+  .layer .kv dd b{color:var(--ink);font-weight:500}
+
+  .layer .choice{
+    display:inline-block;font-family:"JetBrains Mono",monospace;
+    font-size:13px;background:var(--paper-2);padding:3px 10px;
+    border-radius:6px;color:var(--ink);font-weight:500;
+    border:1px solid var(--line);margin-right:6px;
+  }
+
+  .open-q{
+    margin-top:14px;padding:14px 18px;
+    background:var(--ochre-soft);
+    border-left:3px solid var(--ochre);
+    border-radius:0 8px 8px 0;font-size:14px;color:var(--ink-2);
+  }
+  .open-q b{color:var(--ink)}
+
+  /* Tables */
+  table{
+    width:100%;border-collapse:collapse;
+    background:#fff;border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+    font-size:14px;margin:20px 0;
+  }
+  th,td{padding:12px 16px;text-align:left;vertical-align:top}
+  thead th{
+    background:var(--paper-2);
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-2);font-weight:500;border-bottom:1px solid var(--rule);
+  }
+  tbody tr+tr td{border-top:1px solid var(--line)}
+  tbody td:first-child{font-weight:500;color:var(--ink)}
+  tbody td code{font-size:12px}
+
+  /* Callout */
+  .callout{
+    background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    padding:18px 22px;border-radius:0 10px 10px 0;
+    margin:24px 0;color:var(--ink-2);font-size:15px;
+    box-shadow:var(--shadow);
+  }
+  .callout b{color:var(--ink)}
+  .callout.indigo{border-left-color:var(--indigo)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.ochre{border-left-color:var(--ochre)}
+
+  /* For-designer note */
+  .for-designer{
+    background:var(--indigo-soft);border:1px solid var(--indigo);
+    border-radius:12px;padding:22px 26px;margin:24px 0;
+    font-size:15px;color:var(--ink-2);
+  }
+  .for-designer b{color:var(--ink)}
+  .for-designer .tag{background:#fff;margin-bottom:10px;border-color:var(--indigo);color:var(--indigo)}
+
+  /* Phase table */
+  .waves td,.waves th{font-size:13.5px;padding:10px 14px}
+  .waves .w{font-family:"JetBrains Mono",monospace;font-weight:600;color:var(--accent);width:56px}
+
+  footer{
+    margin-top:100px;padding-top:24px;border-top:1px solid var(--rule);
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;letter-spacing:.05em;
+  }
+
+  @media (max-width:900px){
+    .wrap{padding:40px 22px 80px}
+    nav.toc{margin:-40px -22px 40px;padding:12px 22px}
+    .layer .kv{grid-template-columns:1fr}
+    .layer header{flex-direction:column;gap:10px}
+  }
+  @media print{
+    nav.toc{display:none}
+    body{font-size:12px}
+    h2{page-break-before:always}
+    .layer{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc">
+  <div class="toc-inner">
+    <span class="brand">Tech Stack · Handoff</span>
+    <a href="#how">How to use</a>
+    <a href="#context">Context</a>
+    <a href="#nfrs">NFRs</a>
+    <a href="#glance">At a glance</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#backend">Backend</a>
+    <a href="#data">Data</a>
+    <a href="#ai">AI/LLM</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#pay">Payments</a>
+    <a href="#auth">Auth/KYC</a>
+    <a href="#obs">Ops</a>
+    <a href="#infra">Infra</a>
+    <a href="#waves">Waves</a>
+    <a href="#decisions">Decisions</a>
+    <a href="#handoff">Handoff</a>
+  </div>
+</nav>
+
+<!-- ==================== COVER ==================== -->
+<header class="cover">
+  <div class="eyebrow">Technical Handoff · v0.1 · Draft for backend review · 2026-04-22</div>
+  <h1>Technical stack<em>,</em><br/>proposed for build.</h1>
+  <p class="lede">
+    A professional handoff document for the backend engineering team. It proposes opinionated defaults for every layer of the stack, marks the decisions that need backend input, and anchors each choice against the SOW and the reference architecture.
+  </p>
+  <div class="meta-row">
+    <span><b>Document owner</b> &nbsp; Design (for handoff to Backend Eng)</span>
+    <span><b>Status</b> &nbsp; Draft — awaiting backend review</span>
+    <span><b>Anchors</b> &nbsp; <code>SOW §23</code> · <code>architecture.html</code></span>
+  </div>
+</header>
+
+<!-- ==================== 01 HOW TO USE ==================== -->
+<section id="how">
+  <h2><span class="num">01 — How to use this document</span>A note for two audiences.</h2>
+
+  <div class="for-designer">
+    <span class="tag">For the designer</span><br/>
+    You can share this document with backend engineering as the starting point for the stack conversation. The SOW already commits the platform to <b>FastAPI + PostgreSQL + React + LLM orchestration + Knowledge Graph</b>. This document fills in the complements needed to make that stack actually work at enterprise scale — a workflow engine, payments, auth, observability, infra, and so on.<br/><br/>
+    Each section proposes a default with plain-language rationale, then flags the decisions that the backend team needs to confirm. You do not need to defend every choice — just present the document as <i>"this is our current thinking; tell us what you'd change"</i> and let the backend team take ownership of the technical commitments.
+  </div>
+
+  <h4>Legend</h4>
+  <div class="legend">
+    <span class="tag propose">Propose</span> <span>Our default recommendation.</span>
+    <span class="tag open">Decide</span> <span>Open — needs backend team input.</span>
+    <span class="tag sow">SOW</span> <span>Locked by the statement of work.</span>
+    <span class="tag nnfr">NFR</span> <span>Non-negotiable — driven by a compliance or business constraint.</span>
+    <span class="tag info">FYI</span> <span>Informational context only.</span>
+  </div>
+</section>
+
+<!-- ==================== 02 CONTEXT ==================== -->
+<section id="context">
+  <h2><span class="num">02 — Project context</span>For engineers reading this document cold.</h2>
+
+  <p class="section-lede">
+    Glimmora Relocate is an AGI-native cross-border relocation platform. Six portals (Consumer, Employer, Partner, Corporate, Admin, Public) orchestrated by an AI Copilot that reasons over a Country Knowledge Graph and per-user Digital Twins.
+  </p>
+
+  <p>
+    For full scope, read the reference documents in this order:
+  </p>
+  <ul>
+    <li><code>handbook.html</code> — plain-language overview (25 min read).</li>
+    <li><code>architecture.html</code> — reference architecture, data model, flows, roadmap.</li>
+    <li><code>portal-flows.html</code> — per-portal IA and user flows.</li>
+    <li><code>mapping.html</code> — personas × portals × roles matrix.</li>
+    <li><code>SOW</code> (source of truth) — <code>/Users/kavi/Downloads/Glimnmora Relocate_SOW.docx</code>.</li>
+  </ul>
+
+  <h4>What makes this stack non-standard</h4>
+  <ul>
+    <li><b>AGI Copilot is the primary UX,</b> not a sidebar. LLM orchestration is a first-class layer, not an add-on.</li>
+    <li><b>Long-running workflows.</b> A single user&rsquo;s relocation plan can execute over 6–12 months with dozens of dependent tasks. Durable workflow orchestration is mandatory, not optional.</li>
+    <li><b>Escrow-mediated marketplace.</b> Money is held between user and partner; release is conditional on fulfilment. Not a standard e-commerce checkout.</li>
+    <li><b>Multi-tenant B2B (Corporate)</b> sits alongside multi-consumer B2C. The stack needs to support both without forking.</li>
+    <li><b>GDPR + regional data residency.</b> A European user&rsquo;s twin, documents, and events should be storable in-region. Designed-in, not bolted on.</li>
+    <li><b>Partner + employer verification (KYB / KYC)</b> is a prerequisite for transacting, not a post-facto check.</li>
+  </ul>
+</section>
+
+<!-- ==================== 03 NFRs ==================== -->
+<section id="nfrs">
+  <h2><span class="num">03 — Non-functional requirements</span>What the stack must deliver beyond functionality.</h2>
+
+  <p class="section-lede">
+    These shape every layer below. Any stack choice that violates one of these is disqualified.
+  </p>
+
+  <table>
+    <thead><tr><th style="width:24%">Requirement</th><th>Detail</th><th style="width:15%">Source</th></tr></thead>
+    <tbody>
+      <tr><td>GDPR compliance</td><td>Consent management, DSAR (Data Subject Access Requests), right-to-be-forgotten, lawful basis tracking, data processing agreements with sub-processors.</td><td><span class="tag nnfr">NFR</span></td></tr>
+      <tr><td>Data residency</td><td>EU-resident users&rsquo; data should be storable in EU regions. The architecture must not assume a single global region.</td><td><span class="tag nnfr">NFR</span></td></tr>
+      <tr><td>Encryption</td><td>At rest (database, object storage) and in transit (TLS 1.3+). Sensitive fields (documents, financial) additionally field-encrypted with user-scoped keys where feasible.</td><td><span class="tag nnfr">NFR</span></td></tr>
+      <tr><td>Auditability</td><td>Every state change on trust-critical resources (partners, payments, documents, corporate policies) must produce an immutable audit event.</td><td><span class="tag nnfr">NFR</span></td></tr>
+      <tr><td>Multi-tenancy</td><td>Corporate accounts need data isolation from each other and from B2C users. Row-level security or schema-level — a backend decision.</td><td><span class="tag nnfr">NFR</span></td></tr>
+      <tr><td>Durability of long-running work</td><td>A relocation plan cannot be lost to a server restart or a dropped request. State must survive infrastructure events.</td><td><span class="tag nnfr">NFR</span></td></tr>
+      <tr><td>SOC2 readiness</td><td>Not required at launch but the architecture should not paint itself into a corner. Access controls, audit logs, vendor management are designed-in.</td><td><span class="tag info">FYI</span></td></tr>
+      <tr><td>LLM grounding</td><td>The Copilot must be answerable. Every generated recommendation must cite the KG facts, user twin state, or tool call that produced it.</td><td><span class="tag nnfr">NFR</span></td></tr>
+      <tr><td>Observability</td><td>Distributed traces, structured logs, and business metrics. A Copilot turn should be traceable from user click to tool call to LLM response.</td><td><span class="tag nnfr">NFR</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 04 AT A GLANCE ==================== -->
+<section id="glance">
+  <h2><span class="num">04 — Stack at a glance</span>The full recommendation in one table.</h2>
+
+  <table>
+    <thead><tr><th style="width:18%">Layer</th><th style="width:26%">Proposed</th><th>Why</th><th style="width:12%">Status</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend framework</td><td><code>Next.js 14+ · React 18 · TypeScript</code></td><td>SSR for SEO-critical Public Site; one stack for all six portals.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Design system</td><td><code>Tailwind CSS · shadcn/ui</code> (extended with tokens)</td><td>Owned by Design. Fast to iterate. Works for all portals.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Client state / data</td><td><code>TanStack Query · Zustand</code></td><td>Server state + light client state. Plays well with FastAPI REST.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Backend API</td><td><code>FastAPI · Python 3.12 · async</code></td><td>SOW-specified. First-class async, Pydantic, OpenAPI auto-gen.</td><td><span class="tag sow">SOW</span></td></tr>
+      <tr><td>API style</td><td><code>REST + WebSocket</code> (SSE for Copilot streaming)</td><td>REST for CRUD; streaming for Copilot token-by-token responses.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Primary database</td><td><code>PostgreSQL 16</code></td><td>SOW-specified. Mature, multi-tenant-capable, pgvector-compatible.</td><td><span class="tag sow">SOW</span></td></tr>
+      <tr><td>Vector store</td><td><code>pgvector</code> inside Postgres</td><td>One fewer system to run. Upgrade to dedicated vector DB only if scale demands it.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Knowledge graph</td><td><code>Neo4j</code> (self-hosted or Aura managed)</td><td>Purpose-built for KG reasoning. Alternative: Postgres with AGE extension.</td><td><span class="tag open">Decide</span></td></tr>
+      <tr><td>Object storage</td><td><code>S3</code> (AWS) or <code>GCS</code></td><td>Documents vault, encrypted with KMS keys.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Cache / sessions</td><td><code>Redis</code> (ElastiCache / Upstash)</td><td>Session storage, rate limiting, pub/sub.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Workflow engine</td><td><code>Temporal</code> (self-hosted or Temporal Cloud)</td><td>Durable execution for multi-month relocation plans.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>LLM provider (primary)</td><td><code>Anthropic Claude</code> (Opus/Sonnet via Messages API)</td><td>Strong tool use, long context, prompt caching. Abstract behind a provider interface.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>RAG / retrieval</td><td><code>pgvector + custom ranker</code></td><td>KG facts + document snippets + twin facts retrieved per Copilot turn.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Auth</td><td><code>Clerk</code> or <code>Auth0</code></td><td>Multi-tenant, SSO/SAML for Corporate, passwordless options.</td><td><span class="tag open">Decide</span></td></tr>
+      <tr><td>KYC / KYB</td><td><code>Persona</code> or <code>Onfido</code> or <code>Sumsub</code></td><td>User identity + partner/employer business verification.</td><td><span class="tag open">Decide</span></td></tr>
+      <tr><td>Payments &amp; escrow</td><td><code>Stripe + Stripe Connect</code></td><td>Subscriptions, multi-currency, Connect for escrow &amp; partner payouts.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Email / transactional</td><td><code>Resend</code> or <code>Postmark</code></td><td>Auth, notifications, document expiry reminders.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Event bus (internal)</td><td><code>Redis Streams</code> initially → <code>Kafka / SNS+SQS</code> at scale</td><td>Flywheel signals, audit events. Start simple.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Observability</td><td><code>OpenTelemetry → Datadog or Honeycomb</code></td><td>Traces, logs, metrics. Critical for Copilot debuggability.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Error tracking</td><td><code>Sentry</code></td><td>Frontend + backend.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Analytics / warehouse</td><td><code>PostHog</code> (product) · <code>BigQuery / Snowflake</code> (warehouse)</td><td>Events → warehouse → Flywheel ML jobs.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Cloud</td><td><code>AWS</code> (default) — alt <code>GCP</code></td><td>Breadth of services (KMS, SES, RDS, ECS, S3). GCP if AI-first house.</td><td><span class="tag open">Decide</span></td></tr>
+      <tr><td>Container runtime</td><td><code>ECS Fargate</code> (simpler) or <code>EKS / Kubernetes</code> (more control)</td><td>Start with ECS; graduate to K8s only if scale/complexity demands.</td><td><span class="tag open">Decide</span></td></tr>
+      <tr><td>IaC</td><td><code>Terraform</code></td><td>Standard. Multi-cloud portable.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>CDN / edge</td><td><code>Cloudflare</code></td><td>WAF, bot protection, DDoS, edge caching for Public Site.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>CI/CD</td><td><code>GitHub Actions</code></td><td>Standard. Preview deploys per PR.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Feature flags</td><td><code>PostHog</code> flags or <code>LaunchDarkly</code></td><td>Gate W-by-W rollouts; per-corporate feature control.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Repo layout</td><td><code>Monorepo · pnpm + Turbo</code> (FE) · <code>uv / poetry</code> (BE)</td><td>Shared types, shared design tokens, one CI.</td><td><span class="tag propose">Propose</span></td></tr>
+      <tr><td>Architectural style</td><td><code>Modular monolith</code> at W0 → extract services as seams become load-bearing</td><td>Ship fast, refactor when you know where the seams are.</td><td><span class="tag open">Decide</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 05 FRONTEND ==================== -->
+<section id="frontend">
+  <h2><span class="num">05 — Frontend</span>The six portals, one codebase.</h2>
+
+  <p class="section-lede">
+    Design owns this layer. The proposal below reflects what will make the designer&rsquo;s life (and AI-assisted frontend work) most productive while staying aligned with what backend needs to integrate against.
+  </p>
+
+  <div class="layer">
+    <header>
+      <h3>Frontend framework · Next.js + React + TypeScript</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">Next.js 14+</span><span class="choice">React 18</span><span class="choice">TypeScript</span></dd>
+      <dt>Why</dt><dd><b>Next.js</b> gives SSR for the SEO-critical Public Site and React Server Components for heavy data-driven screens. One framework serves all six portals — Consumer App, Employer, Partner, Corporate, Admin, Public — with per-portal route groups. <b>TypeScript</b> because we will share types with the backend via generated OpenAPI clients.</dd>
+      <dt>Alternatives</dt><dd>Remix (smaller ecosystem); Vite SPA (loses SSR); Astro (wrong tool for app-heavy portals).</dd>
+      <dt>For backend</dt><dd>Generate TypeScript clients from FastAPI&rsquo;s OpenAPI spec. One command (<code>openapi-typescript</code>) keeps types synced end-to-end.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Design system &amp; styling · Tailwind + shadcn/ui</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">Tailwind CSS</span><span class="choice">shadcn/ui</span><span class="choice">Radix primitives</span></dd>
+      <dt>Why</dt><dd>Tailwind + shadcn gives fast iteration and accessible primitives. Design owns the token layer (colors, spacing, typography) in a Tailwind config — the same tokens flow to every portal so the system feels consistent.</dd>
+      <dt>Mobile</dt><dd>The Consumer App ships as <b>responsive web first</b>, then a <b>PWA</b> (installable, offline-capable for documents). Native iOS/Android is a later wave when it earns its complexity.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>State &amp; data · TanStack Query + Zustand</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">TanStack Query</span><span class="choice">Zustand</span></dd>
+      <dt>Why</dt><dd>Server state (lists, details, mutations) goes through TanStack Query — caching, retries, optimistic updates out of the box. Client-only state (UI toggles, in-progress form state) uses Zustand. No Redux.</dd>
+      <dt>Copilot streaming</dt><dd>Copilot turns stream from the backend via <b>Server-Sent Events (SSE)</b> — simpler than WebSocket and fits FastAPI cleanly. Frontend maintains a streaming-message component that updates token by token.</dd>
+    </dl>
+  </div>
+
+  <div class="for-designer" style="margin-top:28px">
+    <b>What Design commits to deliver for backend integration:</b>
+    <ol style="margin:8px 0 0">
+      <li>A working Figma design system with components matching the shadcn set (so frontend can implement 1:1).</li>
+      <li>A Storybook of built components per portal (eventually).</li>
+      <li>Design tokens exported as JSON for Tailwind config.</li>
+      <li>One Figma prototype per portal demonstrating the full user flow before backend builds the API for that flow.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ==================== 06 BACKEND ==================== -->
+<section id="backend">
+  <h2><span class="num">06 — Backend &amp; API</span>Where most of the platform lives.</h2>
+
+  <div class="layer">
+    <header>
+      <h3>Language &amp; framework · FastAPI on Python 3.12</h3>
+      <div class="status"><span class="tag sow">SOW</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">FastAPI</span><span class="choice">Python 3.12</span><span class="choice">Pydantic v2</span><span class="choice">SQLAlchemy 2.0 / SQLModel</span><span class="choice">Alembic</span></dd>
+      <dt>Why</dt><dd>Locked by SOW §23. Python is also where the AI/ML ecosystem lives — same language for API handlers, LLM orchestration, and any ML workloads means fewer seams.</dd>
+      <dt>Async everywhere</dt><dd>FastAPI routes are async; database calls go through SQLAlchemy&rsquo;s async engine or async drivers. LLM calls and external integrations naturally want async.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Architectural style · Modular monolith (at W0)</h3>
+      <div class="status"><span class="tag open">Decide</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Proposal</dt><dd>Start as a <b>modular monolith</b> with clear internal boundaries (domain modules: <code>auth</code>, <code>copilot</code>, <code>jobs</code>, <code>relocation</code>, <code>payments</code>, <code>trust</code>, <code>kg</code>, <code>workflow</code>). Deploy as one service. Extract to microservices only when a seam becomes load-bearing — typically payments, workflow, or LLM orchestration.</dd>
+      <dt>Why not microservices day one</dt><dd>The team is small; user flows cross domain boundaries; we don&rsquo;t yet know where the real load or team lines are. A clean monolith with real module boundaries is faster to build and trivial to split later.</dd>
+      <dt>Backend decides</dt><dd>Where the first seam should be. Common candidates: a separate <b>LLM service</b> (different scaling profile, different ops), a separate <b>workflow worker</b> pool (Temporal already gives this).</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Confirm the modular-monolith starting point, or propose a specific service split for W0 with reasoning.</div>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>API style · REST + SSE (streaming)</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">REST (JSON over HTTPS)</span><span class="choice">SSE for Copilot</span><span class="choice">OpenAPI 3.1 contracts</span></dd>
+      <dt>Why REST</dt><dd>The full stack is straightforward CRUD over well-defined resources — jobs, applications, bookings, payments, documents. REST keeps the contract obvious, OpenAPI-documentable, and typed end-to-end.</dd>
+      <dt>Why not GraphQL</dt><dd>No client with radically different data needs. Six portals with similar queries don&rsquo;t justify the GQL overhead.</dd>
+      <dt>Streaming</dt><dd>Copilot responses stream token-by-token via <b>Server-Sent Events</b>. Simpler than WebSockets; one-way (server → client) fits the shape of LLM output.</dd>
+      <dt>Webhook endpoints</dt><dd>For Stripe, KYC, ATS integrations. Signed and idempotent.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Multi-tenancy · Row-level (B2C + Corporate)</h3>
+      <div class="status"><span class="tag open">Decide</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Proposal</dt><dd><b>Row-level multi-tenancy</b> with a <code>tenant_id</code> on every domain row, enforced at the ORM layer and/or via Postgres RLS (Row-Level Security). Individual B2C users are their own tenant; Corporate accounts have many users under one tenant.</dd>
+      <dt>Alternative</dt><dd>Schema-per-tenant — stronger isolation but operationally heavy at B2C volumes.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Row-level with RLS, ORM-layer enforcement, or hybrid. Affects all query paths and auth middleware.</div>
+  </div>
+</section>
+
+<!-- ==================== 07 DATA ==================== -->
+<section id="data">
+  <h2><span class="num">07 — Data layer</span>Postgres first, with purpose-built stores for specific needs.</h2>
+
+  <div class="layer">
+    <header>
+      <h3>Primary database · PostgreSQL 16</h3>
+      <div class="status"><span class="tag sow">SOW</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">PostgreSQL 16</span><span class="choice">Amazon RDS / Aurora</span> or <span class="choice">Supabase</span> or <span class="choice">Neon</span></dd>
+      <dt>Why</dt><dd>SOW-specified. Handles users, jobs, bookings, payments, tasks, audit logs. With <code>pgvector</code> it also handles embeddings for RAG.</dd>
+      <dt>Partitioning / scale</dt><dd>Events and audit logs will partition by month once volume requires it. Read replicas for reporting; primary for writes.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Vector store · pgvector (in Postgres)</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">pgvector</span> extension in the primary Postgres</dd>
+      <dt>Why</dt><dd>Fewer moving parts. The same database holds the documents and the embeddings; one SQL query can retrieve both a fact and its source row. Switch to Pinecone/Weaviate only if we prove retrieval latency or scale justifies it.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Knowledge graph · Neo4j (or PG + AGE)</h3>
+      <div class="status"><span class="tag open">Decide</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Option A</dt><dd><span class="choice">Neo4j</span> (self-hosted or Aura) — purpose-built graph database with mature traversal performance and tooling. The right tool if KG queries become complex.</dd>
+      <dt>Option B</dt><dd><span class="choice">Postgres + Apache AGE</span> — graph extension on top of the primary DB. Fewer systems, weaker tooling, acceptable if the KG stays medium-sized.</dd>
+      <dt>Option C (start)</dt><dd>Model the KG as Postgres tables in W0/W1 — triples pattern <code>(subject, relation, object, confidence, source)</code> — and promote to Neo4j once traversal queries appear.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Recommendation is Option C at W0, with explicit commit to Neo4j (Option A) by W2 when the Country Knowledge Graph starts driving Copilot reasoning at scale. Confirm or counter-propose.</div>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Object storage · S3 (or equivalent)</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">AWS S3</span> with <span class="choice">KMS</span> for encryption</dd>
+      <dt>Why</dt><dd>Documents vault (passports, degrees, visa forms, contracts) needs encrypted object storage with fine-grained access, versioning, and region-pinning for GDPR residency.</dd>
+      <dt>Field encryption</dt><dd>Sensitive fields get an additional envelope encryption layer with user-scoped keys for defense-in-depth.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Cache / pub-sub · Redis</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">Redis</span> (ElastiCache or Upstash)</dd>
+      <dt>Why</dt><dd>Session store, rate limiting, Copilot short-term memory between turns, light pub/sub for in-process events.</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ==================== 08 AI ==================== -->
+<section id="ai">
+  <h2><span class="num">08 — AI &amp; LLM orchestration</span>The Copilot stack.</h2>
+
+  <p class="section-lede">
+    The Copilot is the product&rsquo;s main interface. Its quality depends less on the model and more on the retrieval, tool use, and guardrails built around it.
+  </p>
+
+  <div class="layer">
+    <header>
+      <h3>LLM provider · Anthropic Claude (primary)</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Primary</dt><dd><span class="choice">Anthropic Claude</span> — Opus 4.x for complex reasoning (plan generation, financial simulation explanation), Sonnet 4.x for conversation, Haiku for quick utility tasks.</dd>
+      <dt>Abstraction</dt><dd>All LLM calls go through a <b>provider interface</b>. We never import Anthropic&rsquo;s SDK directly from business logic. This lets us add OpenAI / Gemini / self-hosted fallbacks without touching callers.</dd>
+      <dt>Prompt caching</dt><dd>Critical for cost. The Country Knowledge Graph subset + user twin snapshot are long prefixes — cache them on every Copilot turn.</dd>
+      <dt>Tool use</dt><dd>The Copilot calls defined tools: <code>get_user_twin</code>, <code>search_jobs</code>, <code>simulate_financials</code>, <code>generate_plan</code>, <code>book_service</code>, <code>validate_document</code>, etc. Tool schemas are shared with the OpenAPI spec.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Commit to a primary provider for launch (Anthropic recommended), plus a policy on fallbacks and data-residency implications of the provider choice.</div>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Retrieval · RAG over Twin + KG + docs</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Sources</dt><dd>(1) User Digital Twin state; (2) Country Knowledge Graph facts relevant to the user&rsquo;s corridor; (3) vectorised document snippets (e.g. visa rules, tax guides); (4) flywheel-learned statistics.</dd>
+      <dt>Ranking</dt><dd>A domain-aware ranker combines semantic similarity (pgvector) with relevance features (country match, recency, source trust score).</dd>
+      <dt>Grounding</dt><dd>Every Copilot statement cites the source(s) retrieved. A response without citations is a bug.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Evals &amp; guardrails</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Evals</dt><dd>A versioned eval set per Copilot capability (job match explanation, financial simulation, document validation reasoning). Every prompt / model / tool change runs the suite in CI.</dd>
+      <dt>Guardrails</dt><dd>Output validators: schema validation on structured outputs; refusal for out-of-scope questions; PII detection; jurisdiction-sensitive content filters.</dd>
+      <dt>Observability</dt><dd>Every Copilot turn logs: user input, retrieved context, tools called, model + prompt version, token usage, response, any refusals. Traced end-to-end.</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ==================== 09 WORKFLOW ==================== -->
+<section id="workflow">
+  <h2><span class="num">09 — Workflow orchestration</span>For plans that live for months.</h2>
+
+  <div class="layer">
+    <header>
+      <h3>Workflow engine · Temporal</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">Temporal</span> (self-hosted OSS or Temporal Cloud)</dd>
+      <dt>Why</dt><dd>A relocation plan is a multi-month workflow with dozens of tasks, human waits, retries, and timer-driven alerts (document expiry, visa deadlines). Temporal provides durable execution — the workflow survives deploys, restarts, and infrastructure churn. Celery / simple queues cannot do this well.</dd>
+      <dt>What runs in Temporal</dt><dd>Every long-running flow: relocation plan execution, document expiry monitoring, escrow state machines, KYC callbacks, scheduled flywheel jobs.</dd>
+      <dt>Alternatives considered</dt><dd><b>Celery + outbox</b> — possible but we&rsquo;d rebuild 30% of Temporal. <b>AWS Step Functions</b> — locks us to AWS; weaker local dev. <b>Inngest</b> — newer, less proven at enterprise scale.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Self-hosted Temporal (more control, more ops) vs Temporal Cloud (managed, straightforward cost). Recommendation: Temporal Cloud until volume justifies self-hosting.</div>
+  </div>
+</section>
+
+<!-- ==================== 10 PAYMENTS ==================== -->
+<section id="pay">
+  <h2><span class="num">10 — Payments &amp; escrow</span>The most regulated piece of the stack.</h2>
+
+  <div class="layer">
+    <header>
+      <h3>Payments · Stripe + Stripe Connect</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Subscriptions</dt><dd><span class="choice">Stripe Billing</span> — $100/yr base, premium tiers, corporate seat licenses.</dd>
+      <dt>Escrow</dt><dd><span class="choice">Stripe Connect</span> with <b>separate charges and transfers</b> — funds held on platform, released to partner on fulfilment confirmation.</dd>
+      <dt>Multi-currency</dt><dd>Users pay in their local currency; partners receive in theirs. Stripe handles FX; we surface the spread transparently.</dd>
+      <dt>Tax</dt><dd>Stripe Tax for VAT / GST / sales tax compliance.</dd>
+      <dt>Regulatory</dt><dd>Escrow licensing varies per jurisdiction — Stripe Connect handles much of this via its Connect account model, but we need legal confirmation per launch country.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Stripe Connect model: <b>Standard</b> (partner onboards with Stripe directly, simpler for us), <b>Express</b> (branded flow, more control), or <b>Custom</b> (full control, most compliance burden). Recommendation: <b>Express</b>.</div>
+  </div>
+</section>
+
+<!-- ==================== 11 AUTH / KYC ==================== -->
+<section id="auth">
+  <h2><span class="num">11 — Auth &amp; identity</span>Who signs in, and are they who they say.</h2>
+
+  <div class="layer">
+    <header>
+      <h3>Auth · Clerk or Auth0</h3>
+      <div class="status"><span class="tag open">Decide</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Needs</dt><dd>Email/password + passwordless + social; <b>SSO/SAML</b> for Corporate; <b>MFA</b> for Admin Console; session management; organisation model (Corporate accounts with multiple users).</dd>
+      <dt>Option A</dt><dd><span class="choice">Clerk</span> — great DX, fast to integrate, organisations built in, reasonable cost at scale.</dd>
+      <dt>Option B</dt><dd><span class="choice">Auth0</span> — enterprise-grade, better for complex SSO requirements, higher cost.</dd>
+      <dt>Option C</dt><dd><span class="choice">Supabase Auth</span> or self-hosted Keycloak — cheaper, more ops burden.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Pick one. Recommendation: <b>Clerk</b> for W0–W4 velocity; reassess at W5 if enterprise SSO requirements explode.</div>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>KYC &amp; KYB · Persona / Onfido / Sumsub</h3>
+      <div class="status"><span class="tag open">Decide</span></div>
+    </header>
+    <dl class="kv">
+      <dt>User KYC</dt><dd>Light-touch for B2C consumers; heavier for premium + corporate.</dd>
+      <dt>Partner KYB</dt><dd>Business registration, licence documents, beneficial owner checks, sanctions screening. Non-negotiable before any partner can list.</dd>
+      <dt>Employer verification</dt><dd>Lighter than partner KYB but verified before jobs can be posted.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> One vendor for user + partner + employer, or best-of-breed. Recommendation: <b>Persona</b> for its workflow flexibility (you can script different verification flows per entity type).</div>
+  </div>
+</section>
+
+<!-- ==================== 12 OPS ==================== -->
+<section id="obs">
+  <h2><span class="num">12 — Observability, security, compliance</span>How we know the platform is healthy and safe.</h2>
+
+  <div class="layer">
+    <header>
+      <h3>Observability · OpenTelemetry + Datadog (or Honeycomb)</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Traces</dt><dd>OpenTelemetry end-to-end. A single Copilot turn traces from the frontend click, through FastAPI, through tool calls, through the LLM provider, back through database queries, and out to the user.</dd>
+      <dt>Logs</dt><dd>Structured JSON; every log line carries trace + tenant + user context.</dd>
+      <dt>Metrics</dt><dd>Business metrics alongside infra: time-to-first-token, tool-call success rate, escrow release latency, trust score distribution.</dd>
+      <dt>Error tracking</dt><dd><span class="choice">Sentry</span> for both frontend and backend exceptions.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Security posture</h3>
+      <div class="status"><span class="tag nnfr">NFR</span></div>
+    </header>
+    <ul>
+      <li><b>Least privilege</b> across IAM and DB roles; no shared secrets outside of a vault (AWS Secrets Manager or Doppler).</li>
+      <li><b>Encryption at rest</b> via KMS for DB, S3, backups; <b>TLS 1.3</b> everywhere in flight.</li>
+      <li><b>Field-level encryption</b> for PII and financial data in the DB.</li>
+      <li><b>Audit logs</b> for every trust-critical action; append-only, retained per policy.</li>
+      <li><b>Dependency + container scanning</b> in CI (Snyk, Dependabot, Trivy).</li>
+      <li><b>Pen test cadence</b> — annual external at minimum; scoped per launch corridor.</li>
+      <li><b>SOC2 readiness</b> — designed in from W0; certification pursued at W5+ when enterprise deals require it.</li>
+    </ul>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>GDPR tooling</h3>
+      <div class="status"><span class="tag nnfr">NFR</span></div>
+    </header>
+    <ul>
+      <li>Consent management surface in the Consumer App; granular consent per processor.</li>
+      <li>DSAR endpoint: machine-generated export of all user data on request.</li>
+      <li>Right-to-be-forgotten: soft-delete with cryptographic erase of user-scoped encryption keys, hard-delete on retention expiry.</li>
+      <li>Sub-processor register kept up to date as vendors are added.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== 13 INFRA ==================== -->
+<section id="infra">
+  <h2><span class="num">13 — Infrastructure &amp; delivery</span>How it runs and how it ships.</h2>
+
+  <div class="layer">
+    <header>
+      <h3>Cloud · AWS (proposed) or GCP</h3>
+      <div class="status"><span class="tag open">Decide</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Proposal</dt><dd><span class="choice">AWS</span> — breadth of services, KMS, SES, RDS/Aurora, ECS, S3, multi-region maturity.</dd>
+      <dt>Alternative</dt><dd><span class="choice">GCP</span> — stronger AI tooling (Vertex), cleaner BigQuery for warehousing. Viable if the team is more AI-native.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Cloud choice locks a lot of other decisions. Recommendation: AWS.</div>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Runtime · ECS Fargate (simpler) or EKS</h3>
+      <div class="status"><span class="tag open">Decide</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Proposal</dt><dd><span class="choice">ECS Fargate</span> at W0 — serverless containers, no cluster ops. Migrate to <b>EKS / Kubernetes</b> when complexity / scale demands it.</dd>
+      <dt>Why not K8s now</dt><dd>The team is small; we do not need the control; the ops burden is high. Two services are much easier on Fargate than on EKS.</dd>
+    </dl>
+    <div class="open-q"><b>Decision for backend team.</b> Confirm Fargate start, or argue for K8s from day one.</div>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>Infrastructure as code · Terraform</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">Terraform</span> with remote state (S3 + DynamoDB lock, or Terraform Cloud)</dd>
+      <dt>Why</dt><dd>Multi-cloud portable, huge ecosystem, standard. Pulumi is viable if the team prefers TypeScript but Terraform is the safer default.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>CDN / edge · Cloudflare</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">Cloudflare</span> — CDN, WAF, bot protection, DDoS</dd>
+      <dt>Why</dt><dd>The Public Site is a high-traffic SEO surface and the Consumer App is global. Cloudflare&rsquo;s edge network + security posture is the right default.</dd>
+    </dl>
+  </div>
+
+  <div class="layer">
+    <header>
+      <h3>CI/CD · GitHub Actions</h3>
+      <div class="status"><span class="tag propose">Propose</span></div>
+    </header>
+    <dl class="kv">
+      <dt>Choice</dt><dd><span class="choice">GitHub Actions</span>; preview deploys via Vercel (frontend) + ECS review environments (backend)</dd>
+      <dt>Practices</dt><dd>Trunk-based development; required reviews; automated tests + evals in every PR; semver-tagged container images; zero-downtime deploys.</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ==================== 14 WAVES ==================== -->
+<section id="waves">
+  <h2><span class="num">14 — Wave-by-wave introduction</span>How the stack comes online gradually.</h2>
+
+  <p class="section-lede">
+    We do not stand up the full stack on day one. Each wave adds only what the next set of user-facing capabilities needs, with the rest kept simple.
+  </p>
+
+  <table class="waves">
+    <thead><tr><th>W</th><th style="width:20%">Theme</th><th>Stack introduced</th></tr></thead>
+    <tbody>
+      <tr><td class="w">W0</td><td>Foundations</td><td>Next.js monorepo · FastAPI monolith · Postgres + pgvector · Redis · Auth (Clerk) · S3 · Sentry · OpenTelemetry skeleton · Terraform · GitHub Actions · LLM provider abstraction · Anthropic Claude · Stripe test mode.</td></tr>
+      <tr><td class="w">W1</td><td>Exploration</td><td>Public site SSR · Country KG as Postgres triples · Financial simulator service · Country Comparison · basic RAG pipeline.</td></tr>
+      <tr><td class="w">W2</td><td>Job loop</td><td>Employer Portal · job postings · AI ranker · application pipelines · Interview AI (Copilot capability) · SSE Copilot streaming.</td></tr>
+      <tr><td class="w">W3</td><td>Plan &amp; Docs</td><td>Temporal workflow engine · Documents vault (S3 with encryption) · Document AI validator · plan generation &amp; timeline · KG grows to Neo4j if needed.</td></tr>
+      <tr><td class="w">W4</td><td>Marketplace &amp; Pay</td><td>Partner Portal · KYB via Persona · Stripe Connect (Express) · escrow state machines · trust scoring.</td></tr>
+      <tr><td class="w">W5</td><td>Full Life Setup</td><td>Schools · banking · insurance · healthcare · utilities · community — partner category templates.</td></tr>
+      <tr><td class="w">W6</td><td>Family &amp; Student</td><td>Family Twin models · spouse career plan · child school matching · Student Edition Copilot variant.</td></tr>
+      <tr><td class="w">W7</td><td>B2B</td><td>Corporate Portal · SSO/SAML · row-level tenant isolation for corporates · aggregate dashboards · seat billing.</td></tr>
+      <tr><td class="w">W8</td><td>Scale</td><td>Event bus (Kafka) · warehouse + Flywheel ML jobs · multi-region · SOC2 certification · delay prediction models.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 15 DECISIONS ==================== -->
+<section id="decisions">
+  <h2><span class="num">15 — Open decisions for the backend team</span>The short list the first meeting should close.</h2>
+
+  <p class="section-lede">
+    Everything else in this document is defaulted. These ten decisions need an owner and a dated answer before W0 starts.
+  </p>
+
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:28%">Decision</th><th>Our proposal</th><th style="width:16%">Owner</th></tr></thead>
+    <tbody>
+      <tr><td>01</td><td>Architectural style at W0</td><td>Modular monolith in FastAPI; explicit internal module boundaries.</td><td>Backend lead</td></tr>
+      <tr><td>02</td><td>Cloud provider</td><td>AWS; alternative GCP considered and rejected.</td><td>Backend lead + Founder</td></tr>
+      <tr><td>03</td><td>Container runtime</td><td>ECS Fargate at W0, revisit at W4.</td><td>Backend lead</td></tr>
+      <tr><td>04</td><td>Knowledge Graph engine</td><td>Postgres triples at W0 → Neo4j by W3.</td><td>Backend lead + AI lead</td></tr>
+      <tr><td>05</td><td>Auth provider</td><td>Clerk at W0–W4.</td><td>Backend lead</td></tr>
+      <tr><td>06</td><td>KYC/KYB vendor</td><td>Persona.</td><td>Backend lead + Legal</td></tr>
+      <tr><td>07</td><td>LLM primary provider</td><td>Anthropic Claude, abstracted behind a provider interface.</td><td>AI lead</td></tr>
+      <tr><td>08</td><td>Stripe Connect model</td><td>Express.</td><td>Backend lead + Finance</td></tr>
+      <tr><td>09</td><td>Multi-tenancy model</td><td>Row-level with <code>tenant_id</code> + Postgres RLS.</td><td>Backend lead</td></tr>
+      <tr><td>10</td><td>Data residency regions at launch</td><td>1 region for W0–W4 (likely EU or US); multi-region from W8.</td><td>Backend lead + Legal</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ochre">
+    <b>Format of the answers.</b> For each decision, we want: the chosen option, a one-paragraph rationale, the expected impact on other layers, and any caveats. Anything not accepted should come with a counter-proposal, not just a rejection.
+  </div>
+</section>
+
+<!-- ==================== 16 HANDOFF ==================== -->
+<section id="handoff">
+  <h2><span class="num">16 — The handoff package</span>What design sends, what backend returns.</h2>
+
+  <h3>What Design is handing over</h3>
+  <ol>
+    <li>This document (<code>tech-stack.html</code>).</li>
+    <li>The architecture document (<code>architecture.html</code>).</li>
+    <li>The handbook (<code>handbook.html</code>) for new-hire onboarding.</li>
+    <li>The portal flows (<code>portal-flows.html</code>) — IA, user flows, journey map.</li>
+    <li>The mapping document (<code>mapping.html</code>) — personas × portals × roles.</li>
+    <li>The SOW itself (<code>Glimnmora Relocate_SOW.docx</code>) — contract source of truth.</li>
+    <li>Figma files: design system, per-portal prototypes (delivered wave by wave).</li>
+  </ol>
+
+  <h3>What we need back from Backend</h3>
+  <ol>
+    <li>Written responses to the ten open decisions in section 15.</li>
+    <li>A target repository structure (monorepo layout proposal).</li>
+    <li>An initial OpenAPI skeleton for W0 (auth + user + twin endpoints) so frontend can generate TypeScript clients and start building against mocks.</li>
+    <li>A development-environment runbook: how to stand up the stack locally, seed the KG, seed a test user, run evals.</li>
+    <li>A first-pass estimate of W0 scope in weeks, with explicit dependencies and risks.</li>
+  </ol>
+
+  <h3>Working cadence proposal</h3>
+  <ul>
+    <li><b>Weekly design ↔ backend sync</b> during W0–W2 while contracts stabilise.</li>
+    <li><b>Design leads the portal UX</b>; backend reviews for API feasibility before designs are finalised.</li>
+    <li><b>Backend owns the API contract</b>; design consumes via generated types. No hand-coded types on the frontend.</li>
+    <li><b>Figma + OpenAPI are the two sources of truth</b> — one for what the user sees, one for what the server promises.</li>
+  </ul>
+
+  <div class="callout indigo">
+    <b>The posture of this handoff.</b> Nothing in this document is written in stone. It represents design&rsquo;s best synthesis of the SOW, the reference architecture, and current industry defaults. Backend engineers are expected to push back, substitute, and refine — and whatever the final stack looks like, it will have their name on it, not ours.
+  </div>
+</section>
+
+<footer>
+  © Glimmora · Technical Stack Proposal · v0.1 · 2026-04-22 · Draft for backend team review
+</footer>
+
+</div>
+</body>
+</html>

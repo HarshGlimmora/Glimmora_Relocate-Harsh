@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --paper: 45 50% 99%;
+    --background: 45 50% 99%;
+    --foreground: 230 28% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 230 28% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 230 28% 9%;
+    --border: 228 17% 86%;
+    --input: 228 17% 86%;
+    --ring: 227 45% 44%;
+    --muted: 228 17% 94%;
+    --muted-foreground: 229 11% 39%;
+    --primary: 227 45% 44%;
+    --primary-foreground: 45 50% 99%;
+    --secondary: 228 17% 94%;
+    --secondary-foreground: 230 28% 9%;
+    --accent: 228 17% 94%;
+    --accent-foreground: 230 28% 9%;
+    --destructive: 353 73% 51%;
+    --destructive-foreground: 45 50% 99%;
+    --radius: 0.625rem;
+  }
+
+  * { @apply border-border; }
+
+  html, body {
+    @apply bg-background text-foreground;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-sans text-base;
+    line-height: 1.55;
+    letter-spacing: -0.005em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+    color: inherit;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 999px; border: 2px solid hsl(var(--paper)); }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring) / 0.55);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  input, textarea, select { @apply font-sans; }
+}
+
+@layer components {
+  .mono-label {
+    @apply font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-500;
+    font-weight: 500;
+  }
+
+  .soft-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(15, 20, 40, 0.06);
+    box-shadow: 0 1px 3px rgba(15, 20, 40, 0.04);
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(100px);
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .btn-primary {
+    background: #0F1428;
+    color: #FDFCF9;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-primary:hover {
+    background: #171F41;
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: #11131E;
+    border: 1px solid rgba(15, 20, 40, 0.12);
+    transition: all 0.2s ease;
+  }
+  .btn-ghost:hover {
+    background: rgba(15, 20, 40, 0.04);
+    border-color: rgba(15, 20, 40, 0.2);
+  }
+
+  .reveal {
+    animation: revealUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes revealUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pulse-dot {
+    position: relative;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.3;
+    animation: pulseDot 2s ease-out infinite;
+  }
+  @keyframes pulseDot {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+}

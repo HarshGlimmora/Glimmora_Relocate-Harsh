@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glimmora Relocate — Portal Flows &amp; Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --ink:#0F1222;
+    --ink-2:#2B2E44;
+    --paper:#FAF7F2;
+    --paper-2:#F2EEE6;
+    --line:#E4DDD1;
+    --rule:#D6CCBB;
+    --slate:#5E6379;
+
+    /* portal palette */
+    --consumer:#B3542A;      --consumer-soft:#F3DAC7;
+    --employer:#B48A2C;      --employer-soft:#F4E8C7;
+    --partner:#6B3E8A;       --partner-soft:#EADDF2;
+    --corporate:#2F7D66;     --corporate-soft:#DBEDE6;
+    --admin:#3A3F7A;         --admin-soft:#E2E3F2;
+    --public:#5E6379;        --public-soft:#E8E4DC;
+
+    --shadow: 0 1px 2px rgba(15,18,34,.05), 0 8px 24px rgba(15,18,34,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;
+    font-size:16px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:56px 40px 140px}
+
+  /* ---------- Nav ---------- */
+  nav.toc{
+    position:sticky;top:0;
+    background:rgba(250,247,242,0.92);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--rule);
+    z-index:10;
+    margin:-56px -40px 56px;
+    padding:14px 40px;
+  }
+  nav.toc .toc-inner{
+    max-width:1180px;margin:0 auto;
+    display:flex;gap:4px;flex-wrap:wrap;align-items:center;
+    font-family:"JetBrains Mono",monospace;
+    font-size:11.5px;letter-spacing:.08em;
+  }
+  nav.toc .brand{
+    color:var(--ink);font-weight:600;letter-spacing:.18em;
+    margin-right:18px;text-transform:uppercase;
+  }
+  nav.toc a{
+    color:var(--slate);padding:4px 8px;border-radius:4px;
+    text-transform:uppercase;text-decoration:none;
+  }
+  nav.toc a:hover{background:var(--paper-2);color:var(--ink)}
+
+  /* ---------- Typography ---------- */
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--consumer);margin-bottom:18px;
+  }
+  h1{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:500;
+    font-size:clamp(44px,5.8vw,70px);
+    line-height:1.04;letter-spacing:-.025em;
+    margin:0 0 20px;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--consumer)}
+  .lede{
+    font-family:"Fraunces",Georgia,serif;
+    font-size:22px;font-weight:400;
+    color:var(--ink-2);line-height:1.5;
+    max-width:70ch;margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;gap:40px;flex-wrap:wrap;
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;
+  }
+  .meta-row span b{color:var(--ink);font-weight:500}
+
+  header.cover{
+    border-bottom:1px solid var(--rule);
+    padding-bottom:56px;margin-bottom:56px;
+  }
+
+  h2{
+    font-family:"Fraunces",Georgia,serif;font-weight:500;
+    font-size:38px;letter-spacing:-.02em;line-height:1.12;
+    margin:104px 0 8px;
+  }
+  h2 .num{
+    display:block;font-family:"JetBrains Mono",monospace;
+    font-size:12px;letter-spacing:.22em;color:var(--consumer);
+    margin-bottom:10px;font-weight:500;
+  }
+  h3{
+    font-family:"Fraunces",Georgia,serif;font-weight:500;
+    font-size:26px;letter-spacing:-.01em;
+    margin:56px 0 12px;line-height:1.2;
+  }
+  h4{
+    font-family:"Inter",sans-serif;font-weight:600;
+    font-size:12.5px;text-transform:uppercase;
+    letter-spacing:.14em;color:var(--ink-2);
+    margin:28px 0 10px;
+  }
+  p{margin:0 0 16px;max-width:74ch}
+  a{color:var(--consumer);text-decoration:none;border-bottom:1px solid var(--consumer-soft)}
+  a:hover{border-bottom-color:var(--consumer)}
+  code{
+    font-family:"JetBrains Mono",monospace;font-size:.88em;
+    background:var(--paper-2);padding:1px 6px;border-radius:4px;
+  }
+
+  .section-lede{
+    font-family:"Fraunces",Georgia,serif;font-style:italic;
+    font-size:20px;color:var(--ink-2);max-width:64ch;
+    margin:0 0 28px;line-height:1.5;
+  }
+
+  /* ---------- Portal header ---------- */
+  .portal-header{
+    padding:36px 40px;
+    border-radius:16px;
+    margin:40px 0 28px;
+    display:flex;gap:28px;align-items:center;
+    border:1px solid var(--line);
+    box-shadow:var(--shadow);
+    background:#fff;
+  }
+  .portal-header .badge{
+    width:72px;height:72px;border-radius:16px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Fraunces",serif;font-size:36px;font-weight:500;
+    flex:0 0 72px;
+  }
+  .portal-header .meta{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--slate);
+    margin-bottom:6px;
+  }
+  .portal-header h2{margin:0 0 6px;font-size:34px}
+  .portal-header h2 .num{display:none}
+  .portal-header p{margin:0;color:var(--ink-2);font-size:15px;max-width:70ch}
+
+  .portal-header.consumer{border-left:6px solid var(--consumer)}
+  .portal-header.consumer .badge{background:var(--consumer-soft);color:var(--consumer)}
+  .portal-header.employer{border-left:6px solid var(--employer)}
+  .portal-header.employer .badge{background:var(--employer-soft);color:var(--employer)}
+  .portal-header.partner{border-left:6px solid var(--partner)}
+  .portal-header.partner .badge{background:var(--partner-soft);color:var(--partner)}
+  .portal-header.corporate{border-left:6px solid var(--corporate)}
+  .portal-header.corporate .badge{background:var(--corporate-soft);color:var(--corporate)}
+  .portal-header.admin{border-left:6px solid var(--admin)}
+  .portal-header.admin .badge{background:var(--admin-soft);color:var(--admin)}
+  .portal-header.public{border-left:6px solid var(--public)}
+  .portal-header.public .badge{background:var(--public-soft);color:var(--public)}
+
+  /* ---------- IA sitemap ---------- */
+  .sitemap{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:28px;box-shadow:var(--shadow);margin:20px 0 36px;
+  }
+  .sitemap-title{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--slate);margin-bottom:18px;
+  }
+  .sitemap-root{
+    text-align:center;padding:14px 20px;border-radius:10px;
+    background:var(--paper-2);border:1px solid var(--rule);
+    font-family:"Fraunces",serif;font-size:20px;font-weight:500;
+    display:inline-block;margin:0 auto 20px;
+  }
+  .sitemap-center{text-align:center;margin-bottom:20px}
+  .sitemap-cols{
+    display:grid;gap:16px;
+  }
+  .sitemap-cols.n4{grid-template-columns:repeat(4,1fr)}
+  .sitemap-cols.n3{grid-template-columns:repeat(3,1fr)}
+  .sitemap-cols.n2{grid-template-columns:repeat(2,1fr)}
+  @media (max-width:900px){
+    .sitemap-cols.n4,.sitemap-cols.n3,.sitemap-cols.n2{grid-template-columns:1fr}
+  }
+  .sm-group{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:10px;padding:16px 18px;
+  }
+  .sm-group .head{
+    font-family:"JetBrains Mono",monospace;
+    font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--slate);margin-bottom:10px;
+  }
+  .sm-group ul{list-style:none;padding:0;margin:0;font-size:14px}
+  .sm-group li{
+    padding:5px 0 5px 16px;position:relative;color:var(--ink-2);
+    border-top:1px dashed var(--line);
+  }
+  .sm-group li:first-child{border-top:none}
+  .sm-group li::before{
+    content:"";position:absolute;left:0;top:13px;
+    width:6px;height:6px;border-radius:2px;background:var(--consumer);
+  }
+  .sm-group.consumer li::before{background:var(--consumer)}
+  .sm-group.employer li::before{background:var(--employer)}
+  .sm-group.partner li::before{background:var(--partner)}
+  .sm-group.corporate li::before{background:var(--corporate)}
+  .sm-group.admin li::before{background:var(--admin)}
+  .sm-group.public li::before{background:var(--public)}
+  .sm-group li b{color:var(--ink);font-weight:500}
+  .sm-group li small{display:block;color:var(--slate);font-size:12px;padding-top:2px}
+
+  /* ---------- Diagram container ---------- */
+  .diagram{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:28px;margin:20px 0 28px;box-shadow:var(--shadow);overflow-x:auto;
+  }
+  .diagram-title{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--slate);
+    margin-bottom:16px;
+  }
+  .diagram svg{max-width:100%;height:auto;display:block;margin:0 auto}
+
+  /* ---------- Walkthrough (stages) ---------- */
+  .stages{margin:20px 0 36px;counter-reset:stg}
+  .stages .stg{
+    counter-increment:stg;
+    display:grid;grid-template-columns:80px 1fr;gap:20px;
+    padding:18px 0;border-top:1px solid var(--line);
+  }
+  .stages .stg:first-child{border-top:none}
+  .stages .stg .num{
+    font-family:"Fraunces",serif;font-size:36px;font-weight:500;
+    color:var(--consumer);line-height:1;letter-spacing:-.02em;
+  }
+  .stages.employer .stg .num{color:var(--employer)}
+  .stages.partner .stg .num{color:var(--partner)}
+  .stages.corporate .stg .num{color:var(--corporate)}
+  .stages.admin .stg .num{color:var(--admin)}
+  .stages.public .stg .num{color:var(--public)}
+  .stages .stg h4{
+    margin:0 0 4px;font-family:"Fraunces",serif;font-size:19px;
+    text-transform:none;letter-spacing:-.005em;color:var(--ink);
+    font-weight:500;
+  }
+  .stages .stg p{margin:0 0 6px;font-size:14.5px;color:var(--ink-2)}
+  .stages .stg .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+  /* ---------- Pills ---------- */
+  .pill{
+    display:inline-flex;align-items:center;
+    font-family:"JetBrains Mono",monospace;
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    padding:2px 8px;border-radius:999px;
+    background:var(--paper-2);color:var(--ink-2);
+    border:1px solid var(--line);
+  }
+  .pill.c{background:var(--consumer-soft);color:var(--consumer);border-color:var(--consumer-soft)}
+  .pill.e{background:var(--employer-soft);color:var(--employer);border-color:var(--employer-soft)}
+  .pill.p{background:var(--partner-soft);color:var(--partner);border-color:var(--partner-soft)}
+  .pill.co{background:var(--corporate-soft);color:var(--corporate);border-color:var(--corporate-soft)}
+  .pill.a{background:var(--admin-soft);color:var(--admin);border-color:var(--admin-soft)}
+  .pill.pu{background:var(--public-soft);color:var(--public);border-color:var(--public-soft)}
+
+  /* ---------- Callout ---------- */
+  .callout{
+    background:#fff;border:1px solid var(--line);
+    border-left:3px solid var(--consumer);
+    padding:18px 22px;border-radius:0 10px 10px 0;
+    margin:24px 0;color:var(--ink-2);font-size:15px;
+    box-shadow:var(--shadow);
+  }
+  .callout b{color:var(--ink)}
+  .callout.employer{border-left-color:var(--employer)}
+  .callout.partner{border-left-color:var(--partner)}
+  .callout.corporate{border-left-color:var(--corporate)}
+  .callout.admin{border-left-color:var(--admin)}
+  .callout.public{border-left-color:var(--public)}
+
+  /* ---------- Cross-portal IO box ---------- */
+  .io{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;
+    margin:20px 0 40px;
+  }
+  @media (max-width:900px){.io{grid-template-columns:1fr}}
+  .io .box{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:18px 22px;box-shadow:var(--shadow);
+  }
+  .io .box.in{border-top:3px solid var(--corporate)}
+  .io .box.out{border-top:3px solid var(--partner)}
+  .io .box .label{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--slate);
+    margin-bottom:10px;
+  }
+  .io .box ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+  .io .box li{margin-bottom:6px}
+  .io .box li b{color:var(--ink);font-weight:500}
+
+  /* ---------- Journey map ---------- */
+  .jmap{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:4px;box-shadow:var(--shadow);margin:24px 0;
+    overflow-x:auto;
+  }
+  .jmap table{
+    width:100%;min-width:1100px;border-collapse:collapse;font-size:13.5px;
+  }
+  .jmap th,.jmap td{
+    text-align:left;vertical-align:top;padding:12px 14px;
+    border-right:1px solid var(--line);
+  }
+  .jmap tr+tr th,.jmap tr+tr td{border-top:1px solid var(--line)}
+  .jmap thead th{
+    background:var(--paper-2);
+    font-family:"Fraunces",serif;font-size:15px;font-weight:500;
+    color:var(--ink);letter-spacing:-.005em;
+  }
+  .jmap thead th small{
+    display:block;font-family:"JetBrains Mono",monospace;
+    font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--slate);font-weight:400;margin-top:2px;
+  }
+  .jmap tbody th{
+    background:#fff;
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    letter-spacing:.14em;text-transform:uppercase;
+    color:var(--slate);width:150px;font-weight:500;
+  }
+  .jmap td{color:var(--ink-2)}
+  .jmap .emo{font-size:16px;letter-spacing:2px}
+  .jmap .portal-chip{
+    display:inline-block;padding:2px 8px;border-radius:999px;
+    font-family:"JetBrains Mono",monospace;font-size:10px;
+    letter-spacing:.1em;text-transform:uppercase;
+    background:var(--paper-2);color:var(--ink-2);
+    margin:2px 3px 2px 0;border:1px solid var(--line);
+  }
+  .portal-chip.consumer{background:var(--consumer-soft);color:var(--consumer);border-color:var(--consumer-soft)}
+  .portal-chip.employer{background:var(--employer-soft);color:var(--employer);border-color:var(--employer-soft)}
+  .portal-chip.partner{background:var(--partner-soft);color:var(--partner);border-color:var(--partner-soft)}
+  .portal-chip.corporate{background:var(--corporate-soft);color:var(--corporate);border-color:var(--corporate-soft)}
+  .portal-chip.admin{background:var(--admin-soft);color:var(--admin);border-color:var(--admin-soft)}
+  .portal-chip.public{background:var(--public-soft);color:var(--public);border-color:var(--public-soft)}
+
+  /* ---------- Walk ---------- */
+  .walk{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:32px 36px;box-shadow:var(--shadow);margin:24px 0;
+  }
+  .walk h3{margin-top:32px}
+  .walk h3:first-child{margin-top:0}
+  .walk .meta{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    color:var(--slate);letter-spacing:.14em;text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .walk p{max-width:68ch}
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:120px;padding-top:28px;
+    border-top:1px solid var(--rule);
+    font-size:13px;color:var(--slate);
+    font-family:"JetBrains Mono",monospace;letter-spacing:.05em;
+  }
+
+  @media (max-width:900px){
+    .wrap{padding:40px 22px 80px}
+    nav.toc{margin:-40px -22px 40px;padding:12px 22px}
+    .portal-header{padding:24px;gap:20px}
+    .portal-header .badge{width:56px;height:56px;font-size:28px;flex-basis:56px}
+    .stages .stg{grid-template-columns:56px 1fr}
+  }
+  @media print{
+    nav.toc{display:none}
+    body{font-size:12px}
+    h2,.portal-header{page-break-before:always}
+    .diagram{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= NAV ================= -->
+<nav class="toc">
+  <div class="toc-inner">
+    <span class="brand">Portal Flows</span>
+    <a href="#overview">Overview</a>
+    <a href="#ia">IA</a>
+    <a href="#interconnect">Interconnect</a>
+    <a href="#consumer">Consumer</a>
+    <a href="#employer">Employer</a>
+    <a href="#partner">Partner</a>
+    <a href="#corporate">Corporate</a>
+    <a href="#admin">Admin</a>
+    <a href="#public">Public</a>
+    <a href="#journey">Journey Map</a>
+    <a href="#walkthrough">Walkthrough</a>
+  </div>
+</nav>
+
+<!-- ================= COVER ================= -->
+<header class="cover">
+  <div class="eyebrow">Reference · v0.1 · 2026-04-22</div>
+  <h1>Glimmora Relocate<em>™</em><br/>Portal flows &amp; user journey.</h1>
+  <p class="lede">
+    One document. For each of the six portals: a clean information architecture, a start-to-end user flow, and a prose walkthrough of what happens at every step. Followed by a cross-portal journey map and a full narrative walkthrough of a real user moving through the whole platform.
+  </p>
+  <div class="meta-row">
+    <span><b>Portals</b> &nbsp; 6</span>
+    <span><b>Flows</b> &nbsp; 8 (Consumer app has 3 sub-flows)</span>
+    <span><b>Companion</b> &nbsp; <code>architecture.html</code> · <code>handbook.html</code></span>
+  </div>
+</header>
+
+<!-- ================= 01 OVERVIEW ================= -->
+<section id="overview">
+  <h2><span class="num">01 — Overview</span>The six portals and how to read this document.</h2>
+
+  <p class="section-lede">
+    Each portal is a different door into the same platform. Below is a quick reminder of who walks through which door, and why.
+  </p>
+
+  <div class="sitemap-cols n3" style="margin:24px 0 8px">
+    <div class="sm-group consumer">
+      <div class="head"><span class="pill c">Consumer</span></div>
+      <ul>
+        <li><b>For:</b> the Mover, Family, Student<small>The person moving abroad</small></li>
+        <li><b>Does:</b> full life journey<small>Job · plan · docs · bookings · arrival</small></li>
+      </ul>
+    </div>
+    <div class="sm-group employer">
+      <div class="head"><span class="pill e">Employer</span></div>
+      <ul>
+        <li><b>For:</b> hiring companies<small>Recruiters, HMs, interviewers</small></li>
+        <li><b>Does:</b> visa-aware hiring<small>Post · rank · interview · offer</small></li>
+      </ul>
+    </div>
+    <div class="sm-group partner">
+      <div class="head"><span class="pill p">Partner</span></div>
+      <ul>
+        <li><b>For:</b> service providers<small>Housing · schools · banks · insurers · local</small></li>
+        <li><b>Does:</b> supply side<small>Verify · list · fulfil · get paid</small></li>
+      </ul>
+    </div>
+    <div class="sm-group corporate">
+      <div class="head"><span class="pill co">Corporate</span></div>
+      <ul>
+        <li><b>For:</b> HR / Global Mobility<small>Relocating staff in bulk</small></li>
+        <li><b>Does:</b> B2B management<small>Seats · policies · dashboards</small></li>
+      </ul>
+    </div>
+    <div class="sm-group admin">
+      <div class="head"><span class="pill a">Admin</span></div>
+      <ul>
+        <li><b>For:</b> Glimmora Ops<small>Internal operations team</small></li>
+        <li><b>Does:</b> run the platform<small>Verify · curate · resolve · refund</small></li>
+      </ul>
+    </div>
+    <div class="sm-group public">
+      <div class="head"><span class="pill pu">Public</span></div>
+      <ul>
+        <li><b>For:</b> visitors<small>Pre-signup traffic</small></li>
+        <li><b>Does:</b> acquisition<small>SEO · tools · funnel</small></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>How this document is organised.</b> Section 02 is the master interconnection map. Sections 03–08 cover one portal each: IA first, then flow diagram, then stage-by-stage walkthrough, then what data it sends and receives. Section 09 is the full cross-portal journey map. Section 10 is the narrative walkthrough of a real user from first visit to settled life.
+  </div>
+</section>
+
+<!-- ================= 02 IA QUICK INDEX ================= -->
+<section id="ia">
+  <h2><span class="num">02 — Information Architecture</span>Where everything lives, at a glance.</h2>
+
+  <p class="section-lede">
+    Each portal has its own detailed IA in its section. The tile below is a summary of the top-level navigation of each surface, so you can see the whole platform in one view.
+  </p>
+
+  <div class="sitemap-cols n3">
+    <div class="sm-group consumer">
+      <div class="head"><span class="pill c">Consumer App</span></div>
+      <ul>
+        <li>Home · Copilot</li>
+        <li>Discover (Countries · Jobs)</li>
+        <li>My Plan (Timeline · Tasks)</li>
+        <li>Career (Apps · CV · Interview)</li>
+        <li>Life Setup (6 sub-areas)</li>
+        <li>Family</li>
+        <li>Finance</li>
+        <li>Documents</li>
+        <li>Marketplace</li>
+        <li>Culture &amp; Language</li>
+        <li>Messages</li>
+        <li>Profile · Twin</li>
+        <li>Billing</li>
+      </ul>
+    </div>
+    <div class="sm-group employer">
+      <div class="head"><span class="pill e">Employer Portal</span></div>
+      <ul>
+        <li>Dashboard</li>
+        <li>Jobs (Post · Active · Closed)</li>
+        <li>Candidates (Ranked · Shortlist)</li>
+        <li>Interviews</li>
+        <li>Offers</li>
+        <li>Company Profile</li>
+        <li>ATS Integrations</li>
+        <li>Team (roles)</li>
+        <li>Billing</li>
+      </ul>
+    </div>
+    <div class="sm-group partner">
+      <div class="head"><span class="pill p">Partner Portal</span></div>
+      <ul>
+        <li>Dashboard</li>
+        <li>Verification (KYB)</li>
+        <li>Listings · Inventory</li>
+        <li>Bookings &amp; Requests</li>
+        <li>Messages</li>
+        <li>SLAs &amp; Reviews</li>
+        <li>Payouts · Escrow</li>
+        <li>Team</li>
+        <li>Settings</li>
+      </ul>
+    </div>
+    <div class="sm-group corporate">
+      <div class="head"><span class="pill co">Corporate Portal</span></div>
+      <ul>
+        <li>Overview</li>
+        <li>Employees · Seats</li>
+        <li>Policies</li>
+        <li>Pipelines (by stage)</li>
+        <li>Reports</li>
+        <li>Approvals</li>
+        <li>Billing &amp; Contracts</li>
+        <li>Team</li>
+      </ul>
+    </div>
+    <div class="sm-group admin">
+      <div class="head"><span class="pill a">Admin Console</span></div>
+      <ul>
+        <li>Ops Dashboard</li>
+        <li>Partner Verification Queue</li>
+        <li>Trust &amp; Fraud</li>
+        <li>Country KG Studio</li>
+        <li>Users &amp; Support</li>
+        <li>Finance (Escrow · Refunds)</li>
+        <li>Feature Flags</li>
+        <li>Analytics</li>
+      </ul>
+    </div>
+    <div class="sm-group public">
+      <div class="head"><span class="pill pu">Public Site</span></div>
+      <ul>
+        <li>Home</li>
+        <li>Country Comparison</li>
+        <li>Salary Simulator</li>
+        <li>Guides · Blog</li>
+        <li>For Employers</li>
+        <li>For Partners</li>
+        <li>For Companies</li>
+        <li>Pricing</li>
+        <li>Sign Up · Log In</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 03 INTERCONNECT ================= -->
+<section id="interconnect">
+  <h2><span class="num">03 — Interconnection</span>How the six portals talk to one another.</h2>
+
+  <p class="section-lede">
+    No portal stands alone. Every action taken in one portal ripples into others through a shared core. This is the map of those ripples.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">Cross-portal event flow</div>
+    <pre class="mermaid">
+flowchart LR
+  classDef consumer  fill:#F3DAC7,stroke:#B3542A,color:#0F1222,stroke-width:1.5px
+  classDef employer  fill:#F4E8C7,stroke:#B48A2C,color:#0F1222,stroke-width:1.5px
+  classDef partner   fill:#EADDF2,stroke:#6B3E8A,color:#0F1222,stroke-width:1.5px
+  classDef corporate fill:#DBEDE6,stroke:#2F7D66,color:#0F1222,stroke-width:1.5px
+  classDef admin     fill:#E2E3F2,stroke:#3A3F7A,color:#0F1222,stroke-width:1.5px
+  classDef public    fill:#E8E4DC,stroke:#5E6379,color:#0F1222,stroke-width:1.5px
+  classDef core      fill:#FFFFFF,stroke:#0F1222,color:#0F1222,stroke-width:2px
+
+  PUB[Public Site]:::public
+  C[Consumer App]:::consumer
+  E[Employer Portal]:::employer
+  P[Partner Portal]:::partner
+  CO[Corporate Portal]:::corporate
+  A[Admin Console]:::admin
+
+  CORE((Shared Core<br/>Copilot · Twins · KG<br/>Workflow · Payments · Trust)):::core
+
+  PUB -->|sign up| C
+  C <-->|read + write| CORE
+  E <-->|jobs + candidates| CORE
+  P <-->|listings + bookings| CORE
+  CO <-->|seats + reports| CORE
+  A <-->|verify + curate| CORE
+
+  E -. job posted .-> C
+  C -. application .-> E
+  C -. booking .-> P
+  P -. fulfilment .-> C
+  CO -. invite .-> C
+  C -. milestones .-> CO
+  P -. onboard .-> A
+  A -. verified .-> P
+  A -. KG update .-> C
+    </pre>
+  </div>
+
+  <h3>Key cross-portal events</h3>
+  <div class="diagram">
+    <div class="diagram-title">Event sequence — discovery to settlement</div>
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant PUB as Public Site
+  participant C as Consumer App
+  participant E as Employer Portal
+  participant P as Partner Portal
+  participant A as Admin Console
+  participant CO as Corporate Portal
+
+  PUB->>C: User signs up
+  C->>C: Copilot builds Digital Twin
+  E->>C: Visa-aware jobs published
+  C->>E: Application submitted
+  E->>C: Offer accepted
+  C->>C: Relocation plan generated
+  C->>P: Booking request + escrow deposit
+  A->>P: Partner verified (gate)
+  P->>C: Service fulfilled
+  C->>P: Fulfilment confirmed -> escrow release
+  CO->>C: Invite employee (policy envelope)
+  C->>CO: Milestone events -> aggregate dashboard
+  A->>C: KG updated (visa rule · tax · cost)
+    </pre>
+  </div>
+
+  <div class="callout admin">
+    <b>Reading the interconnect.</b> Solid arrows are direct API calls through the shared Core. Dashed arrows are
+    events — something happening on one surface that surfaces on another. There is no direct portal-to-portal
+    communication; everything goes through the Core, which is why consistency and trust can be enforced in one place.
+  </div>
+</section>
+
+<!-- ================= 04 CONSUMER APP ================= -->
+<div class="portal-header consumer" id="consumer">
+  <div class="badge">C</div>
+  <div>
+    <div class="meta">Portal 01 · Consumer App</div>
+    <h2>The Consumer App</h2>
+    <p>The end-to-end product for Movers, Families, and Students. One of three personas signs up, meets the Copilot, and runs their whole journey here — from the first curious comparison to the day they are fully settled in the new country.</p>
+  </div>
+</div>
+
+<h3>4.1 · Information Architecture</h3>
+
+<div class="sitemap">
+  <div class="sitemap-title">Consumer App sitemap</div>
+  <div class="sitemap-center"><div class="sitemap-root">Consumer App · Home &amp; Copilot</div></div>
+
+  <div class="sitemap-cols n4">
+    <div class="sm-group consumer">
+      <div class="head">Discover</div>
+      <ul>
+        <li><b>Country Comparison</b><small>Job · cost · tax · lifestyle</small></li>
+        <li><b>Job Discovery</b><small>Visa-aware matches</small></li>
+        <li><b>Opportunity Feed</b><small>Copilot suggestions</small></li>
+      </ul>
+    </div>
+    <div class="sm-group consumer">
+      <div class="head">My Plan</div>
+      <ul>
+        <li><b>Timeline</b><small>Milestones · dates</small></li>
+        <li><b>Tasks</b><small>Dependencies · blockers</small></li>
+        <li><b>Readiness Scoreboard</b></li>
+      </ul>
+    </div>
+    <div class="sm-group consumer">
+      <div class="head">Career</div>
+      <ul>
+        <li><b>Applications</b></li>
+        <li><b>Resume &amp; Cover Letters</b></li>
+        <li><b>Interview AI</b></li>
+        <li><b>Offers &amp; Negotiation</b></li>
+      </ul>
+    </div>
+    <div class="sm-group consumer">
+      <div class="head">Life Setup</div>
+      <ul>
+        <li><b>Housing</b></li>
+        <li><b>Schools</b></li>
+        <li><b>Banking &amp; Insurance</b></li>
+        <li><b>Healthcare &amp; Fitness</b></li>
+        <li><b>Utilities &amp; Mobility</b></li>
+        <li><b>Community</b></li>
+      </ul>
+    </div>
+  </div>
+  <div class="sitemap-cols n4" style="margin-top:16px">
+    <div class="sm-group consumer">
+      <div class="head">Family</div>
+      <ul>
+        <li><b>Spouse Career</b></li>
+        <li><b>Children Adaptation</b></li>
+        <li><b>Community Match</b></li>
+      </ul>
+    </div>
+    <div class="sm-group consumer">
+      <div class="head">Finance</div>
+      <ul>
+        <li><b>Salary vs Cost Simulator</b></li>
+        <li><b>Tax &amp; Savings</b></li>
+        <li><b>FX &amp; Multi-currency</b></li>
+      </ul>
+    </div>
+    <div class="sm-group consumer">
+      <div class="head">Documents</div>
+      <ul>
+        <li><b>Dynamic Checklist</b></li>
+        <li><b>Vault &amp; Uploads</b></li>
+        <li><b>Validation</b></li>
+        <li><b>Auto Form-fill</b></li>
+      </ul>
+    </div>
+    <div class="sm-group consumer">
+      <div class="head">Account</div>
+      <ul>
+        <li><b>Profile &amp; Digital Twin</b></li>
+        <li><b>Marketplace</b></li>
+        <li><b>Culture &amp; Language</b></li>
+        <li><b>Messages</b></li>
+        <li><b>Billing &amp; Settings</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h3>4.2 · User Flow — Part A · Discovery → Offer</h3>
+<p>From landing on the app to holding a signed offer. This covers the first half of the user&rsquo;s time on the platform.</p>
+
+<div class="diagram">
+  <div class="diagram-title">Consumer flow — discovery through hiring</div>
+  <pre class="mermaid">
+flowchart TD
+  classDef start fill:#F3DAC7,stroke:#B3542A,color:#0F1222,stroke-width:2px
+  classDef step  fill:#FFFFFF,stroke:#2B2E44,color:#0F1222
+  classDef gate  fill:#FAF7F2,stroke:#B3542A,color:#0F1222,stroke-dasharray:3 3
+  classDef done  fill:#DBEDE6,stroke:#2F7D66,color:#0F1222,stroke-width:2px
+
+  S([Land on app]):::start
+  S --> A1[Sign up email or social]:::step
+  A1 --> A2{Which mode?}:::gate
+  A2 -->|Individual| B[Copilot intake]:::step
+  A2 -->|Family|     B
+  A2 -->|Student|    B
+  B --> B1[Capture: origin · target · skills · family · budget]:::step
+  B1 --> B2[(Digital Twin v0 created)]:::step
+
+  B2 --> C1[Explore · Country Comparison]:::step
+  B2 --> C2[Explore · Financial Simulator]:::step
+  B2 --> C3[Explore · Visa-aware Job Discovery]:::step
+
+  C1 --> D{Ready to commit?}:::gate
+  C2 --> D
+  C3 --> D
+  D -->|Not yet| C1
+  D -->|Yes|     E1[Subscribe 100 per year]:::step
+
+  E1 --> F1[Apply to jobs]:::step
+  F1 --> F2[Copilot tailors CV and cover letter]:::step
+  F2 --> F3[Submit application -> Employer Portal]:::step
+  F3 --> G{Shortlisted?}:::gate
+  G -->|No|  G1[Feedback to Readiness model]:::step
+  G1 --> C3
+  G -->|Yes| H1[Mock interview coaching]:::step
+  H1 --> H2[Live interview]:::step
+  H2 --> I{Offer?}:::gate
+  I -->|No|  G1
+  I -->|Yes| J1[Negotiation assist]:::step
+  J1 --> J2([Offer signed]):::done
+  </pre>
+</div>
+
+<div class="stages">
+  <div class="stg"><div class="num">01</div><div>
+    <h4>Land on the app</h4>
+    <p>Entry can be direct, from the public site, from an employer invite, or from a corporate HR invite. The shell of the Consumer App loads with an anonymous Copilot preview.</p>
+    <div class="tags"><span class="pill pu">Public → Consumer</span></div>
+  </div></div>
+  <div class="stg"><div class="num">02</div><div>
+    <h4>Sign up</h4>
+    <p>Email, Google, or Apple. Email verification is soft-gated — the user can continue to intake first. A minimal account record is created.</p>
+  </div></div>
+  <div class="stg"><div class="num">03</div><div>
+    <h4>Mode selection</h4>
+    <p>The user picks Individual, Family, or Student. This determines which Copilot intake script is loaded and which Twin schema is instantiated.</p>
+  </div></div>
+  <div class="stg"><div class="num">04</div><div>
+    <h4>Copilot intake conversation</h4>
+    <p>A short guided dialogue — not a form. The Copilot asks about origin country, target countries, profession and skills, family shape, passport and visa history, timeline, and budget. Each answer updates the Twin in real time.</p>
+    <div class="tags"><span class="pill">Copilot</span> <span class="pill">Twin</span></div>
+  </div></div>
+  <div class="stg"><div class="num">05</div><div>
+    <h4>Digital Twin v0 created</h4>
+    <p>At the end of intake, a v0 twin exists and is stored. From here on, every other feature reads and writes to this twin.</p>
+  </div></div>
+  <div class="stg"><div class="num">06</div><div>
+    <h4>Exploration (free)</h4>
+    <p>Three tools are open before subscription: country comparison, financial simulation, and visa-aware job discovery. The user can roam for as long as they want — the Copilot answers questions throughout.</p>
+  </div></div>
+  <div class="stg"><div class="num">07</div><div>
+    <h4>Commitment</h4>
+    <p>When the user is ready to turn exploration into execution, they subscribe at the base tier. This unlocks the document vault, plan execution, bookings, and the Marketplace.</p>
+    <div class="tags"><span class="pill">Billing</span></div>
+  </div></div>
+  <div class="stg"><div class="num">08</div><div>
+    <h4>Apply to jobs</h4>
+    <p>From Job Discovery, the user applies. The Copilot generates a tailored CV and cover letter from the twin. Applications cross the boundary into the Employer Portal.</p>
+    <div class="tags"><span class="pill c">Consumer</span><span class="pill e">Employer</span></div>
+  </div></div>
+  <div class="stg"><div class="num">09</div><div>
+    <h4>Interview prep &amp; live interview</h4>
+    <p>If shortlisted, the user runs mock interviews with the Copilot and then takes live interviews scheduled by the employer. Feedback at each step updates the readiness model.</p>
+  </div></div>
+  <div class="stg"><div class="num">10</div><div>
+    <h4>Offer &amp; acceptance</h4>
+    <p>On offer, the Copilot helps evaluate terms against the financial model and negotiate. Acceptance locks destination, salary, and start date into the Relocation Twin, which triggers the Plan flow (Part B).</p>
+  </div></div>
+</div>
+
+<h3>4.3 · User Flow — Part B · Plan, Docs, Bookings</h3>
+<p>From accepted offer to everything booked. This is where the Copilot becomes an execution engine.</p>
+
+<div class="diagram">
+  <div class="diagram-title">Consumer flow — execution phase</div>
+  <pre class="mermaid">
+flowchart TD
+  classDef start fill:#DBEDE6,stroke:#2F7D66,color:#0F1222,stroke-width:2px
+  classDef step  fill:#FFFFFF,stroke:#2B2E44,color:#0F1222
+  classDef io    fill:#EADDF2,stroke:#6B3E8A,color:#0F1222
+  classDef gate  fill:#FAF7F2,stroke:#B3542A,color:#0F1222,stroke-dasharray:3 3
+  classDef done  fill:#F3DAC7,stroke:#B3542A,color:#0F1222,stroke-width:2px
+
+  S([Offer signed]):::start
+  S --> P1[Job-Relocation Sync updates Twin]:::step
+  P1 --> P2[Workflow Orchestrator expands plan]:::step
+  P2 --> P3[Timeline + Milestones generated]:::step
+
+  P3 --> D1[Documents · dynamic checklist]:::step
+  D1 --> D2[Upload documents]:::step
+  D2 --> D3{AI validation passes?}:::gate
+  D3 -->|No|  D4[Copilot explains fix]:::step
+  D4 --> D2
+  D3 -->|Yes| D5[Auto form-fill gov e-forms]:::step
+  D5 --> D6[Submit to visa portal]:::step
+
+  P3 --> H1[Housing · Marketplace search]:::step
+  H1 --> H2[Book unit -> escrow]:::io
+  H2 --> H3[Partner confirms]:::io
+
+  P3 --> SC1[Schools · admissions]:::step
+  P3 --> BK1[Bank · insurance · health]:::step
+  P3 --> UT1[Utilities · SIM · movers]:::step
+
+  SC1 --> ALL([All bookings placed]):::done
+  BK1 --> ALL
+  H3  --> ALL
+  UT1 --> ALL
+  D6  --> ALL
+  </pre>
+</div>
+
+<div class="stages">
+  <div class="stg"><div class="num">01</div><div>
+    <h4>Job-Relocation Sync</h4>
+    <p>The offer data flows into the Relocation Twin — destination city, salary, start date, employer. The twin transitions from &ldquo;exploring&rdquo; to &ldquo;committed&rdquo;.</p>
+  </div></div>
+  <div class="stg"><div class="num">02</div><div>
+    <h4>Plan expansion</h4>
+    <p>The Workflow Orchestrator reads the Relocation Twin and expands the plan into a dependency-aware task tree. The country and visa type determine which sub-flows activate.</p>
+    <div class="tags"><span class="pill">Workflow</span> <span class="pill">KG</span></div>
+  </div></div>
+  <div class="stg"><div class="num">03</div><div>
+    <h4>Timeline &amp; milestones</h4>
+    <p>Tasks are scheduled against the start date. Timeline Intelligence predicts realistic durations per task given country, user profile, and historical flywheel data.</p>
+  </div></div>
+  <div class="stg"><div class="num">04</div><div>
+    <h4>Documents</h4>
+    <p>The Document module generates a per-country, per-visa checklist. For each document: upload → AI validation (OCR · schema · tamper check) → vault → auto form-fill where possible → submit to gov portal.</p>
+    <div class="tags"><span class="pill">FR-50</span> <span class="pill">FR-51</span></div>
+  </div></div>
+  <div class="stg"><div class="num">05</div><div>
+    <h4>Housing booking</h4>
+    <p>The Marketplace surfaces verified housing matches. The user books; the deposit is held in escrow. The booking request crosses into the Partner Portal.</p>
+    <div class="tags"><span class="pill c">Consumer</span><span class="pill p">Partner</span></div>
+  </div></div>
+  <div class="stg"><div class="num">06</div><div>
+    <h4>Schools, banking, insurance, health</h4>
+    <p>Parallel booking sub-flows run for each life domain. Each follows the same pattern: match → book → escrow (where money is involved) → partner fulfils.</p>
+  </div></div>
+  <div class="stg"><div class="num">07</div><div>
+    <h4>Utilities, SIM, movers</h4>
+    <p>Shorter-horizon tasks closer to the move date. Often transactional rather than escrowed; still routed through the Marketplace for trust scoring.</p>
+  </div></div>
+  <div class="stg"><div class="num">08</div><div>
+    <h4>All placed</h4>
+    <p>When every critical task has a confirmed partner or a successful submission, the plan enters the &ldquo;awaiting arrival&rdquo; state. Part C picks up from here.</p>
+  </div></div>
+</div>
+
+<h3>4.4 · User Flow — Part C · Pre-departure, Arrival, Settlement</h3>
+<p>From the user&rsquo;s last week in their origin country to steady-state life in the new country.</p>
+
+<div class="diagram">
+  <div class="diagram-title">Consumer flow — arrival &amp; settlement</div>
+  <pre class="mermaid">
+flowchart TD
+  classDef start fill:#F3DAC7,stroke:#B3542A,color:#0F1222,stroke-width:2px
+  classDef step  fill:#FFFFFF,stroke:#2B2E44,color:#0F1222
+  classDef family fill:#E2E3F2,stroke:#3A3F7A,color:#0F1222
+  classDef io    fill:#EADDF2,stroke:#6B3E8A,color:#0F1222
+  classDef done  fill:#DBEDE6,stroke:#2F7D66,color:#0F1222,stroke-width:2px
+
+  S([All bookings placed]):::start
+  S --> PR1[Cultural + Language modules]:::step
+  S --> PR2[Family prep: spouse + children]:::family
+  S --> PR3[Logistics: movers + flights]:::step
+
+  PR1 --> AR1([Arrive in country])
+  PR2 --> AR1
+  PR3 --> AR1
+
+  AR1 --> W1[First-week checklist]:::step
+  W1 --> W2[Keys handover -> escrow releases]:::io
+  W2 --> W3[Registration + residency]:::step
+  W3 --> W4[SIM + transport + utilities]:::step
+
+  W4 --> SE1[Community match]:::step
+  W4 --> SE2[Spouse career plan active]:::family
+  W4 --> SE3[Children school adaptation]:::family
+
+  SE1 --> ON([Settled - ongoing support])
+  SE2 --> ON
+  SE3 --> ON
+  ON --> MNT[Renewals · expiry alerts · tax events]:::step
+  MNT --> FW([Journey feeds Data Flywheel]):::done
+  </pre>
+</div>
+
+<div class="stages">
+  <div class="stg"><div class="num">01</div><div>
+    <h4>Cultural &amp; language prep</h4>
+    <p>Structured learning paths assigned by the Copilot. Short daily modules; cultural expectations (workplace behaviour, social norms) alongside language basics.</p>
+  </div></div>
+  <div class="stg"><div class="num">02</div><div>
+    <h4>Family prep</h4>
+    <p>Parallel plans for the spouse (job search or re-skilling) and each child (school start, language, friend-finding). Each family member sees the parts of the plan that concern them.</p>
+    <div class="tags"><span class="pill">Family Twin</span></div>
+  </div></div>
+  <div class="stg"><div class="num">03</div><div>
+    <h4>Logistics</h4>
+    <p>Shipping, movers, flights, pet relocation. Lower-intelligence, higher-coordination tasks; the Workflow engine orchestrates them with hard deadlines.</p>
+  </div></div>
+  <div class="stg"><div class="num">04</div><div>
+    <h4>Arrival</h4>
+    <p>Landing day. The Copilot switches to &ldquo;arrival mode&rdquo; — shorter, more checklist-driven interactions tuned for someone jet-lagged and stressed.</p>
+  </div></div>
+  <div class="stg"><div class="num">05</div><div>
+    <h4>Key handover &amp; escrow release</h4>
+    <p>When the user confirms the housing keys are received, the escrow on the deposit releases automatically to the landlord. This is the single biggest trust proof of the platform.</p>
+    <div class="tags"><span class="pill p">Partner</span></div>
+  </div></div>
+  <div class="stg"><div class="num">06</div><div>
+    <h4>Registration &amp; residency</h4>
+    <p>Country-specific tasks: address registration, residency permit activation, local ID. Forms auto-fill from the vault wherever the country supports it.</p>
+  </div></div>
+  <div class="stg"><div class="num">07</div><div>
+    <h4>Utilities, SIM, transport</h4>
+    <p>Electricity, internet, mobile plan, transit pass. Often bookable as a bundle through Partner offerings; Copilot-chosen based on the user&rsquo;s neighbourhood.</p>
+  </div></div>
+  <div class="stg"><div class="num">08</div><div>
+    <h4>Community</h4>
+    <p>The Copilot introduces the user to other Movers with similar profiles, language partners, interest communities. Family-mode adds school-parent and spouse-peer groups.</p>
+  </div></div>
+  <div class="stg"><div class="num">09</div><div>
+    <h4>Settlement (ongoing)</h4>
+    <p>The Copilot stays active indefinitely. It tracks document expiries, tax deadlines, insurance renewals, kids&rsquo; school milestones, and surfaces them as proactive alerts.</p>
+  </div></div>
+  <div class="stg"><div class="num">10</div><div>
+    <h4>Data flywheel</h4>
+    <p>Everything about the user&rsquo;s journey — which partners delivered on time, which cost estimates were right, which bottlenecks hit — flows back into the system to improve the next user&rsquo;s plan.</p>
+  </div></div>
+</div>
+
+<h4>Cross-portal inputs &amp; outputs</h4>
+<div class="io">
+  <div class="box in">
+    <div class="label">What the Consumer App receives</div>
+    <ul>
+      <li><b>From Employer:</b> published jobs, visa metadata, interview invites, offers.</li>
+      <li><b>From Partner:</b> listings, availability, booking confirmations, fulfilment updates.</li>
+      <li><b>From Corporate:</b> policy envelope, seat invite, approvals.</li>
+      <li><b>From Admin:</b> updated Country Knowledge Graph, trust signals on partners.</li>
+      <li><b>From Public site:</b> pre-filled intent (e.g. simulated country, salary range).</li>
+    </ul>
+  </div>
+  <div class="box out">
+    <div class="label">What the Consumer App sends out</div>
+    <ul>
+      <li><b>To Employer:</b> applications, interview availability, offer responses.</li>
+      <li><b>To Partner:</b> booking requests, escrow deposits, fulfilment confirmations, reviews.</li>
+      <li><b>To Corporate:</b> milestone progress, status, cost-to-date (aggregated).</li>
+      <li><b>To Admin:</b> fraud signals, disputes, support tickets.</li>
+      <li><b>To Flywheel:</b> every event in the journey as a signal.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================= 05 EMPLOYER PORTAL ================= -->
+<div class="portal-header employer" id="employer">
+  <div class="badge">E</div>
+  <div>
+    <div class="meta">Portal 02 · Employer Portal</div>
+    <h2>The Employer Portal</h2>
+    <p>Where hiring companies post visa-aware roles, receive AI-ranked candidates whose passport + visa situation already matches the sponsorship reality, and close offers that plug directly into the candidate&rsquo;s relocation plan.</p>
+  </div>
+</div>
+
+<h3>5.1 · Information Architecture</h3>
+<div class="sitemap">
+  <div class="sitemap-title">Employer Portal sitemap</div>
+  <div class="sitemap-center"><div class="sitemap-root">Employer Portal · Dashboard</div></div>
+  <div class="sitemap-cols n3">
+    <div class="sm-group employer">
+      <div class="head">Hiring</div>
+      <ul>
+        <li><b>Jobs</b><small>Post · edit · close · visa metadata</small></li>
+        <li><b>Candidates</b><small>AI-ranked · filters · shortlist</small></li>
+        <li><b>Interviews</b><small>Schedule · feedback · scorecards</small></li>
+        <li><b>Offers</b><small>Send · negotiate · accept/decline</small></li>
+      </ul>
+    </div>
+    <div class="sm-group employer">
+      <div class="head">Company</div>
+      <ul>
+        <li><b>Company Profile</b><small>About · culture · benefits</small></li>
+        <li><b>ATS Integrations</b><small>Greenhouse · Lever · Workday</small></li>
+        <li><b>Sponsorship Policy</b><small>Countries · tiers supported</small></li>
+        <li><b>Team</b><small>Owner · recruiter · HM · interviewer · finance</small></li>
+      </ul>
+    </div>
+    <div class="sm-group employer">
+      <div class="head">Operations</div>
+      <ul>
+        <li><b>Analytics</b><small>Pipeline · time-to-hire · visa success</small></li>
+        <li><b>Billing &amp; Subscription</b></li>
+        <li><b>Messages</b><small>Candidate chats · notifications</small></li>
+        <li><b>Settings</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h3>5.2 · User Flow — Start to End</h3>
+
+<div class="diagram">
+  <div class="diagram-title">Employer flow — signup through hire</div>
+  <pre class="mermaid">
+flowchart TD
+  classDef start fill:#F4E8C7,stroke:#B48A2C,color:#0F1222,stroke-width:2px
+  classDef step  fill:#FFFFFF,stroke:#2B2E44,color:#0F1222
+  classDef gate  fill:#FAF7F2,stroke:#B48A2C,color:#0F1222,stroke-dasharray:3 3
+  classDef io    fill:#F3DAC7,stroke:#B3542A,color:#0F1222
+  classDef done  fill:#DBEDE6,stroke:#2F7D66,color:#0F1222,stroke-width:2px
+
+  S([Company signs up]):::start
+  S --> V1[Business verification]:::step
+  V1 --> V2{KYB approved?}:::gate
+  V2 -->|No|  REJ([Rejected + reason])
+  V2 -->|Yes| T1[Owner invites team]:::step
+  T1 --> CP[Complete company profile + sponsorship policy]:::step
+
+  CP --> J1[Create a job]:::step
+  J1 --> J2[Add visa metadata · eligible passports · sponsorship tier]:::step
+  J2 --> J3[Publish to Job Discovery]:::io
+
+  J3 --> APP[Applications arrive]:::io
+  APP --> PL[AI-ranked pipeline]:::step
+  PL --> SH{Shortlist?}:::gate
+  SH -->|No|  REJ2[Reject with reason -> feedback to candidate]:::step
+  REJ2 --> PL
+  SH -->|Yes| IV1[Schedule interview]:::step
+  IV1 --> IV2[Interview + scorecards]:::step
+  IV2 --> DEC{Make offer?}:::gate
+  DEC -->|No|  REJ2
+  DEC -->|Yes| OF1[Create + send offer]:::step
+  OF1 --> OF2{Accepted?}:::gate
+  OF2 -->|No|  PL
+  OF2 -->|Yes| OF3([Offer accepted]):::done
+  OF3 --> SYNC[Trigger relocation plan in Consumer App]:::io
+  </pre>
+</div>
+
+<div class="stages employer">
+  <div class="stg"><div class="num">01</div><div>
+    <h4>Company signup</h4>
+    <p>An Owner registers the company, provides basic details, and invites teammates. Until verification passes, no jobs can be posted.</p>
+  </div></div>
+  <div class="stg"><div class="num">02</div><div>
+    <h4>Business verification (KYB)</h4>
+    <p>Legal entity check, business registration documents, a primary contact. The Admin Console receives this in its Partner/Employer verification queue.</p>
+    <div class="tags"><span class="pill a">Admin</span></div>
+  </div></div>
+  <div class="stg"><div class="num">03</div><div>
+    <h4>Team setup</h4>
+    <p>The Owner assigns roles — Recruiters, Hiring Managers, Interviewers, Finance. Permissions are scoped from here.</p>
+  </div></div>
+  <div class="stg"><div class="num">04</div><div>
+    <h4>Company profile &amp; sponsorship policy</h4>
+    <p>A public-facing profile (what candidates see) plus an internal policy stating which countries the company sponsors, which visa tiers, and any restrictions. This is the input to visa-aware matching.</p>
+  </div></div>
+  <div class="stg"><div class="num">05</div><div>
+    <h4>Create a job</h4>
+    <p>Standard job posting plus structured visa fields: eligible passports, sponsorship tier, relocation benefits. Optional ATS sync pushes the same record to the employer&rsquo;s existing system.</p>
+  </div></div>
+  <div class="stg"><div class="num">06</div><div>
+    <h4>Publish</h4>
+    <p>Once published, the job enters Job Discovery in the Consumer App. Only candidates whose twins pass the visa filter will see it.</p>
+    <div class="tags"><span class="pill e">Employer</span><span class="pill c">Consumer</span></div>
+  </div></div>
+  <div class="stg"><div class="num">07</div><div>
+    <h4>Applications &amp; AI ranking</h4>
+    <p>Applications flow in. The Matcher ranks them on fit and visa-path confidence; the Recruiter sees them ordered with reasoning badges.</p>
+  </div></div>
+  <div class="stg"><div class="num">08</div><div>
+    <h4>Shortlist, interview, decide</h4>
+    <p>Standard interview loop — scheduled through the Portal, feedback captured as scorecards. Rejections surface back to the candidate&rsquo;s Readiness module as signal.</p>
+  </div></div>
+  <div class="stg"><div class="num">09</div><div>
+    <h4>Offer</h4>
+    <p>Created inside the Portal, pushed to the candidate&rsquo;s Consumer App. Negotiation happens in a structured thread rather than email.</p>
+  </div></div>
+  <div class="stg"><div class="num">10</div><div>
+    <h4>Acceptance → relocation triggered</h4>
+    <p>On acceptance, the employer&rsquo;s job is done. On the candidate&rsquo;s side, the Job-Relocation Sync fires and the full plan unfolds automatically.</p>
+    <div class="tags"><span class="pill c">Consumer: Plan starts</span></div>
+  </div></div>
+</div>
+
+<div class="io">
+  <div class="box in">
+    <div class="label">Receives</div>
+    <ul>
+      <li><b>From Consumer:</b> applications, interview responses, offer acceptance.</li>
+      <li><b>From Admin:</b> KYB approval, fraud flags, policy updates.</li>
+      <li><b>From Core:</b> visa-aware candidate rankings, company trust score.</li>
+    </ul>
+  </div>
+  <div class="box out">
+    <div class="label">Sends</div>
+    <ul>
+      <li><b>To Consumer:</b> job postings, interview invites, offers, rejection reasons.</li>
+      <li><b>To Admin:</b> verification documents, any compliance concerns.</li>
+      <li><b>To ATS:</b> job sync, candidate sync (when integrated).</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================= 06 PARTNER PORTAL ================= -->
+<div class="portal-header partner" id="partner">
+  <div class="badge">P</div>
+  <div>
+    <div class="meta">Portal 03 · Partner Portal</div>
+    <h2>The Partner Portal</h2>
+    <p>Where housing providers, schools, banks, insurers, and local service companies onboard, get verified, list their inventory, receive bookings, fulfil services, and get paid through escrow as their trust score accumulates.</p>
+  </div>
+</div>
+
+<h3>6.1 · Information Architecture</h3>
+<div class="sitemap">
+  <div class="sitemap-title">Partner Portal sitemap</div>
+  <div class="sitemap-center"><div class="sitemap-root">Partner Portal · Dashboard</div></div>
+  <div class="sitemap-cols n3">
+    <div class="sm-group partner">
+      <div class="head">Setup &amp; Trust</div>
+      <ul>
+        <li><b>Verification (KYB)</b><small>Business docs · licences · bank</small></li>
+        <li><b>Trust Score</b><small>SLA · reviews · history</small></li>
+        <li><b>Team</b><small>Owner · listing · fulfilment · finance</small></li>
+        <li><b>Policies</b><small>Cancellation · service terms</small></li>
+      </ul>
+    </div>
+    <div class="sm-group partner">
+      <div class="head">Supply</div>
+      <ul>
+        <li><b>Listings / Inventory</b><small>Units · slots · plans · services</small></li>
+        <li><b>Pricing &amp; Availability</b></li>
+        <li><b>Bookings &amp; Requests</b><small>Incoming · confirmed · fulfilled</small></li>
+        <li><b>Messages</b><small>With users · with Ops</small></li>
+      </ul>
+    </div>
+    <div class="sm-group partner">
+      <div class="head">Money</div>
+      <ul>
+        <li><b>Escrow Status</b><small>Held · eligible for release · released</small></li>
+        <li><b>Payouts</b><small>Statements · schedule · bank details</small></li>
+        <li><b>Refunds &amp; Disputes</b></li>
+        <li><b>Settings</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h3>6.2 · User Flow — Start to End</h3>
+
+<div class="diagram">
+  <div class="diagram-title">Partner flow — onboarding through payout</div>
+  <pre class="mermaid">
+flowchart TD
+  classDef start fill:#EADDF2,stroke:#6B3E8A,color:#0F1222,stroke-width:2px
+  classDef step  fill:#FFFFFF,stroke:#2B2E44,color:#0F1222
+  classDef io    fill:#F3DAC7,stroke:#B3542A,color:#0F1222
+  classDef gate  fill:#FAF7F2,stroke:#6B3E8A,color:#0F1222,stroke-dasharray:3 3
+  classDef done  fill:#DBEDE6,stroke:#2F7D66,color:#0F1222,stroke-width:2px
+  classDef admin fill:#E2E3F2,stroke:#3A3F7A,color:#0F1222
+
+  S([Partner signs up]):::start
+  S --> P1[Choose category]:::step
+  P1 --> V1[KYC + KYB upload]:::step
+  V1 --> V2[Admin review queue]:::admin
+  V2 --> V3{Approved?}:::gate
+  V3 -->|No|  REJ([Rejected + reason])
+  V3 -->|Yes| L1[Create listings or inventory]:::step
+  L1 --> L2[Set pricing + availability]:::step
+  L2 --> L3[Publish to Marketplace]:::step
+
+  L3 --> B1[Booking request arrives]:::io
+  B1 --> B2{Accept?}:::gate
+  B2 -->|No|  B3[Decline with reason]:::step
+  B3 --> L3
+  B2 -->|Yes| B4[Confirm booking]:::step
+  B4 --> ESC1[Escrow holds user funds]:::io
+
+  B4 --> F1[Service window scheduled]:::step
+  F1 --> F2[Fulfil service]:::step
+  F2 --> F3[User confirms fulfilment]:::io
+  F3 --> R1[Escrow releases to partner]:::io
+  R1 --> PAY([Payout landed]):::done
+  R1 --> TR[Trust score + SLA update]:::step
+  </pre>
+</div>
+
+<div class="stages partner">
+  <div class="stg"><div class="num">01</div><div>
+    <h4>Signup &amp; category</h4>
+    <p>A Partner Owner registers and picks a category: housing, school, bank, insurer, local service. Each category has different document requirements.</p>
+  </div></div>
+  <div class="stg"><div class="num">02</div><div>
+    <h4>KYC + KYB</h4>
+    <p>Individual identity (for the signer), business registration, licences relevant to the category (real estate licence, education ministry accreditation, banking licence excerpts, etc.), and bank details for payouts.</p>
+    <div class="tags"><span class="pill a">Admin review</span></div>
+  </div></div>
+  <div class="stg"><div class="num">03</div><div>
+    <h4>Admin review</h4>
+    <p>A Trust &amp; Verification Officer in the Admin Console reviews the submission. Approved partners unlock listings; rejected ones get a structured reason.</p>
+  </div></div>
+  <div class="stg"><div class="num">04</div><div>
+    <h4>Create listings</h4>
+    <p>Housing units, school slots, insurance plans, service packages. Each has pricing, availability, photos where relevant, and structured metadata (bedrooms, neighbourhood, language of instruction, coverage limits).</p>
+  </div></div>
+  <div class="stg"><div class="num">05</div><div>
+    <h4>Publish to Marketplace</h4>
+    <p>Listings go live in the Consumer App&rsquo;s Marketplace. They are ranked by fit + Trust score; a freshly approved partner starts with a neutral score and earns ranking through fulfilment.</p>
+  </div></div>
+  <div class="stg"><div class="num">06</div><div>
+    <h4>Booking request</h4>
+    <p>A user books. The Partner Portal shows the request with the user&rsquo;s relevant context (moving from / to, family shape if disclosed) — not their full PII.</p>
+    <div class="tags"><span class="pill c">From Consumer</span></div>
+  </div></div>
+  <div class="stg"><div class="num">07</div><div>
+    <h4>Accept or decline</h4>
+    <p>The Fulfilment Agent accepts, declines with reason, or counter-offers. Accepting converts the booking into an escrow-held contract.</p>
+  </div></div>
+  <div class="stg"><div class="num">08</div><div>
+    <h4>Escrow holds</h4>
+    <p>The user&rsquo;s funds are held by the platform&rsquo;s payment partner. Neither the Partner nor the user can unilaterally move them.</p>
+  </div></div>
+  <div class="stg"><div class="num">09</div><div>
+    <h4>Fulfil the service</h4>
+    <p>Hand over keys, confirm the admissions slot, activate the account, deliver the service. The Partner marks fulfilment in the Portal and the user is prompted to confirm on their side.</p>
+  </div></div>
+  <div class="stg"><div class="num">10</div><div>
+    <h4>Confirmation &amp; escrow release</h4>
+    <p>When the user confirms, escrow releases to the Partner (minus platform fee). If the user disputes, it escalates into the Admin Console&rsquo;s dispute workflow.</p>
+    <div class="tags"><span class="pill a">Dispute fallback</span></div>
+  </div></div>
+  <div class="stg"><div class="num">11</div><div>
+    <h4>Trust update</h4>
+    <p>The completed booking, time-to-fulfil, user review, and any incident feed into the Partner&rsquo;s Trust score. This affects future ranking. A score that falls below threshold auto-pauses listings and alerts the Admin.</p>
+  </div></div>
+</div>
+
+<div class="io">
+  <div class="box in">
+    <div class="label">Receives</div>
+    <ul>
+      <li><b>From Consumer:</b> booking requests, fulfilment confirmations, reviews, disputes.</li>
+      <li><b>From Admin:</b> KYB decisions, SLA alerts, dispute outcomes.</li>
+      <li><b>From Payments:</b> escrow status, payout statements.</li>
+    </ul>
+  </div>
+  <div class="box out">
+    <div class="label">Sends</div>
+    <ul>
+      <li><b>To Consumer:</b> listings, acceptance/decline, fulfilment updates.</li>
+      <li><b>To Admin:</b> verification documents, dispute responses.</li>
+      <li><b>To Core:</b> inventory state, availability, pricing.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================= 07 CORPORATE MOBILITY ================= -->
+<div class="portal-header corporate" id="corporate">
+  <div class="badge">H</div>
+  <div>
+    <div class="meta">Portal 04 · Corporate Mobility Portal</div>
+    <h2>The Corporate Mobility Portal</h2>
+    <p>Where HR and Global Mobility leads buy seats, set policies, invite employees, and watch aggregate progress as their workforce relocates — each employee still runs the full Consumer App, but inside the company&rsquo;s policy envelope.</p>
+  </div>
+</div>
+
+<h3>7.1 · Information Architecture</h3>
+<div class="sitemap">
+  <div class="sitemap-title">Corporate Portal sitemap</div>
+  <div class="sitemap-center"><div class="sitemap-root">Corporate Portal · Overview</div></div>
+  <div class="sitemap-cols n3">
+    <div class="sm-group corporate">
+      <div class="head">People</div>
+      <ul>
+        <li><b>Employees · Seats</b><small>Active · pending · archived</small></li>
+        <li><b>Invitations</b><small>Send · resend · revoke</small></li>
+        <li><b>Individual Status</b><small>Milestones · risks · SLAs</small></li>
+        <li><b>Approvals</b><small>Policy overrides · expense exceptions</small></li>
+      </ul>
+    </div>
+    <div class="sm-group corporate">
+      <div class="head">Policy &amp; Pipeline</div>
+      <ul>
+        <li><b>Policies</b><small>Cost caps · allowed countries · benefits</small></li>
+        <li><b>Pipelines</b><small>By stage: visa · housing · onboarding</small></li>
+        <li><b>Alerts</b><small>Delays · breaches · escalations</small></li>
+        <li><b>Communications</b><small>Company-wide notices</small></li>
+      </ul>
+    </div>
+    <div class="sm-group corporate">
+      <div class="head">Reporting</div>
+      <ul>
+        <li><b>Reports</b><small>Cost per relocation · compliance · SLA</small></li>
+        <li><b>Billing &amp; Contracts</b></li>
+        <li><b>Team</b><small>Admin · mobility · finance · viewer</small></li>
+        <li><b>Settings</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h3>7.2 · User Flow — Start to End</h3>
+
+<div class="diagram">
+  <div class="diagram-title">Corporate flow — contract through reporting</div>
+  <pre class="mermaid">
+flowchart TD
+  classDef start fill:#DBEDE6,stroke:#2F7D66,color:#0F1222,stroke-width:2px
+  classDef step  fill:#FFFFFF,stroke:#2B2E44,color:#0F1222
+  classDef io    fill:#F3DAC7,stroke:#B3542A,color:#0F1222
+  classDef gate  fill:#FAF7F2,stroke:#2F7D66,color:#0F1222,stroke-dasharray:3 3
+  classDef done  fill:#EADDF2,stroke:#6B3E8A,color:#0F1222,stroke-width:2px
+
+  S([Contract signed]):::start
+  S --> A1[Admin account created]:::step
+  A1 --> POL[Configure global policies]:::step
+  POL --> SEAT[Buy seats]:::step
+  SEAT --> INV[Invite employees]:::step
+  INV --> EMP[Employee accepts + signs up]:::io
+  EMP --> CA[Consumer App · policy-scoped]:::io
+
+  CA --> EV[Employee runs relocation]:::io
+  EV --> AGG[Milestone events aggregated]:::step
+  AGG --> DASH[Corporate dashboard updates]:::step
+
+  DASH --> AL{SLA breach or risk?}:::gate
+  AL -->|No|  LOOP[Continue monitoring]:::step
+  LOOP --> AGG
+  AL -->|Yes| ESC[Escalation + approval workflow]:::step
+  ESC --> ACT[Action · override · extend budget · Ops contact]:::step
+  ACT --> LOOP
+
+  DASH --> R1[Reports: cost · compliance · SLA]:::step
+  R1 --> BILL([Monthly invoice + review]):::done
+  </pre>
+</div>
+
+<div class="stages corporate">
+  <div class="stg"><div class="num">01</div><div>
+    <h4>Contract &amp; Admin account</h4>
+    <p>Sales-led deal. Contract is signed; a Corporate Admin account is provisioned. This account controls everything that follows.</p>
+  </div></div>
+  <div class="stg"><div class="num">02</div><div>
+    <h4>Configure policies</h4>
+    <p>Global defaults: allowed destination countries, cost caps per relocation, benefit packages (housing stipend, language training, family coverage), approval thresholds.</p>
+  </div></div>
+  <div class="stg"><div class="num">03</div><div>
+    <h4>Buy seats</h4>
+    <p>Seats correspond to employees who will be relocated. Can be bought in batches; unused seats can be reassigned.</p>
+  </div></div>
+  <div class="stg"><div class="num">04</div><div>
+    <h4>Invite employees</h4>
+    <p>Mobility Managers send invitations. Each invite carries the policy envelope so that the employee&rsquo;s Consumer App starts with cost caps and benefits already wired.</p>
+  </div></div>
+  <div class="stg"><div class="num">05</div><div>
+    <h4>Employee signup</h4>
+    <p>The employee accepts and signs up in the Consumer App. Their account is tagged to the corporate; they can still use private-mode features, but relocation spend is governed by the policy.</p>
+    <div class="tags"><span class="pill c">Consumer</span></div>
+  </div></div>
+  <div class="stg"><div class="num">06</div><div>
+    <h4>Employee runs their journey</h4>
+    <p>The employee&rsquo;s side is indistinguishable from a B2C user — same Copilot, same plan, same bookings — except policy-driven guard-rails surface in the UX (&ldquo;this exceeds your housing allowance&rdquo;).</p>
+  </div></div>
+  <div class="stg"><div class="num">07</div><div>
+    <h4>Milestone aggregation</h4>
+    <p>Every milestone (offer accepted, visa submitted, housing booked, arrival, settled) emits an event. The Corporate Portal shows these aggregated — per employee and rolled up.</p>
+  </div></div>
+  <div class="stg"><div class="num">08</div><div>
+    <h4>Dashboards &amp; alerts</h4>
+    <p>SLA risk (visa approaching deadline, housing not booked 14 days before arrival), cost-to-date vs policy, compliance status. Alerts escalate to the Mobility Manager.</p>
+  </div></div>
+  <div class="stg"><div class="num">09</div><div>
+    <h4>Approvals &amp; overrides</h4>
+    <p>An employee may need a policy override (a more expensive apartment, an extra week of temp housing). Approval requests are routed to the Mobility Manager or Finance, with audit trail.</p>
+  </div></div>
+  <div class="stg"><div class="num">10</div><div>
+    <h4>Reporting &amp; billing</h4>
+    <p>Cost per relocation, compliance posture, SLA hit-rate. Invoices are generated against seat usage and any policy-scoped spend that flows through Glimmora.</p>
+  </div></div>
+</div>
+
+<div class="io">
+  <div class="box in">
+    <div class="label">Receives</div>
+    <ul>
+      <li><b>From Consumer:</b> milestone events, cost signals, exception requests.</li>
+      <li><b>From Core:</b> SLA risk scores, consolidated analytics.</li>
+    </ul>
+  </div>
+  <div class="box out">
+    <div class="label">Sends</div>
+    <ul>
+      <li><b>To Consumer:</b> invitations, policy envelopes, approvals / denials.</li>
+      <li><b>To Admin:</b> escalations, contract changes, compliance requests.</li>
+      <li><b>To Billing:</b> seat usage, invoice triggers.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================= 08 ADMIN / OPS ================= -->
+<div class="portal-header admin" id="admin">
+  <div class="badge">A</div>
+  <div>
+    <div class="meta">Portal 05 · Admin / Ops Console</div>
+    <h2>The Admin / Ops Console</h2>
+    <p>Where Glimmora runs the live platform. Unlike the other portals, this one does not have a single linear flow — it is a set of parallel workflows for verification, trust, data curation, dispute resolution, and finance operations.</p>
+  </div>
+</div>
+
+<h3>8.1 · Information Architecture</h3>
+<div class="sitemap">
+  <div class="sitemap-title">Admin Console sitemap</div>
+  <div class="sitemap-center"><div class="sitemap-root">Admin Console · Ops Dashboard</div></div>
+  <div class="sitemap-cols n3">
+    <div class="sm-group admin">
+      <div class="head">Verification &amp; Trust</div>
+      <ul>
+        <li><b>Partner Verification Queue</b><small>KYB review · approve · reject</small></li>
+        <li><b>Employer Verification Queue</b></li>
+        <li><b>Trust &amp; Fraud</b><small>SLA dashboards · incidents · auto-pauses</small></li>
+        <li><b>Dispute Resolution</b></li>
+      </ul>
+    </div>
+    <div class="sm-group admin">
+      <div class="head">Knowledge &amp; Support</div>
+      <ul>
+        <li><b>Country KG Studio</b><small>Visa · tax · COL · schools</small></li>
+        <li><b>AI Updates Queue</b><small>Model-extracted · needs review</small></li>
+        <li><b>Users &amp; Support</b><small>Tickets · escalations · impersonate (with consent)</small></li>
+        <li><b>Corporate Accounts</b></li>
+      </ul>
+    </div>
+    <div class="sm-group admin">
+      <div class="head">Finance &amp; Config</div>
+      <ul>
+        <li><b>Escrow &amp; Refunds</b><small>Exceptions · reconciliation</small></li>
+        <li><b>Partner Payouts</b></li>
+        <li><b>Feature Flags &amp; Config</b></li>
+        <li><b>Analytics &amp; Audit</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h3>8.2 · User Flow — Ops Dashboard fan-out</h3>
+<p>The Admin Console is a hub. Every morning, an Ops person opens the Dashboard and sees the set of queues waiting on human judgement. From there, they dispatch into one of five sub-workflows.</p>
+
+<div class="diagram">
+  <div class="diagram-title">Admin — Ops dashboard and sub-workflows</div>
+  <pre class="mermaid">
+flowchart LR
+  classDef start fill:#E2E3F2,stroke:#3A3F7A,color:#0F1222,stroke-width:2px
+  classDef step  fill:#FFFFFF,stroke:#2B2E44,color:#0F1222
+  classDef done  fill:#DBEDE6,stroke:#2F7D66,color:#0F1222,stroke-width:2px
+
+  D([Ops Dashboard<br/>alert queues]):::start
+
+  D --> V[Partner verification]:::step
+  D --> T[Trust + fraud]:::step
+  D --> K[KG curation]:::step
+  D --> R[Refunds + disputes]:::step
+  D --> S[Support tickets]:::step
+
+  V --> V1[Review docs -> approve or reject]:::step
+  V1 --> V2([Partner live or rejected]):::done
+
+  T --> T1[Investigate incident]:::step
+  T1 --> T2[Auto-pause · remediation plan · remove]:::step
+  T2 --> T3([Trust score updated]):::done
+
+  K --> K1[Review AI-extracted update]:::step
+  K1 --> K2[Verify against source]:::step
+  K2 --> K3([Promote to live KG]):::done
+
+  R --> R1[Investigate dispute]:::step
+  R1 --> R2[Decide: refund · release · partial]:::step
+  R2 --> R3([Escrow action executed]):::done
+
+  S --> S1[Respond to ticket]:::step
+  S1 --> S2([Resolved or escalated]):::done
+  </pre>
+</div>
+
+<h4>Sub-workflow · Partner verification</h4>
+<div class="diagram">
+  <div class="diagram-title">Partner verification workflow</div>
+  <pre class="mermaid">
+flowchart LR
+  A([Partner submits KYB]) --> B[Docs in queue]
+  B --> C[Trust Officer reviews]
+  C --> D{Complete + legitimate?}
+  D -->|No| E[Reject with reason]
+  E --> F([Partner notified])
+  D -->|Yes| G[Approve]
+  G --> H[Listings unlocked]
+  H --> I([Partner live in Marketplace])
+  </pre>
+</div>
+
+<h4>Sub-workflow · KG curation</h4>
+<div class="diagram">
+  <div class="diagram-title">Country Knowledge Graph curation</div>
+  <pre class="mermaid">
+flowchart LR
+  A([Source change detected<br/>news · gov site · vendor feed]) --> B[AI extracts structured update]
+  B --> C[Update enters review queue]
+  C --> D[Curator cross-checks source]
+  D --> E{Valid?}
+  E -->|No| F[Discard + flag source]
+  E -->|Yes| G[Promote to live KG]
+  G --> H([All Copilot answers reflect update])
+  </pre>
+</div>
+
+<h4>Sub-workflow · Dispute &amp; escrow exception</h4>
+<div class="diagram">
+  <div class="diagram-title">Dispute and escrow exception</div>
+  <pre class="mermaid">
+flowchart LR
+  A([User raises dispute]) --> B[Escrow frozen]
+  B --> C[Ops gathers evidence · both sides]
+  C --> D{Outcome}
+  D -->|Refund user| E[Release to user]
+  D -->|Release partner| F[Release to partner]
+  D -->|Split| G[Partial to each]
+  E --> H([Trust score penalty on partner])
+  F --> I([Trust score unchanged])
+  G --> J([Proportional adjustment])
+  </pre>
+</div>
+
+<div class="stages admin">
+  <div class="stg"><div class="num">01</div><div>
+    <h4>Dashboard</h4>
+    <p>The entry point. Shows five queues: verification pending, trust alerts, KG updates for review, refunds/disputes, support tickets. Each is a count and an age.</p>
+  </div></div>
+  <div class="stg"><div class="num">02</div><div>
+    <h4>Partner verification</h4>
+    <p>Trust &amp; Verification Officers pick up KYB submissions, check documents, and approve or reject. Approval unlocks the partner; rejection closes the application with a documented reason.</p>
+  </div></div>
+  <div class="stg"><div class="num">03</div><div>
+    <h4>Trust &amp; fraud monitoring</h4>
+    <p>The Core auto-monitors SLA, reviews, refund rates. When a partner trips thresholds, listings auto-pause and an incident opens here. Officers investigate and either remediate or remove.</p>
+  </div></div>
+  <div class="stg"><div class="num">04</div><div>
+    <h4>KG curation</h4>
+    <p>Data Curators run the world-knowledge freshness loop. The AI extracts candidate updates from sources; a curator verifies and promotes. The live Copilot&rsquo;s answers shift accordingly.</p>
+  </div></div>
+  <div class="stg"><div class="num">05</div><div>
+    <h4>Disputes &amp; escrow</h4>
+    <p>Finance Ops handles disputed bookings and escrow exceptions. The outcome (refund / release / split) is auditable and feeds the partner&rsquo;s Trust score.</p>
+  </div></div>
+  <div class="stg"><div class="num">06</div><div>
+    <h4>Support</h4>
+    <p>User tickets. Support Agents can assist but cannot move money or approve partners — separation of duties is enforced in roles.</p>
+  </div></div>
+  <div class="stg"><div class="num">07</div><div>
+    <h4>Config &amp; analytics</h4>
+    <p>Feature flags, rollout toggles, platform-wide analytics. Usually the Super Admin&rsquo;s domain.</p>
+  </div></div>
+</div>
+
+<div class="io">
+  <div class="box in">
+    <div class="label">Receives</div>
+    <ul>
+      <li><b>From Partner/Employer:</b> verification submissions.</li>
+      <li><b>From Consumer:</b> disputes, support tickets, fraud flags.</li>
+      <li><b>From Core:</b> trust alerts, AI-extracted KG updates.</li>
+    </ul>
+  </div>
+  <div class="box out">
+    <div class="label">Sends</div>
+    <ul>
+      <li><b>To Partner/Employer:</b> verification outcomes, SLA warnings, account states.</li>
+      <li><b>To Consumer:</b> dispute outcomes, support responses, platform notices.</li>
+      <li><b>To Core:</b> promoted KG updates, config changes, feature flag states.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================= 09 PUBLIC SITE ================= -->
+<div class="portal-header public" id="public">
+  <div class="badge">W</div>
+  <div>
+    <div class="meta">Portal 06 · Public &amp; Comparison Site</div>
+    <h2>The Public Site</h2>
+    <p>The pre-signup surface. Where strangers become prospects. Useful tools (country comparison, salary simulator) work without an account — the account happens when the user wants their progress saved.</p>
+  </div>
+</div>
+
+<h3>9.1 · Information Architecture</h3>
+<div class="sitemap">
+  <div class="sitemap-title">Public Site sitemap</div>
+  <div class="sitemap-center"><div class="sitemap-root">Public Site · Home</div></div>
+  <div class="sitemap-cols n3">
+    <div class="sm-group public">
+      <div class="head">Product</div>
+      <ul>
+        <li><b>How it works</b></li>
+        <li><b>For Movers</b></li>
+        <li><b>For Families</b></li>
+        <li><b>For Students</b></li>
+      </ul>
+    </div>
+    <div class="sm-group public">
+      <div class="head">Tools (free)</div>
+      <ul>
+        <li><b>Country Comparison</b></li>
+        <li><b>Salary Simulator</b></li>
+        <li><b>Visa Checker</b></li>
+      </ul>
+    </div>
+    <div class="sm-group public">
+      <div class="head">Content &amp; B2B</div>
+      <ul>
+        <li><b>Guides · Blog</b></li>
+        <li><b>Case Studies</b></li>
+        <li><b>For Employers</b></li>
+        <li><b>For Partners</b></li>
+        <li><b>For Companies</b> (B2B)</li>
+        <li><b>Pricing</b></li>
+        <li><b>Sign Up · Log In</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h3>9.2 · User Flow — Start to End</h3>
+
+<div class="diagram">
+  <div class="diagram-title">Public site flow — visitor to signup</div>
+  <pre class="mermaid">
+flowchart TD
+  classDef start fill:#E8E4DC,stroke:#5E6379,color:#0F1222,stroke-width:2px
+  classDef step  fill:#FFFFFF,stroke:#2B2E44,color:#0F1222
+  classDef gate  fill:#FAF7F2,stroke:#5E6379,color:#0F1222,stroke-dasharray:3 3
+  classDef done  fill:#F3DAC7,stroke:#B3542A,color:#0F1222,stroke-width:2px
+
+  S([Visitor arrives]):::start
+  S --> SRC{Source}:::gate
+  SRC -->|SEO| L1[Landing: guide or tool]:::step
+  SRC -->|Paid| L2[Landing: campaign page]:::step
+  SRC -->|Referral| L3[Landing: signup CTA]:::step
+
+  L1 --> T[Try a free tool<br/>country compare · salary · visa]:::step
+  L2 --> T
+  L3 --> T
+  T --> R[See a result or insight]:::step
+  R --> CTA{Call-to-action}:::gate
+  CTA -->|Learn more| GD[Read guide or case study]:::step
+  GD --> CTA
+  CTA -->|B2B| EMP[Contact Sales]:::step
+  CTA -->|Partner| PAR[Apply as Partner]:::step
+  CTA -->|Mover| SIGN([Sign up in Consumer App]):::done
+  EMP --> SIGN
+  PAR --> SIGN
+  </pre>
+</div>
+
+<div class="stages public">
+  <div class="stg"><div class="num">01</div><div>
+    <h4>Arrival</h4>
+    <p>SEO, paid, referral, social, or direct. Different landing pages for different sources; all lead toward either a tool or a signup.</p>
+  </div></div>
+  <div class="stg"><div class="num">02</div><div>
+    <h4>Try a free tool</h4>
+    <p>Country comparison, salary simulator, visa checker — useful on the first visit, no account required. State is cached in the browser and carried into the account when the user signs up.</p>
+  </div></div>
+  <div class="stg"><div class="num">03</div><div>
+    <h4>See a personal result</h4>
+    <p>The tool outputs something specific to the visitor&rsquo;s inputs (not generic content). The more personal, the better the conversion.</p>
+  </div></div>
+  <div class="stg"><div class="num">04</div><div>
+    <h4>CTA branching</h4>
+    <p>Movers and families go to the Consumer App signup. Employers go to a &ldquo;For Employers&rdquo; route with a specialised signup. Partners have a &ldquo;Become a partner&rdquo; application funnel. Corporate buyers go to a &ldquo;Contact Sales&rdquo; path.</p>
+  </div></div>
+  <div class="stg"><div class="num">05</div><div>
+    <h4>Signup carries state</h4>
+    <p>Whatever the visitor simulated, compared, or read is attached to the new account so the Copilot can start from context rather than a blank slate.</p>
+    <div class="tags"><span class="pill c">Consumer</span><span class="pill e">Employer</span><span class="pill p">Partner</span></div>
+  </div></div>
+</div>
+
+<div class="io">
+  <div class="box in">
+    <div class="label">Receives</div>
+    <ul>
+      <li><b>From Marketing:</b> campaign traffic, content, pricing updates.</li>
+      <li><b>From Core:</b> live country data for public tools (subset of KG).</li>
+    </ul>
+  </div>
+  <div class="box out">
+    <div class="label">Sends</div>
+    <ul>
+      <li><b>To Consumer / Employer / Partner:</b> new signups with pre-filled intent.</li>
+      <li><b>To Sales:</b> B2B leads.</li>
+      <li><b>To Analytics:</b> acquisition metrics, funnel events.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================= 10 USER JOURNEY MAP ================= -->
+<section id="journey">
+  <h2><span class="num">10 — User Journey Map</span>One mover, nine stages, every portal she touches.</h2>
+
+  <p class="section-lede">
+    A journey map tells you — at a glance — what a user is doing, feeling, and thinking at each stage, and which portals are in play. Below is the full journey of a Mover from first search to stable life.
+  </p>
+
+  <div class="jmap">
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Discover<small>stage 01</small></th>
+        <th>Explore<small>stage 02</small></th>
+        <th>Commit<small>stage 03</small></th>
+        <th>Hunt Job<small>stage 04</small></th>
+        <th>Get Offer<small>stage 05</small></th>
+        <th>Plan Move<small>stage 06</small></th>
+        <th>Execute<small>stage 07</small></th>
+        <th>Arrive<small>stage 08</small></th>
+        <th>Settle<small>stage 09</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>Actions</th>
+        <td>Google &ldquo;move to Germany&rdquo;, read guides</td>
+        <td>Run simulators, compare countries, chat Copilot</td>
+        <td>Subscribe to base plan</td>
+        <td>Apply to jobs, CVs, mock interviews</td>
+        <td>Interview, negotiate, accept offer</td>
+        <td>Review plan, build doc checklist</td>
+        <td>Book housing, school, bank, pay escrow</td>
+        <td>Fly, collect keys, first-week tasks</td>
+        <td>Community, renewals, family adapt</td>
+      </tr>
+      <tr>
+        <th>Thoughts</th>
+        <td>&ldquo;Is this even possible?&rdquo;</td>
+        <td>&ldquo;Can I afford it?&rdquo;</td>
+        <td>&ldquo;Worth the bet.&rdquo;</td>
+        <td>&ldquo;Will anyone sponsor me?&rdquo;</td>
+        <td>&ldquo;This is real.&rdquo;</td>
+        <td>&ldquo;So many moving parts.&rdquo;</td>
+        <td>&ldquo;Who do I trust?&rdquo;</td>
+        <td>&ldquo;Don&rsquo;t miss anything.&rdquo;</td>
+        <td>&ldquo;Finally home.&rdquo;</td>
+      </tr>
+      <tr>
+        <th>Emotions</th>
+        <td class="emo">◐ ◐</td>
+        <td class="emo">◐ ●</td>
+        <td class="emo">● ◐</td>
+        <td class="emo">◐ ○</td>
+        <td class="emo">● ●</td>
+        <td class="emo">◐ ◐</td>
+        <td class="emo">◐ ○</td>
+        <td class="emo">○ ◐</td>
+        <td class="emo">● ●</td>
+      </tr>
+      <tr>
+        <th>Touchpoints</th>
+        <td><span class="portal-chip public">Public</span></td>
+        <td><span class="portal-chip public">Public</span> <span class="portal-chip consumer">Consumer</span></td>
+        <td><span class="portal-chip consumer">Consumer</span></td>
+        <td><span class="portal-chip consumer">Consumer</span> <span class="portal-chip employer">Employer</span></td>
+        <td><span class="portal-chip employer">Employer</span> <span class="portal-chip consumer">Consumer</span></td>
+        <td><span class="portal-chip consumer">Consumer</span></td>
+        <td><span class="portal-chip consumer">Consumer</span> <span class="portal-chip partner">Partner</span></td>
+        <td><span class="portal-chip consumer">Consumer</span> <span class="portal-chip partner">Partner</span></td>
+        <td><span class="portal-chip consumer">Consumer</span></td>
+      </tr>
+      <tr>
+        <th>Pain points</th>
+        <td>Information overload online</td>
+        <td>Contradictory numbers everywhere</td>
+        <td>Fear of commitment</td>
+        <td>Getting ghosted by employers</td>
+        <td>Paperwork explosion</td>
+        <td>Unknown country-specific rules</td>
+        <td>Trust: will the landlord deliver?</td>
+        <td>Jet-lag, urgent tasks</td>
+        <td>Isolation, bureaucracy</td>
+      </tr>
+      <tr>
+        <th>Glimmora response</th>
+        <td>SEO tools with real answers</td>
+        <td>Grounded Copilot, honest numbers</td>
+        <td>Low-friction subscription</td>
+        <td>Visa-aware matching kills ghosting</td>
+        <td>Structured offer + negotiation</td>
+        <td>Dynamic checklist generated from KG</td>
+        <td>Escrow + verified partners</td>
+        <td>Arrival-mode Copilot + first-week tasks</td>
+        <td>Community + proactive alerts</td>
+      </tr>
+      <tr>
+        <th>Copilot mode</th>
+        <td>Anonymous preview</td>
+        <td>Explorer</td>
+        <td>Activation</td>
+        <td>Career coach</td>
+        <td>Negotiator</td>
+        <td>Planner</td>
+        <td>Concierge</td>
+        <td>Arrival co-pilot</td>
+        <td>Lifelong assistant</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p style="margin-top:14px;font-size:13.5px;color:var(--slate)">
+    <b>Legend.</b> &nbsp; Emotions: <span style="font-family:'JetBrains Mono',monospace">●</span> high · <span style="font-family:'JetBrains Mono',monospace">◐</span> mixed · <span style="font-family:'JetBrains Mono',monospace">○</span> low. Read the two glyphs as (confidence · optimism) at that stage.
+  </p>
+</section>
+
+<!-- ================= 11 COMPLETE JOURNEY WALKTHROUGH ================= -->
+<section id="walkthrough">
+  <h2><span class="num">11 — Complete journey walkthrough</span>Priya&rsquo;s move, told end to end.</h2>
+
+  <p class="section-lede">
+    Meet Priya. 34, senior backend engineer in Bangalore, married to Rohan, mother to eight-year-old Ananya. She wants to move the family to Germany. This is what her time with Glimmora Relocate looks like, from first click to a life in Berlin.
+  </p>
+
+  <div class="walk">
+    <h3>Stage 01 · Discover — Public Site</h3>
+    <div class="meta">Weekend, 9 months before move</div>
+    <p>Priya searches &ldquo;move to Germany from India&rdquo; on a Saturday morning. She lands on a Glimmora guide that actually has useful numbers, not fluff. In the side panel is a <b>salary simulator</b>. She enters her role, seniority, and current salary. The tool shows her take-home after Germany&rsquo;s taxes, rent in Berlin, and an honest monthly leftover. She reads two case studies and opens the <b>country comparison</b> tool. She is impressed enough to leave her email for updates.</p>
+
+    <h3>Stage 02 · Explore — Public Site → Consumer App</h3>
+    <div class="meta">Next weekend</div>
+    <p>She clicks an email link and lands inside the Consumer App, signed up with a single click. The <b>Copilot</b> greets her by name and references the simulations she ran last week. Over twenty minutes, it walks her through an intake conversation — her family, her skills, her timeline — and a <b>Digital Twin v0</b> is built. She spends the rest of the afternoon comparing Germany vs Netherlands vs Portugal. The Copilot explains trade-offs with actual numbers tied to her Twin: &ldquo;With your profile and salary target, Germany has 3.4x more open roles but higher tax; Portugal has better family tax breaks but your salary expectation is above the market.&rdquo;</p>
+
+    <h3>Stage 03 · Commit — Consumer App</h3>
+    <div class="meta">Two weeks later</div>
+    <p>She is sold on Germany. She subscribes to the $100/year plan. This unlocks the <b>document vault</b>, <b>plan execution</b>, and access to the <b>Marketplace</b>. The Copilot offers to include Rohan and Ananya as linked family members; she sends Rohan an invite and adds Ananya&rsquo;s record (minor, no separate login).</p>
+
+    <h3>Stage 04 · Hunt Job — Consumer App ↔ Employer Portal</h3>
+    <div class="meta">Weeks 3–10</div>
+    <p>In <b>Job Discovery</b>, she sees only roles where the employer&rsquo;s sponsorship policy matches her profile — this is the <b>visa-aware matching</b> at work. She applies to nine roles over six weeks. The Copilot tailors each CV and cover letter from her Twin. Three companies shortlist her. She runs <b>mock interviews</b> inside the app, then takes live interviews scheduled through the Employer Portal by recruiters on the other side. Feedback from rejections tunes her <b>readiness score</b>.</p>
+
+    <h3>Stage 05 · Get Offer — Employer Portal → Consumer App</h3>
+    <div class="meta">Week 11</div>
+    <p>A Berlin fintech sends her an offer. Inside her Consumer App, the offer lands as a structured card — base, bonus, equity, start date, relocation benefit, visa path. The Copilot runs it through the <b>financial model</b> and shows her Germany-equivalent take-home plus an explicit delta vs her current Bangalore package. She negotiates through the structured thread; the employer adjusts. She accepts. A moment later, <b>Job-Relocation Sync</b> fires: Berlin, EU Blue Card path, 1 October start date now live in her Relocation Twin.</p>
+
+    <h3>Stage 06 · Plan Move — Consumer App</h3>
+    <div class="meta">Weeks 12–14</div>
+    <p>Her dashboard transforms. Instead of exploration tools, she now sees a <b>timeline</b> anchored on 1 October, populated with milestones: Blue Card appointment (week 18), housing booked (by week 22), school place for Ananya (by week 24), bank account (week 26), flight (week 38). The <b>Workflow Orchestrator</b> has resolved dependencies automatically — she can&rsquo;t book the apartment before her employment contract is signed, so that task is blocked until then. The <b>dynamic document checklist</b> shows her fifteen documents she&rsquo;ll need, with statuses.</p>
+
+    <h3>Stage 07 · Execute — Consumer App ↔ Partner Portal</h3>
+    <div class="meta">Weeks 15–34</div>
+    <p>She starts executing tasks. She uploads her degree certificate; the AI validator checks the document, catches that the Apostille translation is missing, and tells her how to fix it. She re-uploads; it passes into the vault.</p>
+    <p>In <b>Housing</b>, the Marketplace surfaces twelve matched apartments in Berlin ranked by her neighbourhood fit (family-friendly, near an international school). She shortlists three, books one. The deposit — &euro;3,200 — flows into <b>escrow</b>. On the Partner Portal side, a Berlin property manager accepts the booking and confirms key handover for 28 September.</p>
+    <p>For Ananya, the <b>School matching</b> surfaces two English-language primary schools with open slots; Priya completes admissions via the Marketplace. For the bank, she begins a remote account opening through a German neobank partner. Insurance is bundled. Rohan, meanwhile, uses his linked account to start his parallel job search — the <b>Family Intelligence</b> module runs his plan inside Priya&rsquo;s.</p>
+
+    <h3>Stage 08 · Arrive — Consumer App ↔ Partner Portal</h3>
+    <div class="meta">27 September — 4 October</div>
+    <p>They land in Berlin on 28 September. The Copilot has switched to <b>arrival mode</b>: shorter, checklist-driven. The property manager meets them at the apartment; Priya confirms the keys in the app. The <b>escrow releases</b> automatically — the landlord&rsquo;s bank account lands the rent deposit within the hour. The app&rsquo;s <b>first-week checklist</b> starts firing: register the address at the Bürgeramt, activate the SIM card (ordered through the Marketplace, delivered to the apartment), buy a month&rsquo;s transit pass, pick up her <b>Blue Card</b>. Ananya starts school; a Copilot-suggested playdate with another child from the platform is scheduled for the weekend.</p>
+
+    <h3>Stage 09 · Settle — Consumer App</h3>
+    <div class="meta">Ongoing</div>
+    <p>Three months in, Priya&rsquo;s app looks different again. The timeline&rsquo;s active tasks are gone; in their place is a <b>steady-state view</b>: her Blue Card renews in 47 months (the Copilot will nag her at month 45), her tax filing is due in April, Rohan&rsquo;s interview prep for a local role is active, Ananya&rsquo;s parent-teacher conference is on the calendar. The Copilot is no longer a planner — it is an assistant that knows everything about her family&rsquo;s life in Germany and surfaces what matters proactively.</p>
+
+    <p>Behind the scenes, Priya&rsquo;s journey is now feeding the <b>Data Flywheel</b>. The next Indian engineer moving to Berlin with a family of three will get a slightly sharper plan — realistic timing for the Blue Card appointment in her district, a better neighbourhood rank for family-friendly units, a truer estimate of first-year tax. She did not only complete her journey; she made the platform measurably better.</p>
+  </div>
+
+  <div class="callout">
+    <b>Why this walkthrough matters.</b> Every portal shows up in it. The Public Site acquires her. The Consumer App is her home. The Employer Portal is the other side of her job hunt. The Partner Portal is how every real-world service gets delivered. The Corporate Portal is absent in this story (Priya is self-funded) — but if her employer had an enterprise contract, it would sit underneath her journey as a policy envelope, visible to her HR team. The Admin Console watched over every trust-critical moment (partner verification, document validation, any disputed payments). That is what a single-platform view looks like from the user&rsquo;s chair.
+  </div>
+</section>
+
+<footer>
+  © Glimmora · Portal Flows &amp; Journey · v0.1 · 2026-04-22 · Companion to <code>architecture.html</code> &amp; <code>handbook.html</code>
+</footer>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: '13.5px',
+      primaryColor: '#FFFFFF',
+      primaryTextColor: '#0F1222',
+      primaryBorderColor: '#2B2E44',
+      lineColor: '#5E6379',
+      secondaryColor: '#F3DAC7',
+      tertiaryColor: '#E2E3F2',
+      clusterBkg: '#FAF7F2',
+      clusterBorder: '#D6CCBB',
+      edgeLabelBackground: '#FAF7F2',
+      noteBkgColor: '#FAF7F2',
+      noteBorderColor: '#D6CCBB'
+    },
+    flowchart: { curve: 'basis', padding: 16, nodeSpacing: 44, rankSpacing: 56, htmlLabels: true, useMaxWidth: true },
+    sequence: { actorMargin: 44, boxMargin: 14, mirrorActors: false, useMaxWidth: true }
+  });
+</script>
+</body>
+</html>

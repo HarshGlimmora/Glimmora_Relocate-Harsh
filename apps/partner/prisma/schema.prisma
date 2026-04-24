@@ -1,0 +1,223 @@
+// Glimmora for Partners — Service Provider Portal
+// SQLite for local dev. Models a multi-tenant supply-side portal for housing,
+// schools, banks, insurers, legal — any provider fulfilling relocation services.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A supply-side business — an apartment agency, an international school, etc.
+model Partner {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  category      String   // HOUSING, SCHOOL, BANK, LEGAL, INSURANCE, LANGUAGE, LOCAL
+  website       String?
+  about         String?
+  hqCountry     String?
+  hqCity        String?
+  logoUrl       String?
+  // KYB verification gating — set by Admin Console.
+  verificationStatus String  @default("PENDING") // PENDING, IN_REVIEW, APPROVED, REJECTED
+  kybSubmittedAt     DateTime?
+  kybApprovedAt      DateTime?
+  kybRejectedReason  String?
+  // Quality signal surfaced across the platform.
+  rating        Float    @default(0)
+  reviewCount   Int      @default(0)
+  fulfilmentRateBps Int  @default(0) // 9800 = 98.00%
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  members       PartnerMembership[]
+  listings      Listing[]
+  bookings      Booking[]
+  payouts       Payout[]
+  reviews       Review[]
+  docs          KybDocument[]
+}
+
+model PartnerUser {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified DateTime?
+  passwordHash  String
+  name          String?
+  title         String?
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships   PartnerMembership[]
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model PartnerMembership {
+  id        String   @id @default(cuid())
+  partnerId String
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  userId    String
+  user      PartnerUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("OPERATOR") // OWNER, OPERATOR, FINANCE, VIEWER
+  createdAt DateTime @default(now())
+
+  @@unique([partnerId, userId])
+}
+
+// An inventory item — an apartment listing, a school seat slot, a lawyer hour.
+model Listing {
+  id            String   @id @default(cuid())
+  partnerId     String
+  partner       Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  kind          String   // APARTMENT, SCHOOL_SEAT, BANK_APPOINTMENT, LEGAL_PACKAGE, COWORKING, LANGUAGE_COURSE
+  title         String
+  summary       String?
+  city          String
+  country       String   // ISO-2
+  address       String?
+  // Pricing — single-figure or range. currency + billingCycle unify many listing types.
+  priceMin      Int?
+  priceMax      Int?
+  currency      String   @default("EUR")
+  billingCycle  String   @default("one-time") // one-time, monthly, yearly, hourly
+  // Photo array (URLs) stored as JSON.
+  photos        String   @default("[]")
+  // Dynamic attributes (bedrooms, school grade, visa-type, etc.) as JSON.
+  attributes    String   @default("{}")
+  // Available slots/units count. For scarce inventory.
+  capacity      Int      @default(0)
+  capacityTaken Int      @default(0)
+  status        String   @default("ACTIVE") // DRAFT, ACTIVE, ARCHIVED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  publishedAt   DateTime?
+
+  bookings      Booking[]
+}
+
+// A booking request from a Consumer user.
+model Booking {
+  id              String   @id @default(cuid())
+  partnerId       String
+  partner         Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  listingId       String
+  listing         Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  // Consumer-side identity (mirrored, not foreign-keyed across DBs).
+  customerEmail   String
+  customerName    String
+  customerCountry String?
+  customerPassport String?
+  note            String?   // customer's note at booking time
+  status          String   @default("REQUESTED") // REQUESTED, CONFIRMED, DECLINED, IN_PROGRESS, FULFILLED, CANCELLED
+  // Move-in / start dates.
+  startDate       DateTime?
+  endDate         DateTime?
+  // Escrow financials.
+  amount          Int       // total in currency units
+  currency        String    @default("EUR")
+  escrowState     String    @default("HELD") // HELD, RELEASED, REFUNDED, PENDING
+  confirmedAt     DateTime?
+  fulfilledAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  messages        Message[]
+  payout          Payout?
+  review          Review?
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sender    String   // PARTNER, CUSTOMER, SYSTEM
+  author    String   // display name
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
+}
+
+model Payout {
+  id          String   @id @default(cuid())
+  partnerId   String
+  partner     Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  bookingId   String   @unique
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount      Int       // partner take (net of Glimmora fee)
+  platformFee Int       @default(0)
+  currency    String    @default("EUR")
+  status      String    @default("PENDING") // PENDING, RELEASED, HELD, FAILED
+  releasedAt  DateTime?
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  partnerId String
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  rating    Int       // 1-5
+  body      String?
+  authorName String
+  createdAt DateTime  @default(now())
+
+  @@index([partnerId, createdAt])
+}
+
+model KybDocument {
+  id        String   @id @default(cuid())
+  partnerId String
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  kind      String   // CERT_OF_INCORPORATION, VAT, PROOF_OF_ADDRESS, DIRECTOR_ID, INSURANCE
+  fileName  String
+  fileUrl   String?
+  uploadedAt DateTime @default(now())
+  status    String    @default("SUBMITTED") // SUBMITTED, APPROVED, REJECTED
+}
+
+// ---- NextAuth tables ----
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user              PartnerUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         PartnerUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

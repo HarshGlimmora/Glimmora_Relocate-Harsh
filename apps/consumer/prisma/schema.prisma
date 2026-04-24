@@ -1,0 +1,219 @@
+// Glimmora Relocate — Consumer App
+// Prisma schema · SQLite for local dev · designed to swap to Postgres at W4
+// Note: SQLite doesn't support enums; we use String fields with runtime validation in zod schemas.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---- UserMode: INDIVIDUAL | FAMILY | STUDENT
+// ---- AccountStatus: ACTIVE | SUSPENDED | DELETED
+// ---- SubscriptionTier: FREE | BASE | PREMIUM
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  emailVerified DateTime?
+  passwordHash  String
+  name          String?
+  image         String?
+  mode          String         @default("INDIVIDUAL")
+  status        String         @default("ACTIVE")
+  locale        String         @default("en")
+  timezone      String         @default("UTC")
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  profile       Profile?
+  twin          Twin?
+  subscription  Subscription?
+  sessions      Session[]
+  accounts      Account[]
+  preferences   Preferences?
+  relocation    Relocation?
+}
+
+// Active relocation plan, triggered by an offer-accepted event from Glimmora for Employers.
+// One per user; the bridge endpoint upserts by userId.
+model Relocation {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Hire context (mirror from Employer DB)
+  employerName  String
+  employerSlug  String?
+  jobTitle      String
+  startDate     DateTime?
+  salary        Int?
+  currency      String    @default("EUR")
+  visaRoute     String?
+
+  // Destination
+  destCountry   String
+  destCity      String?
+
+  status        String    @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED
+  acceptedAt    DateTime  @default(now())
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  milestones    RelocationMilestone[]
+}
+
+model RelocationMilestone {
+  id            String     @id @default(cuid())
+  relocationId  String
+  relocation    Relocation @relation(fields: [relocationId], references: [id], onDelete: Cascade)
+
+  kind          String     // OFFER_ACCEPTED, VISA_APPLY, VISA_APPROVE, HOUSING, FLIGHTS, BANK, MOVE_IN, START_DAY
+  title         String
+  description   String?
+  status        String     @default("PENDING") // PENDING, IN_PROGRESS, DONE, BLOCKED
+  dueDate       DateTime?
+  completedAt   DateTime?
+  order         Int        @default(0)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([relocationId, order])
+}
+
+model Profile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName       String?
+  lastName        String?
+  displayName     String?
+  avatarUrl       String?
+  phone           String?
+
+  currentCountry  String?
+  currentCity     String?
+  nationality     String?
+  passportNumber  String?
+
+  headline        String?
+  bio             String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Twin {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  targetCountries      String   @default("[]")
+  timelineMonths       Int?
+  budgetUSD            Int?
+
+  profession           String?
+  yearsExperience      Int?
+  seniorityLevel       String?
+
+  familySize           Int      @default(1)
+  hasChildren          Boolean  @default(false)
+  childrenCount        Int      @default(0)
+
+  stage                String   @default("exploring")
+  readinessScore       Int      @default(0)
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Preferences {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  emailNotifications   Boolean  @default(true)
+  pushNotifications    Boolean  @default(true)
+  weeklyDigest         Boolean  @default(true)
+  productUpdates       Boolean  @default(true)
+  marketingEmails      Boolean  @default(false)
+
+  shareWithPartners    Boolean  @default(false)
+  allowFamilyView      Boolean  @default(true)
+  twinShareWithCoach   Boolean  @default(false)
+
+  theme                String   @default("system")
+  density              String   @default("comfortable")
+  reduceMotion         Boolean  @default(false)
+
+  updatedAt            DateTime @updatedAt
+}
+
+model Subscription {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tier          String    @default("FREE")
+  status        String    @default("active")
+  currentPeriodEnd  DateTime?
+  cancelAtPeriodEnd Boolean   @default(false)
+
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+  stripePriceId        String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+
+  @@index([email])
+}
