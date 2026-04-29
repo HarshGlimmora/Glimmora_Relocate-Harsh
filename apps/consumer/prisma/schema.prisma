@@ -217,3 +217,24 @@ model PasswordResetToken {
 
   @@index([email])
 }
+
+// Glimmora FastAPI backend bridge: pairs a consumer NextAuth user
+// with an account on the FastAPI backend, storing the access + refresh
+// tokens we need to call /api/v1/* endpoints. One-to-one with User.
+model BackendSession {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  backendUserId   String
+  backendEmail    String   @default("")
+  caseId          String
+  accessToken     String
+  refreshToken    String
+  expiresAt       DateTime
+
+  // Local-only password we generate to register the user on the backend
+  // (the user never sees this; consumer auth is the source of truth).
+  backendPassword String
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

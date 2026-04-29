@@ -1,15 +1,32 @@
+/**
+ * Sidebar navigation — ordered to mirror the backend pipeline:
+ *   Auth → Resume → Profile → Country → Jobfit → Visa → Family →
+ *   Finance → Documents → Workflow → Culture → Timeline → Synthesis.
+ *
+ * Older routes (`/app/discover`, `/app/career`, `/app/life`,
+ * `/app/marketplace`, `/app/messages`, `/app/plan`) are kept available
+ * but de-emphasized under "Other" since the user's main flow goes
+ * through the backend-driven analysis pages above.
+ */
+
 import {
   Home,
   Compass,
-  Route,
+  FileSpreadsheet,
+  IdCard,
   Briefcase,
-  Building2,
+  Globe2,
   Users,
   Coins,
-  FileText,
+  FolderClosed,
+  Network,
+  Languages,
+  CalendarRange,
+  Trophy,
+  Settings,
+  CreditCard,
   Store,
-  Globe,
-  MessageSquareText,
+  Route,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,95 +47,49 @@ export const navSections: NavSection[] = [
   {
     title: "Home",
     items: [
-      {
-        label: "Dashboard",
-        href: "/app",
-        icon: Home,
-        description: "Today, at a glance",
-      },
+      { label: "Dashboard", href: "/app", icon: Home, description: "Today's status" },
     ],
   },
   {
-    title: "Explore",
+    title: "Onboarding",
     items: [
-      {
-        label: "Discover",
-        href: "/app/discover",
-        icon: Compass,
-        description: "Countries, jobs, opportunities",
-      },
-      {
-        label: "My Plan",
-        href: "/app/plan",
-        icon: Route,
-        description: "Timeline, tasks, readiness",
-      },
+      { label: "Resume", href: "/app/onboarding/resume", icon: FileSpreadsheet, description: "Upload & parse" },
+      { label: "Profile", href: "/app/onboarding/profile", icon: IdCard, description: "Confirm details" },
     ],
   },
   {
-    title: "Build your life",
+    title: "Analysis",
     items: [
-      {
-        label: "Career",
-        href: "/app/career",
-        icon: Briefcase,
-        description: "Applications, CVs, interviews",
-      },
-      {
-        label: "Life Setup",
-        href: "/app/life",
-        icon: Building2,
-        description: "Housing, schools, banking, more",
-      },
-      {
-        label: "Family",
-        href: "/app/family",
-        icon: Users,
-        description: "Spouse, children, community",
-      },
-      {
-        label: "Finance",
-        href: "/app/finance",
-        icon: Coins,
-        description: "Salary, tax, cost of living",
-      },
+      { label: "Country", href: "/app/country", icon: Globe2, description: "Origin vs destination" },
+      { label: "Job fit", href: "/app/jobs", icon: Briefcase, description: "Role, salary, sponsor" },
+      { label: "Visa", href: "/app/visa", icon: IdCard, description: "Route & blockers" },
+      { label: "Family", href: "/app/family", icon: Users, description: "Household impact" },
+      { label: "Finance", href: "/app/finance", icon: Coins, description: "Affordability" },
+      { label: "Documents", href: "/app/documents", icon: FolderClosed, description: "Checklist" },
+      { label: "Workflow", href: "/app/workflow", icon: Network, description: "Dependencies" },
+      { label: "Culture", href: "/app/culture", icon: Languages, description: "Norms & language" },
+      { label: "Timeline", href: "/app/timeline", icon: CalendarRange, description: "Phases & milestones" },
     ],
   },
   {
-    title: "Execute",
+    title: "Decision",
     items: [
-      {
-        label: "Documents",
-        href: "/app/documents",
-        icon: FileText,
-        description: "Checklist, vault, validation",
-      },
-      {
-        label: "Marketplace",
-        href: "/app/marketplace",
-        icon: Store,
-        description: "Verified partners & bookings",
-      },
-      {
-        label: "Culture & Language",
-        href: "/app/culture",
-        icon: Globe,
-        description: "Learning paths, cultural fit",
-      },
-      {
-        label: "Messages",
-        href: "/app/messages",
-        icon: MessageSquareText,
-        description: "Copilot threads & partner chats",
-      },
+      { label: "Final synthesis", href: "/app/synthesis", icon: Trophy, description: "Verdict & next actions" },
+    ],
+  },
+  {
+    title: "Other",
+    items: [
+      { label: "Discover", href: "/app/discover", icon: Compass },
+      { label: "Plan", href: "/app/plan", icon: Route },
+      { label: "Marketplace", href: "/app/marketplace", icon: Store },
     ],
   },
 ];
 
 export const accountNav: NavItem[] = [
-  { label: "Profile & Twin", href: "/app/profile", icon: Users },
-  { label: "Settings", href: "/app/settings", icon: Compass },
-  { label: "Billing", href: "/app/billing", icon: Coins },
+  { label: "Settings", href: "/app/settings", icon: Settings },
+  { label: "Billing", href: "/app/billing", icon: CreditCard },
 ];
 
 export function flattenNav(): NavItem[] {

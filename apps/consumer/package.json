@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "prisma db push --accept-data-loss --skip-generate && next start",
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
@@ -42,6 +42,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/forms": "^0.5.9",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.16.11",
