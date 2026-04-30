@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GlimmoraMark } from "@/components/shared/glimmora-mark";
+import { PublicNav } from "@/components/public/public-nav";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,16 +12,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <span className="font-sans text-[15px] font-semibold tracking-tight">Glimmora</span>
           </Link>
 
-          <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">
-            <Link href="/compare" className="text-[13.5px] text-ink-700 hover:text-ink-900">Compare countries</Link>
-            <Link href="/salary" className="text-[13.5px] text-ink-700 hover:text-ink-900">Salary simulator</Link>
-            <Link href="/guides" className="text-[13.5px] text-ink-700 hover:text-ink-900">Guides</Link>
-            <Link href="/pricing" className="text-[13.5px] text-ink-700 hover:text-ink-900">Pricing</Link>
-            <span className="h-4 w-px bg-ink-200" />
-            <Link href="/for-employers" className="text-[13.5px] text-ink-700 hover:text-ink-900">For employers</Link>
-            <Link href="/for-partners" className="text-[13.5px] text-ink-700 hover:text-ink-900">For partners</Link>
-            <Link href="/for-companies" className="text-[13.5px] text-ink-700 hover:text-ink-900">For companies</Link>
-          </nav>
+          <PublicNav />
 
           <div className="flex items-center gap-3 shrink-0">
             <Link href="/sign-in" className="text-[13.5px] text-ink-700 hover:text-ink-900">Sign in</Link>
@@ -55,20 +47,38 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
               {([
                 {
+                  h: "For movers",
+                  items: [
+                    ["For individuals", "/for-individuals", "live"],
+                    ["For families", "/for-families", "live"],
+                    ["For students", "/for-students", "live"],
+                  ],
+                },
+                {
                   h: "Tools",
-                  items: [["Compare countries", "/compare", "live"], ["Salary simulator", "/salary", "live"], ["Guides & blog", "/guides", "live"]],
+                  items: [
+                    ["Compare countries", "/compare", "live"],
+                    ["Salary simulator", "/salary", "live"],
+                    ["Guides & blog", "/guides", "live"],
+                    ["Pricing", "/pricing", "live"],
+                  ],
                 },
                 {
-                  h: "Audience",
-                  items: [["For movers", "/sign-up", "live"], ["For employers", "/for-employers", "live"], ["For partners", "/for-partners", "live"], ["For companies", "/for-companies", "live"]],
-                },
-                {
-                  h: "Company",
-                  items: [["Pricing", "/pricing", "live"], ["About", null, "W5"], ["Contact", "mailto:hello@glimmora.ai", "live"], ["Careers", null, "W5"]],
+                  h: "For partners",
+                  items: [
+                    ["For employers", "/for-employers", "live"],
+                    ["For partners", "/for-partners", "live"],
+                    ["For companies", "/for-companies", "live"],
+                  ],
                 },
                 {
                   h: "Legal",
-                  items: [["Privacy", null, "W5"], ["Terms", null, "W5"], ["Cookies", null, "W5"], ["Security", null, "W5"]],
+                  items: [
+                    ["About", null, "W5"],
+                    ["Contact", "mailto:hello@glimmora.ai", "live"],
+                    ["Privacy", null, "W5"],
+                    ["Terms", null, "W5"],
+                  ],
                 },
               ] as { h: string; items: [string, string | null, string][] }[]).map((col) => (
                 <div key={col.h}>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   Home, GraduationCap, Landmark, Scale, Coffee, Languages,
   MapPin, Star, Users, ShieldCheck, ArrowRight, PackageSearch, Clock,
@@ -45,15 +46,26 @@ function bookingAmount(l: PartnerListing) {
 
 export default async function MarketplacePage() {
   const session = await auth();
-  const user = session?.user?.id
-    ? await prisma.user.findUnique({
-        where: { id: session.user.id },
-        include: { twin: true },
-      })
-    : null;
+  if (!session?.user?.id) {
+    redirect("/sign-in");
+  }
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { twin: true, relocation: true },
+  });
+  if (!user) {
+    redirect("/sign-in");
+  }
+  if (!user.relocation) {
+    redirect("/onboarding");
+  }
 
-  const targetCountries: string[] = user?.twin?.targetCountries ? JSON.parse(user.twin.targetCountries) : [];
-  const primaryCountry = targetCountries[0];
+  const mode = (user.mode as "INDIVIDUAL" | "FAMILY" | "STUDENT" | undefined) ?? "INDIVIDUAL";
+  const isStudent = mode === "STUDENT";
+  const isFamily = mode === "FAMILY";
+
+  // Country preference: relocation destination drives partner filtering.
+  const primaryCountry = user.relocation.destCountry;
 
   let listings: PartnerListing[] = [];
   let bookings: PartnerBooking[] = [];
@@ -61,8 +73,8 @@ export default async function MarketplacePage() {
 
   try {
     [listings, bookings] = await Promise.all([
-      listPartnerListings(primaryCountry ? { country: primaryCountry } : undefined),
-      user?.email ? listCustomerBookings(user.email) : Promise.resolve([]),
+      listPartnerListings({ country: primaryCountry }),
+      listCustomerBookings(user.email),
     ]);
   } catch (e) {
     apiError = e instanceof Error ? e.message : "Partner portal unreachable";
@@ -79,22 +91,70 @@ export default async function MarketplacePage() {
     return acc;
   }, {});
 
+  const heroHeadline = isStudent
+    ? "Everything your studies need."
+    : isFamily
+    ? "Everything your family needs."
+    : "Everything your move needs.";
+
+  const heroSub = isStudent
+    ? "Verified halls and student housing, blocked-account providers, student insurance, language schools. Book with escrow protection — your deposit is held until you arrive."
+    : isFamily
+    ? "Verified family-sized housing, international and bilingual school seats, joint banking, paediatric cover, removalists. Book with escrow protection — every deposit guaranteed."
+    : "Verified housing, school seats, legal packages, bank setups, coworking. Book with escrow protection — no deposit lost to unknown landlords.";
+
+  const focusCategories = isStudent
+    ? ["HOUSING", "BANK", "INSURANCE", "LANGUAGE"]
+    : isFamily
+    ? ["HOUSING", "SCHOOL", "BANK", "INSURANCE", "LEGAL"]
+    : ["HOUSING", "BANK", "LEGAL", "INSURANCE", "LOCAL"];
+
+  const focusLabel = isStudent
+    ? "Most relevant for your studies"
+    : isFamily
+    ? "Most relevant for your family"
+    : "Most relevant for your move";
+
   return (
     <div className="mx-auto max-w-[1200px] px-6 py-12 md:px-10 md:py-14">
       <header className="mb-10">
         <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-500 font-medium">Marketplace</p>
         <h1 className="mt-3 font-sans text-[clamp(2.25rem,4.5vw,3.25rem)] font-semibold leading-[1.02] tracking-[-0.03em] text-ink-900">
-          Everything your move needs.
+          {heroHeadline}
         </h1>
         <p className="mt-4 max-w-xl text-[15.5px] leading-[1.6] text-ink-600">
-          Verified housing, school seats, legal packages, bank setups, coworking. Book with escrow protection — no deposit lost to unknown landlords.
+          {heroSub}
         </p>
       </header>
 
+      {/* Mode-relevant focus tags — guides the user without hiding listings */}
+      <section className="mb-8 rounded-2xl border border-ink-200 bg-white p-5 md:p-6">
+        <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-500 font-medium">
+          {focusLabel}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {focusCategories.map((cat) => (
+            <span
+              key={cat}
+              className="inline-flex h-9 items-center rounded-full border border-ink-200 bg-parchment px-3 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-700 font-medium"
+            >
+              {categoryTitle(cat)}
+            </span>
+          ))}
+        </div>
+      </section>
+
       {apiError ? (
-        <section className="mb-8 rounded-2xl border border-danger-200 bg-danger-50 p-5 text-[13px] text-danger-700">
-          <p className="font-semibold">Couldn't reach the partner marketplace.</p>
-          <p className="mt-1 text-[12.5px]">{apiError}</p>
+        <section className="mb-8 rounded-2xl border border-gilt-200 bg-gilt-50/60 p-5">
+          <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-gilt-800 font-medium">
+            Inventory connecting
+          </p>
+          <p className="mt-2 text-[14px] font-semibold text-ink-900">
+            Live partner inventory is reconnecting.
+          </p>
+          <p className="mt-1 text-[13px] text-ink-700 leading-[1.55]">
+            Verified housing, school seats, banking, and legal packages will appear here as soon as the partner network responds. Check back in a moment.
+          </p>
         </section>
       ) : null}
 

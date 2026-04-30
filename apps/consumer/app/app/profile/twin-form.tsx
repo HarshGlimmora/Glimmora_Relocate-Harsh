@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { updateTwin } from "./actions";
 
+type Mode = "INDIVIDUAL" | "FAMILY" | "STUDENT";
+
 interface Initial {
   profession: string;
   seniorityLevel: string;
@@ -21,11 +23,14 @@ interface Initial {
   childrenCount: number;
 }
 
-export function TwinForm({ initial }: { initial: Initial }) {
+export function TwinForm({ mode, initial }: { mode: Mode; initial: Initial }) {
   const [pending, startTransition] = React.useTransition();
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [hasChildren, setHasChildren] = React.useState(initial.hasChildren);
+
+  const isStudent = mode === "STUDENT";
+  const isFamily = mode === "FAMILY";
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -57,37 +62,41 @@ export function TwinForm({ initial }: { initial: Initial }) {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="profession">Profession</Label>
+          <Label htmlFor="profession">{isStudent ? "Field of study" : "Profession"}</Label>
           <Input
             id="profession"
             name="profession"
             defaultValue={initial.profession}
-            placeholder="e.g. Software Engineer"
+            placeholder={isStudent ? "e.g. Computer Science" : "e.g. Software Engineer"}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="seniorityLevel">Seniority</Label>
+          <Label htmlFor="seniorityLevel">{isStudent ? "Degree level" : "Seniority"}</Label>
           <Input
             id="seniorityLevel"
             name="seniorityLevel"
             defaultValue={initial.seniorityLevel}
-            placeholder="Mid / Senior / Staff"
+            placeholder={isStudent ? "BSc / MSc / PhD" : "Mid / Senior / Staff"}
           />
         </div>
+        {!isStudent ? (
+          <div className="space-y-1.5">
+            <Label htmlFor="yearsExperience">Years of experience</Label>
+            <Input
+              id="yearsExperience"
+              name="yearsExperience"
+              type="number"
+              min={0}
+              max={60}
+              defaultValue={initial.yearsExperience ?? ""}
+              placeholder="8"
+            />
+          </div>
+        ) : null}
         <div className="space-y-1.5">
-          <Label htmlFor="yearsExperience">Years of experience</Label>
-          <Input
-            id="yearsExperience"
-            name="yearsExperience"
-            type="number"
-            min={0}
-            max={60}
-            defaultValue={initial.yearsExperience ?? ""}
-            placeholder="8"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="timelineMonths">Timeline (months)</Label>
+          <Label htmlFor="timelineMonths">
+            {isStudent ? "Months until semester" : "Timeline (months)"}
+          </Label>
           <Input
             id="timelineMonths"
             name="timelineMonths"
@@ -95,73 +104,90 @@ export function TwinForm({ initial }: { initial: Initial }) {
             min={1}
             max={120}
             defaultValue={initial.timelineMonths ?? ""}
-            placeholder="9"
+            placeholder={isStudent ? "4" : "9"}
           />
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="targetCountries">Target countries (ISO-2, comma separated)</Label>
-        <Input
-          id="targetCountries"
-          name="targetCountries"
-          defaultValue={initial.targetCountries.join(", ")}
-          placeholder="DE, NL, PT"
-          className="uppercase"
-        />
-        <p className="text-[11px] text-ink-500">
-          Up to 10 country codes. The Copilot will rank them by fit.
-        </p>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="budgetUSD">Budget (USD)</Label>
+        <Label htmlFor="budgetUSD">
+          {isStudent ? "Annual study budget (USD)" : "Budget (USD)"}
+        </Label>
         <Input
           id="budgetUSD"
           name="budgetUSD"
           type="number"
           min={0}
           defaultValue={initial.budgetUSD ?? ""}
-          placeholder="20000"
+          placeholder={isStudent ? "12000" : "20000"}
         />
+        <p className="text-[11px] text-ink-500">
+          {isStudent
+            ? "Tuition + living. Helps the Copilot suggest scholarships and part-time options."
+            : "What you can put toward the move (deposits, flights, settling-in)."}
+        </p>
       </div>
 
-      <div className="hairline" />
+      {/* Hidden inputs preserve existing values for fields not shown in this mode.
+          Avoids zeroing out data when a different mode previously saved them. */}
+      {isStudent ? (
+        <input type="hidden" name="yearsExperience" value={initial.yearsExperience ?? ""} />
+      ) : null}
+      <input
+        type="hidden"
+        name="targetCountries"
+        value={initial.targetCountries.join(", ")}
+      />
 
-      <div>
-        <p className="mono-label mb-3">Family</p>
-        <div className="grid gap-5 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="familySize">Family size</Label>
-            <Input
-              id="familySize"
-              name="familySize"
-              type="number"
-              min={1}
-              max={20}
-              defaultValue={initial.familySize}
-            />
+      {/* Family size + children fields ONLY shown for INDIVIDUAL mode (where it's
+          context the Copilot can use). For FAMILY mode the source-of-truth is
+          /app/family workspace — duplicating here causes drift. For STUDENT mode
+          family fields are not relevant. */}
+      {!isFamily && !isStudent ? (
+        <>
+          <div className="hairline" />
+          <div>
+            <p className="mono-label mb-3">Household</p>
+            <div className="grid gap-5 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="familySize">Household size</Label>
+                <Input
+                  id="familySize"
+                  name="familySize"
+                  type="number"
+                  min={1}
+                  max={20}
+                  defaultValue={initial.familySize}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-ink-200 bg-parchment/60 px-4 py-3">
+                <Label htmlFor="hasChildren" className="text-[12.5px] normal-case tracking-normal text-ink-900">
+                  Children with you?
+                </Label>
+                <Switch id="hasChildren" checked={hasChildren} onCheckedChange={setHasChildren} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="childrenCount">Children count</Label>
+                <Input
+                  id="childrenCount"
+                  name="childrenCount"
+                  type="number"
+                  min={0}
+                  max={12}
+                  defaultValue={initial.childrenCount}
+                  disabled={!hasChildren}
+                />
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-between rounded-md border border-ink-200 bg-parchment/60 px-4 py-3">
-            <Label htmlFor="hasChildren" className="text-[12.5px] normal-case tracking-normal text-ink-900">
-              Children with you?
-            </Label>
-            <Switch id="hasChildren" checked={hasChildren} onCheckedChange={setHasChildren} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="childrenCount">Children count</Label>
-            <Input
-              id="childrenCount"
-              name="childrenCount"
-              type="number"
-              min={0}
-              max={12}
-              defaultValue={initial.childrenCount}
-              disabled={!hasChildren}
-            />
-          </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        <>
+          <input type="hidden" name="familySize" value={initial.familySize} />
+          <input type="hidden" name="childrenCount" value={initial.childrenCount} />
+          {initial.hasChildren ? <input type="hidden" name="hasChildren" value="on" /> : null}
+        </>
+      )}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="submit" disabled={pending}>

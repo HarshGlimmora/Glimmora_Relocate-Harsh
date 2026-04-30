@@ -228,6 +228,53 @@ export default function LandingPage() {
       </section>
 
       {/* ============================================================ */}
+      {/* AUDIENCE CROSS-LINKS                                          */}
+      {/* ============================================================ */}
+      <section className="py-28 md:py-36">
+        <div className="mx-auto max-w-[1200px] px-6 md:px-10">
+          <div className="mb-12 grid gap-8 md:grid-cols-12 md:items-end">
+            <div className="md:col-span-5">
+              <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-500 font-medium">
+                Who's making the move?
+              </p>
+              <h2 className="mt-4 font-sans text-[clamp(1.75rem,3vw,2.75rem)] font-semibold leading-[1.1] tracking-[-0.02em] text-ink-900">
+                One platform. Three plans. <br /> Yours, tuned to your move.
+              </h2>
+            </div>
+            <p className="md:col-span-7 max-w-xl text-[15px] leading-[1.65] text-ink-600">
+              Whether you're moving solo on a job offer, taking your whole household, or
+              starting a degree abroad, Glimmora generates a plan shaped around the move you're
+              actually making — not generic relocation advice.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <AudienceCard
+              href="/for-individuals"
+              kicker="On your own"
+              title="For individuals"
+              body="Job offer in hand. Visa to file, apartment to find, bank to open, flight to book — sequenced into one timeline that ends on your start day."
+              tone="default"
+            />
+            <AudienceCard
+              href="/for-families"
+              kicker="With your household"
+              title="For families"
+              body="Spouse permits, school enrolment, household shipping, family-sized housing — coordinated for everyone moving with you."
+              tone="lagoon"
+            />
+            <AudienceCard
+              href="/for-students"
+              kicker="Starting a degree"
+              title="For students"
+              body="Student visa, blocked account, halls of residence, semester registration — from your admission letter to your first lecture."
+              tone="gilt"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================ */}
       {/* PRICING                                                       */}
       {/* ============================================================ */}
       <section id="pricing" className="py-28 md:py-36">
@@ -352,6 +399,53 @@ export default function LandingPage() {
 /* ============================================================ */
 /* BITS                                                          */
 /* ============================================================ */
+
+function AudienceCard({
+  href,
+  kicker,
+  title,
+  body,
+  tone,
+}: {
+  href: string;
+  kicker: string;
+  title: string;
+  body: string;
+  tone: "default" | "lagoon" | "gilt";
+}) {
+  const cardCls =
+    tone === "lagoon"
+      ? "border-lagoon-100 bg-lagoon-50/40 hover:border-lagoon-300"
+      : tone === "gilt"
+      ? "border-gilt-200 bg-gilt-50/40 hover:border-gilt-300"
+      : "border-ink-200 bg-white hover:border-ink-900";
+  const kickerCls =
+    tone === "lagoon"
+      ? "text-lagoon-800"
+      : tone === "gilt"
+      ? "text-gilt-800"
+      : "text-ink-500";
+  return (
+    <Link
+      href={href}
+      className={`group flex h-full flex-col rounded-2xl border p-7 transition-colors ${cardCls}`}
+    >
+      <p
+        className={`font-mono text-[10.5px] uppercase tracking-[0.22em] font-medium ${kickerCls}`}
+      >
+        {kicker}
+      </p>
+      <h3 className="mt-4 font-sans text-[22px] font-semibold tracking-tight text-ink-900">
+        {title}
+      </h3>
+      <p className="mt-3 flex-1 text-[13.5px] leading-[1.6] text-ink-600">{body}</p>
+      <span className="mt-6 inline-flex items-center gap-1.5 font-sans text-[13px] font-semibold text-ink-900">
+        See the plan
+        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+      </span>
+    </Link>
+  );
+}
 
 function Stat({ k, l }: { k: string; l: string }) {
   return (
