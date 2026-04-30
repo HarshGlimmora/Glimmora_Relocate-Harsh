@@ -12,28 +12,66 @@ import {
   RisksList,
   ScoreCard,
   SummaryReasoning,
+  ValueLead,
+  readyOrNull,
+  FailedValueLead,
 } from "@/components/backend/envelope-shell";
+import { framingFor } from "@/lib/intent";
+import { JobsPreferencesPanel } from "./jobs-panel";
 
 export const metadata: Metadata = { title: "Job fit" };
 export const dynamic = "force-dynamic";
 
 export default async function JobFitPage() {
-  const { caseId } = await requirePrereqs();
+  const { caseId, profile, intent } = await requirePrereqs();
   const row = await jobfit.ensure(caseId);
+  const ready = readyOrNull(row.envelope);
+  const score = ready?.detail.overall_job_fit_score ?? 0;
+  const target = ready?.detail.role_match.target_role_inferred ?? null;
+  const fastestPath = ready?.detail.job_pathways?.[0] ?? null;
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="02 · Job fit"
-          title="Where your career lands."
-          description="Role match, salary realism, sponsor employability, skill gaps."
+          title="Is your career path realistic here?"
+          description="Role match, salary realism, sponsor employability, skill gaps — one direction, not a long list."
+          intentFraming={framingFor("jobs", intent)}
         />
         <Link href="/app/visa" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Visa →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
       <div className="mt-6 space-y-6">
+        {ready ? (
+          <ValueLead
+            label="Direction we'd back"
+            headline={target ?? `Job-fit ${score}/100`}
+            detail={
+              fastestPath
+                ? `Fastest path: ${fastestPath.name} · ~${fastestPath.time_to_offer_weeks}w to offer · fit ${score}/100`
+                : ready.summary
+            }
+            emphasis={score >= 70 ? "good" : score >= 50 ? "warn" : "bad"}
+            cta={{ href: "/app/visa", text: "What visa unlocks this" }}
+          />
+        ) : (
+          <FailedValueLead envelope={row.envelope} />
+        )}
+
+        <JobsPreferencesPanel
+          initialTargetRole={ready?.detail.role_match.target_role_inferred ?? profile.current_role ?? ""}
+          initialIndustry={profile.industry ?? ""}
+          initialWorkMode={(profile.work_preference ?? "hybrid") as "onsite" | "hybrid" | "remote"}
+          initialNeedsSponsorship={profile.needs_visa_sponsorship ?? true}
+          initialOpenToChange={false}
+          initialFocus={(profile.priority_ranking ?? []) as ("career" | "family" | "cost" | "lifestyle" | "speed")[]}
+          initialSalaryMin={profile.current_salary?.toString() ?? ""}
+          initialSalaryMax={profile.expected_salary?.toString() ?? ""}
+          initialCurrency={profile.salary_currency ?? "EUR"}
+        />
+
         {!isReadyEnvelope(row.envelope) ? (
           <FailedEnvelopeView envelope={row.envelope} />
         ) : (

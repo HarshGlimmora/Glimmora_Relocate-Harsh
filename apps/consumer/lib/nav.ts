@@ -43,6 +43,46 @@ export interface NavSection {
   items: NavItem[];
 }
 
+/**
+ * Per-module slug used for intent emphasis. Only Analysis items have one.
+ */
+type ModuleSlug =
+  | "country" | "jobs" | "visa" | "family" | "finance"
+  | "documents" | "workflow" | "culture" | "timeline";
+
+const SLUG_BY_HREF: Record<string, ModuleSlug> = {
+  "/app/country": "country",
+  "/app/jobs": "jobs",
+  "/app/visa": "visa",
+  "/app/family": "family",
+  "/app/finance": "finance",
+  "/app/documents": "documents",
+  "/app/workflow": "workflow",
+  "/app/culture": "culture",
+  "/app/timeline": "timeline",
+};
+
+/**
+ * Reorders the Analysis section so the user's intent-priority modules sit
+ * at the top. `emphasis` is the ordered list from `lib/intent.ts`.
+ */
+export function navSectionsForIntent(emphasis: readonly string[] | null): NavSection[] {
+  if (!emphasis?.length) return navSections;
+  const order = new Map<string, number>();
+  emphasis.forEach((slug, i) => order.set(slug, i));
+  return navSections.map((s) => {
+    if (s.title !== "Analysis") return s;
+    const items = [...s.items].sort((a, b) => {
+      const sa = SLUG_BY_HREF[a.href];
+      const sb = SLUG_BY_HREF[b.href];
+      const ra = sa ? order.get(sa) ?? 99 : 99;
+      const rb = sb ? order.get(sb) ?? 99 : 99;
+      return ra - rb;
+    });
+    return { ...s, items };
+  });
+}
+
 export const navSections: NavSection[] = [
   {
     title: "Home",

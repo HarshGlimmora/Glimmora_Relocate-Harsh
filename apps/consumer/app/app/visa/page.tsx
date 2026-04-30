@@ -11,28 +11,68 @@ import {
   PageHeader,
   RisksList,
   SummaryReasoning,
+  ValueLead,
+  FailedValueLead,
+  readyOrNull,
 } from "@/components/backend/envelope-shell";
+import { framingFor } from "@/lib/intent";
+import { VisaPreferencesPanel } from "./visa-panel";
 
 export const metadata: Metadata = { title: "Visa direction" };
 export const dynamic = "force-dynamic";
 
+const DIFFICULTY_EMPHASIS: Record<string, "good" | "warn" | "bad"> = {
+  low: "good",
+  moderate: "warn",
+  high: "bad",
+  very_high: "bad",
+};
+
 export default async function VisaPage() {
-  const { caseId } = await requirePrereqs();
+  const { caseId, profile, intent } = await requirePrereqs();
   const row = await visa.ensure(caseId);
+  const ready = readyOrNull(row.envelope);
+  const route = ready?.detail.primary_route ?? null;
+  const blockers = ready?.detail.blockers ?? [];
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="03 · Visa direction"
-          title="The route to your destination."
+          title="The most likely route — and what blocks it."
           description="Direction only — not legal advice. Confirm with a licensed adviser."
+          intentFraming={framingFor("visa", intent)}
         />
         <Link href="/app/family" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Family →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
       <div className="mt-6 space-y-6">
+        {ready && route ? (
+          <ValueLead
+            label="Your strongest route"
+            headline={`${route.name}${route.code ? ` · ${route.code}` : ""}`}
+            detail={
+              blockers.length
+                ? `Difficulty ${route.difficulty}. Top blocker: ${blockers[0].label}.`
+                : `Difficulty ${route.difficulty}. ${ready.summary}`
+            }
+            emphasis={DIFFICULTY_EMPHASIS[route.difficulty] ?? "neutral"}
+            cta={{ href: "/app/documents", text: "What you'll need on paper" }}
+          />
+        ) : (
+          <FailedValueLead envelope={row.envelope} />
+        )}
+
+        <VisaPreferencesPanel
+          initialNationality={profile.nationality ?? ""}
+          initialCurrentVisaStatus={profile.current_visa_status ?? ""}
+          initialSponsorRequired={profile.needs_visa_sponsorship ?? true}
+          initialFamilyRelocation={false}
+          initialEmployment={"employed"}
+        />
+
         {!isReadyEnvelope(row.envelope) ? (
           <FailedEnvelopeView envelope={row.envelope} />
         ) : (

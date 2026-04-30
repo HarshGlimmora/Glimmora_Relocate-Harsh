@@ -11,28 +11,65 @@ import {
   PageHeader,
   RisksList,
   SummaryReasoning,
+  ValueLead,
+  FailedValueLead,
+  readyOrNull,
 } from "@/components/backend/envelope-shell";
+import { framingFor } from "@/lib/intent";
+import { TimelinePreferencesPanel } from "./timeline-panel";
 
 export const metadata: Metadata = { title: "Timeline" };
 export const dynamic = "force-dynamic";
 
 export default async function TimelinePage() {
-  const { caseId } = await requirePrereqs();
+  const { caseId, profile, intent } = await requirePrereqs();
   const row = await timeline.ensure(caseId);
+  const ready = readyOrNull(row.envelope);
+  const minWeeks = ready?.detail.estimated_total_weeks_min ?? 0;
+  const maxWeeks = ready?.detail.estimated_total_weeks_max ?? 0;
+  const start = ready?.detail.earliest_realistic_start_date ?? null;
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="09 · Timeline"
-          title="When and what."
+          title="The earliest realistic start date."
           description="Phases, milestones, blockers, total weeks."
+          intentFraming={framingFor("timeline", intent)}
         />
         <Link href="/app/synthesis" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Synthesis →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
       <div className="mt-6 space-y-6">
+        {ready ? (
+          <ValueLead
+            label="Earliest realistic start"
+            headline={
+              start
+                ? `${start} · ~${minWeeks}–${maxWeeks} weeks`
+                : `${minWeeks}–${maxWeeks} weeks end to end`
+            }
+            detail={ready.summary}
+            emphasis={maxWeeks <= 12 ? "good" : maxWeeks <= 24 ? "warn" : "bad"}
+            cta={{ href: "/app/synthesis", text: "See the verdict" }}
+          />
+        ) : (
+          <FailedValueLead envelope={row.envelope} />
+        )}
+
+        <TimelinePreferencesPanel
+          initialUrgency={(profile.move_urgency ?? "12m") as "asap" | "6m" | "12m" | "exploring"}
+          initialStyle={
+            (profile.priority_ranking ?? []).includes("speed" as never)
+              ? "fast"
+              : (profile.priority_ranking ?? []).includes("family" as never)
+              ? "with_family"
+              : "safe"
+          }
+        />
+
         {!isReadyEnvelope(row.envelope) ? (
           <FailedEnvelopeView envelope={row.envelope} />
         ) : (

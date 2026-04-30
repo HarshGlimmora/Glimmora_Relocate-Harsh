@@ -12,21 +12,31 @@ import { redirect } from "next/navigation";
 import { ensureBackendSession } from "./session";
 import { getProfile } from "./client";
 import type { BackendProfile } from "./types";
+import { getIntent, type IntentMeta } from "@/lib/intent";
 
 export interface PrereqContext {
   caseId: string;
   profile: BackendProfile;
+  intent: IntentMeta | null;
 }
 
 /**
- * Loads the case + profile, redirecting to onboarding if the profile is
- * missing `target_country` (every analysis module needs this).
+ * Loads case + profile + intent. Redirects to:
+ *   - /app/onboarding/intent if no intent yet
+ *   - /app/onboarding/profile if target_country missing
+ *
+ * Module pages call this so they can rely on a complete prereq state and
+ * read `intent` for emphasis-driven copy.
  */
 export async function requirePrereqs(): Promise<PrereqContext> {
   const sess = await ensureBackendSession();
+  const intent = await getIntent();
+  if (!intent) {
+    redirect("/app/onboarding/intent");
+  }
   const profile = await getProfile();
   if (!profile.target_country) {
     redirect("/app/onboarding/profile?missing=target_country");
   }
-  return { caseId: sess.caseId, profile };
+  return { caseId: sess.caseId, profile, intent };
 }

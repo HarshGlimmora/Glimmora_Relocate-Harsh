@@ -68,8 +68,14 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
       ? "(from resume)"
       : "";
 
+  const inferredCount = Object.values(initial.field_sources ?? {}).filter(
+    (s) => s === "resume",
+  ).length;
+  const completion = Math.max(0, Math.min(100, initial.completion_percentage ?? 0));
+
   return (
     <form onSubmit={onSubmit} className="space-y-6 rounded-2xl border border-ink-200 bg-white p-6">
+      <ProfileCompleteness completion={completion} inferredCount={inferredCount} />
       {error ? (
         <div className="rounded-xl bg-danger-50 p-3 text-[13px] text-danger-800">{error}</div>
       ) : null}
@@ -257,6 +263,36 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
         .uppercase { text-transform: uppercase; }
       `}</style>
     </form>
+  );
+}
+
+function ProfileCompleteness({
+  completion,
+  inferredCount,
+}: {
+  completion: number;
+  inferredCount: number;
+}) {
+  const tone =
+    completion >= 75 ? "bg-success-500" : completion >= 40 ? "bg-gilt-500" : "bg-danger-500";
+  return (
+    <div data-profile-completeness className="rounded-xl border border-ink-200 bg-parchment/40 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
+          Profile completeness
+        </p>
+        <p className="font-mono text-[11px] text-ink-700">
+          {completion}% · {inferredCount} field{inferredCount === 1 ? "" : "s"} from resume
+        </p>
+      </div>
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
+        <div className={`h-full ${tone}`} style={{ width: `${completion}%` }} />
+      </div>
+      <p className="mt-2 text-[11.5px] text-ink-500">
+        Resume-inferred fields are tagged below. Fill the rest — the analysis
+        won't run without target country.
+      </p>
+    </div>
   );
 }
 

@@ -11,28 +11,62 @@ import {
   PageHeader,
   RisksList,
   SummaryReasoning,
+  ValueLead,
+  FailedValueLead,
+  readyOrNull,
 } from "@/components/backend/envelope-shell";
+import { framingFor } from "@/lib/intent";
+import { DocumentsStatusPanel } from "./documents-panel";
 
 export const metadata: Metadata = { title: "Documents" };
 export const dynamic = "force-dynamic";
 
 export default async function DocumentsPage() {
-  const { caseId } = await requirePrereqs();
+  const { caseId, intent } = await requirePrereqs();
   const row = await documents.ensure(caseId);
+  const ready = readyOrNull(row.envelope);
+  const pct = ready?.detail.readiness_percentage ?? 0;
+  const need = ready?.detail.need_count ?? 0;
+  const next = ready?.detail.next_to_handle ?? null;
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="06 · Documents"
-          title="Your checklist."
+          title="What's missing — and what blocks the route."
           description="Generated from your destination + visa route + family shape."
+          intentFraming={framingFor("documents", intent)}
         />
         <Link href="/app/workflow" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Workflow →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
       <div className="mt-6 space-y-6">
+        {ready ? (
+          <ValueLead
+            label="Document readiness"
+            headline={`${pct}% ready · ${need} item${need === 1 ? "" : "s"} to gather`}
+            detail={
+              next
+                ? `Next: ${next.label}. ${next.why ?? ""}`
+                : ready.summary
+            }
+            emphasis={pct >= 75 ? "good" : pct >= 40 ? "warn" : "bad"}
+            cta={{ href: "/app/timeline", text: "Effect on your timeline" }}
+          />
+        ) : (
+          <FailedValueLead envelope={row.envelope} />
+        )}
+
+        <DocumentsStatusPanel
+          initialItems={(ready?.detail.items ?? []).map((it) => ({
+            kind: it.kind,
+            label: it.label,
+            status: it.status,
+          }))}
+        />
+
         {!isReadyEnvelope(row.envelope) ? (
           <FailedEnvelopeView envelope={row.envelope} />
         ) : (

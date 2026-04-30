@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import type { BackendProfile } from "@/lib/backend/types";
 import { applyResumeAction, uploadResumeAction } from "./actions";
 
 type State =
   | { kind: "idle" }
   | { kind: "uploading" }
-  | { kind: "uploaded"; parseId: string; status: string }
+  | { kind: "uploaded"; parseId: string; status: string; extracted: BackendProfile | null }
   | { kind: "applying" }
   | { kind: "applied"; appliedKeys: string[]; profileCompletion: number }
   | { kind: "error"; message: string };
@@ -28,7 +29,12 @@ export function ResumeUploadCard() {
     fd.set("file", fileRef.current.files[0]);
     const r = await uploadResumeAction(fd);
     if (!r.ok) return setState({ kind: "error", message: r.error });
-    setState({ kind: "uploaded", parseId: r.parseId, status: r.status });
+    setState({
+      kind: "uploaded",
+      parseId: r.parseId,
+      status: r.status,
+      extracted: r.extracted,
+    });
   }
 
   async function onApply(parseId: string) {
@@ -82,19 +88,32 @@ export function ResumeUploadCard() {
       ) : null}
 
       {state.kind === "uploaded" && state.status === "ready" ? (
-        <div className="mt-5 rounded-xl border border-ink-200 bg-parchment/40 p-4">
+        <div className="mt-5 rounded-xl border border-ink-200 bg-parchment/40 p-4" data-resume-preview>
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-            Parsed
+            Parsed — does this look right?
           </p>
-          <p className="mt-2 text-[13.5px] text-ink-800">
-            Resume extracted. Apply it to your profile to pre-fill the next step.
-          </p>
-          <button
-            onClick={() => onApply(state.parseId)}
-            className="mt-3 rounded-full bg-ink-900 px-4 py-2 text-[13px] font-medium text-parchment hover:bg-ink-800"
-          >
-            Apply to my profile →
-          </button>
+          {state.extracted ? (
+            <ExtractedPreview profile={state.extracted} />
+          ) : (
+            <p className="mt-2 text-[13.5px] text-ink-800">
+              Resume extracted. Apply it to your profile to pre-fill the next step.
+            </p>
+          )}
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              onClick={() => onApply(state.parseId)}
+              className="rounded-full bg-ink-900 px-4 py-2 text-[13px] font-medium text-parchment hover:bg-ink-800"
+            >
+              Looks right · Apply to my profile →
+            </button>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="text-[13px] text-ink-600 underline-offset-4 hover:underline"
+            >
+              Try another file
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -135,6 +154,72 @@ export function ResumeUploadCard() {
           Profile is {state.profileCompletion}% complete. Redirecting…
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function ExtractedPreview({ profile }: { profile: BackendProfile }) {
+  const items: { k: string; v: string | null }[] = [
+    { k: "Name", v: profile.full_name ?? null },
+    { k: "Current role", v: profile.current_role ?? null },
+    { k: "Industry", v: profile.industry ?? null },
+    { k: "Seniority", v: profile.seniority ?? null },
+    {
+      k: "Years experience",
+      v: profile.years_experience != null ? String(profile.years_experience) : null,
+    },
+    {
+      k: "Skills",
+      v: profile.skills?.length
+        ? profile.skills
+            .slice(0, 8)
+            .map((s) => s.name)
+            .join(", ") + (profile.skills.length > 8 ? "…" : "")
+        : null,
+    },
+    {
+      k: "Companies",
+      v: profile.companies?.length ? profile.companies.slice(0, 4).join(", ") : null,
+    },
+  ];
+  const filled = items.filter((it) => it.v && it.v.trim().length > 0);
+  const missing = items.filter((it) => !it.v || it.v.trim().length === 0);
+  return (
+    <div className="mt-2 grid gap-3 md:grid-cols-2" data-resume-extracted>
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-success-700">
+          We pulled
+        </p>
+        <ul className="mt-1.5 space-y-1 text-[12.5px]">
+          {filled.length === 0 ? (
+            <li className="text-ink-500">Nothing structured. You'll fill the next step manually.</li>
+          ) : (
+            filled.map((it) => (
+              <li key={it.k}>
+                <span className="text-ink-500">{it.k}:</span>{" "}
+                <span className="font-medium text-ink-900">{it.v}</span>
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-gilt-700">
+          Still need from you
+        </p>
+        <ul className="mt-1.5 space-y-1 text-[12.5px]">
+          {missing.length === 0 ? (
+            <li className="text-ink-500">Nothing — you can keep going.</li>
+          ) : (
+            missing.map((it) => (
+              <li key={it.k} className="text-ink-700">
+                · {it.k}
+              </li>
+            ))
+          )}
+          <li className="text-ink-700">· Target country (always required)</li>
+        </ul>
+      </div>
     </div>
   );
 }

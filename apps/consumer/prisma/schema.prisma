@@ -26,6 +26,7 @@ model User {
   status        String         @default("ACTIVE")
   locale        String         @default("en")
   timezone      String         @default("UTC")
+  intent        String?        // null until selected on /app/onboarding/intent
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

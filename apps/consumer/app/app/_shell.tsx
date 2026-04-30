@@ -9,16 +9,20 @@ import { MobileSidebar } from "@/components/app/mobile-sidebar";
 export function AppShell({
   user,
   children,
+  intentEmphasis,
+  intentLabel,
 }: {
   user: { name: string | null; email: string; image: string | null };
   children: React.ReactNode;
+  intentEmphasis?: readonly string[] | null;
+  intentLabel?: string | null;
 }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   return (
     <div className="flex min-h-screen bg-parchment">
       <aside className="sticky top-0 hidden h-screen w-[244px] shrink-0 border-r border-ink-200/60 lg:block">
-        <AppSidebar />
+        <AppSidebar intentEmphasis={intentEmphasis} intentLabel={intentLabel} />
       </aside>
 
       <MobileSidebar open={mobileOpen} onOpenChange={setMobileOpen} />

@@ -12,28 +12,67 @@ import {
   RisksList,
   ScoreCard,
   SummaryReasoning,
+  ValueLead,
+  FailedValueLead,
+  readyOrNull,
 } from "@/components/backend/envelope-shell";
+import { framingFor } from "@/lib/intent";
+import { DestinationSwitcher } from "./destination-switcher";
+import { CountryPreferencesPanel } from "./preferences-panel";
 
 export const metadata: Metadata = { title: "Country comparison" };
 export const dynamic = "force-dynamic";
 
+function leadEmphasis(score: number): "good" | "warn" | "bad" {
+  if (score >= 70) return "good";
+  if (score >= 50) return "warn";
+  return "bad";
+}
+
 export default async function CountryPage() {
-  const { caseId } = await requirePrereqs();
+  const { caseId, profile, intent } = await requirePrereqs();
   const row = await country.ensure(caseId);
+  const ready = readyOrNull(row.envelope);
+  const score = ready?.detail.overall_comparison_score ?? 0;
+  const summary = ready?.summary ?? "";
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="01 · Country comparison"
-          title="Origin vs destination."
-          description="Paired scores for the dimensions that matter for a relocation decision."
+          title="Why this country, and why now?"
+          description="Paired scores for the dimensions that matter most for a relocation decision."
+          intentFraming={framingFor("country", intent)}
         />
         <Link href="/app/jobs" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Job fit →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
       <div className="mt-6 space-y-6">
+        {ready ? (
+          <ValueLead
+            label={`Match for ${profile.target_country}`}
+            headline={`${score}/100 · ${score >= 70 ? "Strong fit" : score >= 50 ? "Workable with trade-offs" : "Tough match"}`}
+            detail={summary || undefined}
+            emphasis={leadEmphasis(score)}
+            cta={{ href: "/app/jobs", text: "See your career angle" }}
+          />
+        ) : (
+          <FailedValueLead envelope={row.envelope} />
+        )}
+
+        <DestinationSwitcher
+          current={profile.target_country ?? ""}
+          alternates={["DE", "NL", "IE", "GB", "CA", "AU", "AE", "SG"]}
+        />
+
+        <CountryPreferencesPanel
+          initialPriorities={(profile.priority_ranking ?? []) as ("career" | "family" | "cost" | "lifestyle" | "speed")[]}
+          initialReason={null}
+          initialAlternatives={[]}
+        />
+
         {!isReadyEnvelope(row.envelope) ? (
           <FailedEnvelopeView envelope={row.envelope} />
         ) : (

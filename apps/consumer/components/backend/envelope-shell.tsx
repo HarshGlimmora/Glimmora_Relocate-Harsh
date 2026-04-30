@@ -22,16 +22,24 @@ export function PageHeader({
   eyebrow,
   title,
   description,
+  intentFraming,
 }: {
   eyebrow: string;
   title: string;
   description?: string;
+  /** Intent-driven framing line — sits between eyebrow and title. */
+  intentFraming?: string | null;
 }) {
   return (
     <header className="mb-8">
       <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-500 font-medium">
         {eyebrow}
       </p>
+      {intentFraming ? (
+        <p className="mt-2 text-[12.5px] font-medium text-lagoon-700" data-intent-framing>
+          {intentFraming}
+        </p>
+      ) : null}
       <h1 className="mt-3 font-sans text-[clamp(1.75rem,3.5vw,2.5rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-ink-900">
         {title}
       </h1>
@@ -39,6 +47,53 @@ export function PageHeader({
         <p className="mt-3 max-w-2xl text-[14px] leading-[1.6] text-ink-600">{description}</p>
       ) : null}
     </header>
+  );
+}
+
+/**
+ * The one unique insight on a module page. Every module's lead value is
+ * different (a verdict, a route name, a headline number) — this component
+ * just gives a consistent shell so the user always knows where to look.
+ */
+export function ValueLead({
+  label,
+  headline,
+  detail,
+  emphasis = "neutral",
+  cta,
+}: {
+  label: string;
+  headline: React.ReactNode;
+  detail?: React.ReactNode;
+  emphasis?: "neutral" | "good" | "warn" | "bad";
+  cta?: { href: string; text: string };
+}) {
+  const palette = {
+    neutral: "border-ink-300 bg-parchment/40 text-ink-900",
+    good: "border-success-300 bg-success-50 text-success-900",
+    warn: "border-gilt-300 bg-gilt-50 text-gilt-900",
+    bad: "border-danger-300 bg-danger-50 text-danger-900",
+  }[emphasis];
+  return (
+    <section
+      data-value-lead
+      data-emphasis={emphasis}
+      className={`rounded-2xl border-2 ${palette} px-6 py-5`}
+    >
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] opacity-70">{label}</p>
+      <p className="mt-2 text-[20px] font-semibold leading-[1.25] tracking-[-0.01em]">
+        {headline}
+      </p>
+      {detail ? <p className="mt-1.5 text-[13.5px] leading-[1.55] opacity-90">{detail}</p> : null}
+      {cta ? (
+        <a
+          href={cta.href}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink-900 px-3.5 py-1.5 text-[12.5px] font-medium text-parchment hover:bg-ink-800"
+        >
+          {cta.text} →
+        </a>
+      ) : null}
+    </section>
   );
 }
 
@@ -221,6 +276,44 @@ export function isReadyEnvelope<T>(
   env: AnalysisEnvelope<T> | FailedEnvelope,
 ): env is AnalysisEnvelope<T> {
   return env.status !== "failed";
+}
+
+/** Returns the ready envelope, or null if it's failed.
+ *  Use this when you need to read fields conditionally — it lets the
+ *  TypeScript narrowing flow through into a callable expression. */
+export function readyOrNull<T>(
+  env: AnalysisEnvelope<T> | FailedEnvelope,
+): AnalysisEnvelope<T> | null {
+  return isReadyEnvelope(env) ? env : null;
+}
+
+/**
+ * Drop-in ValueLead for the failure path. Every module page renders this
+ * when its envelope is `failed` so the page still has its "one unique
+ * insight" — a clear apology + recovery CTA — instead of the nondescript
+ * red FailedEnvelopeView alone. Accepts the union type so each page can
+ * pass `row.envelope` without casting; renders nothing if the envelope
+ * is actually ready.
+ */
+export function FailedValueLead<T>({
+  envelope,
+  retryHref = "/app/onboarding/profile",
+  retryLabel = "Re-check your profile",
+}: {
+  envelope: AnalysisEnvelope<T> | FailedEnvelope;
+  retryHref?: string;
+  retryLabel?: string;
+}) {
+  if (isReadyEnvelope(envelope)) return null;
+  return (
+    <ValueLead
+      label="This module needs another pass"
+      headline={envelope.user_message || "We couldn't compute this analysis yet."}
+      detail={`Code: ${envelope.error_code}. The other modules below may still be useful.`}
+      emphasis="warn"
+      cta={{ href: retryHref, text: retryLabel }}
+    />
+  );
 }
 
 export function BlockedState({ message, actionHref, actionLabel }: { message: string; actionHref?: string; actionLabel?: string }) {

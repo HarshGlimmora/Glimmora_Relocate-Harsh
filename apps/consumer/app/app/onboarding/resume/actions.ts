@@ -1,9 +1,10 @@
 "use server";
 
+import type { BackendProfile } from "@/lib/backend/types";
 import { uploadResume, applyResumeToProfile } from "@/lib/backend/client";
 
 export async function uploadResumeAction(formData: FormData): Promise<
-  | { ok: true; parseId: string; status: string }
+  | { ok: true; parseId: string; status: string; extracted: BackendProfile | null }
   | { ok: false; error: string }
 > {
   const file = formData.get("file");
@@ -12,7 +13,12 @@ export async function uploadResumeAction(formData: FormData): Promise<
   }
   try {
     const r = await uploadResume(file);
-    return { ok: true, parseId: r.parse_id, status: r.status };
+    return {
+      ok: true,
+      parseId: r.parse_id,
+      status: r.status,
+      extracted: r.extracted ?? null,
+    };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }

@@ -44,7 +44,7 @@ export function SignUpForm() {
         setFieldErrors(result.fieldErrors ?? {});
         return;
       }
-      router.push("/app");
+      router.push("/app/onboarding/intent");
       router.refresh();
     });
   }

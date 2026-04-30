@@ -12,28 +12,73 @@ import {
   RisksList,
   ScoreCard,
   SummaryReasoning,
+  ValueLead,
+  FailedValueLead,
+  readyOrNull,
 } from "@/components/backend/envelope-shell";
+import { framingFor } from "@/lib/intent";
+import { FamilyShapePanel } from "./family-panel";
 
 export const metadata: Metadata = { title: "Family relocation" };
 export const dynamic = "force-dynamic";
 
 export default async function FamilyPage() {
-  const { caseId } = await requirePrereqs();
+  const { caseId, intent } = await requirePrereqs();
   const row = await family.ensure(caseId);
+  const ready = readyOrNull(row.envelope);
+  // household_complexity_score: low score = simpler. Invert for display.
+  const complexity = ready?.detail.household_complexity_score ?? 0;
+  const score = Math.max(0, 100 - complexity);
+  const mode = ready?.detail.mode ?? "solo";
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="04 · Family relocation"
-          title="For everyone moving with you."
-          description="Spouse, children, parents, housing fit — what changes for the household."
+          title="How the move changes for everyone with you."
+          description="Spouse, children, parents, housing fit — what shifts at the household level."
+          intentFraming={framingFor("family", intent)}
         />
         <Link href="/app/finance" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Finance →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
       <div className="mt-6 space-y-6">
+        {ready ? (
+          <ValueLead
+            label={mode === "solo" ? "Solo move" : "Household move"}
+            headline={`Family-fit ${score}/100`}
+            detail={ready.summary}
+            emphasis={score >= 70 ? "good" : score >= 50 ? "warn" : "bad"}
+            cta={{ href: "/app/finance", text: "What it costs the household" }}
+          />
+        ) : (
+          <FailedValueLead envelope={row.envelope} />
+        )}
+
+        <FamilyShapePanel
+          initialMode={(ready?.detail.mode ?? "solo") as "solo" | "with_family"}
+          initialSpouseMoving={!!ready?.detail.spouse_outlook}
+          initialSpouseHasCareer={false}
+          initialSpouseProfession=""
+          initialSpouseVisaRequired={true}
+          initialChildren={(ready?.detail.child_outlooks ?? []).map((c) => ({
+            age: String(c.age),
+            schooling_need: "primary" as const,
+          }))}
+          initialParentsMoving={!!ready?.detail.parents_outlook}
+          initialParentsDependency="none"
+          initialParentsSensitivity="low"
+          initialHousing=""
+          initialBudgetImpact="medium"
+          initialPriority={
+            ready?.detail.mode === "solo"
+              ? "speed"
+              : "schooling"
+          }
+        />
+
         {!isReadyEnvelope(row.envelope) ? (
           <FailedEnvelopeView envelope={row.envelope} />
         ) : (

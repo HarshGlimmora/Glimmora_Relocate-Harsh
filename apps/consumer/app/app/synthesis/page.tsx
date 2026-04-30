@@ -11,8 +11,11 @@ import {
   NextActionsList,
   PageHeader,
   RisksList,
+  ValueLead,
 } from "@/components/backend/envelope-shell";
 import { BackendApiError } from "@/lib/backend/client";
+import { framingFor } from "@/lib/intent";
+import { SynthesisFocusPanel } from "./synthesis-panel";
 
 export const metadata: Metadata = { title: "Final synthesis" };
 export const dynamic = "force-dynamic";
@@ -33,8 +36,16 @@ const VERDICT_TONE: Record<string, string> = {
   blocked: "bg-danger-100 text-danger-900 border-danger-300",
 };
 
+const VERDICT_EMPHASIS: Record<string, "neutral" | "good" | "warn" | "bad"> = {
+  go: "good",
+  go_with_conditions: "warn",
+  wait: "neutral",
+  reconsider: "bad",
+  blocked: "bad",
+};
+
 export default async function SynthesisPage() {
-  const { caseId } = await requirePrereqs();
+  const { caseId, profile, intent } = await requirePrereqs();
 
   let row;
   try {
@@ -64,7 +75,8 @@ export default async function SynthesisPage() {
         <PageHeader
           eyebrow="10 · Final synthesis"
           title="Should you move?"
-          description="Verdict, feasibility, recommended destination + job, top blockers, next best actions."
+          description={intent?.synthesisLead ?? "Verdict, feasibility, recommended path, top blockers, next best actions."}
+          intentFraming={framingFor("synthesis", intent)}
         />
         <Link href="/app" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">← Dashboard</Link>
       </div>
@@ -72,22 +84,37 @@ export default async function SynthesisPage() {
 
       <div className="mt-6 space-y-6">
         {!isReadyEnvelope(row.envelope) ? (
-          <FailedEnvelopeView envelope={row.envelope} />
+          <>
+            <ValueLead
+              label="Verdict pending"
+              headline="We couldn't compute the verdict yet."
+              detail={row.envelope.user_message}
+              emphasis="warn"
+              cta={{ href: "/app/country", text: "Re-run upstream from country" }}
+            />
+            <FailedEnvelopeView envelope={row.envelope} />
+          </>
         ) : (
           <>
-            <section className={"rounded-2xl border p-6 " + (VERDICT_TONE[row.envelope.detail.verdict] ?? "")}>
-              <div className="flex flex-wrap items-baseline justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.22em]">Verdict</p>
-                  <h2 className="mt-2 font-sans text-[40px] font-semibold leading-none tracking-[-0.02em]">{VERDICT_LABEL[row.envelope.detail.verdict] ?? row.envelope.detail.verdict}</h2>
-                  <p className="mt-2 text-[13.5px]">{row.envelope.detail.one_line_reasoning}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.22em]">Feasibility</p>
-                  <p className="mt-2 font-sans text-[60px] font-semibold leading-none tracking-[-0.03em]">{row.envelope.detail.feasibility_score}<span className="text-[18px]">/100</span></p>
-                </div>
-              </div>
-            </section>
+            <ValueLead
+              label="The verdict"
+              headline={
+                <>
+                  {VERDICT_LABEL[row.envelope.detail.verdict] ?? row.envelope.detail.verdict}
+                  {" · "}
+                  <span className="text-[16px] font-mono opacity-70">
+                    feasibility {row.envelope.detail.feasibility_score}/100
+                  </span>
+                </>
+              }
+              detail={row.envelope.detail.one_line_reasoning}
+              emphasis={VERDICT_EMPHASIS[row.envelope.detail.verdict] ?? "neutral"}
+              cta={
+                row.envelope.detail.next_best_actions[0]
+                  ? { href: "#next-actions", text: `Next: ${row.envelope.detail.next_best_actions[0].label}` }
+                  : undefined
+              }
+            />
 
             <section className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-ink-200 bg-white p-5">
@@ -140,7 +167,7 @@ export default async function SynthesisPage() {
               </section>
             ) : null}
 
-            <section>
+            <section id="next-actions">
               <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">Next best actions</h2>
               <ol className="space-y-2">
                 {row.envelope.detail.next_best_actions.map((a, i) => (
@@ -164,6 +191,11 @@ export default async function SynthesisPage() {
             <AssumptionsList items={row.envelope.assumptions} />
           </>
         )}
+
+        <SynthesisFocusPanel
+          initialOutcome={(profile.priority_ranking?.[0] ?? "career") as "career" | "family" | "cost" | "lifestyle" | "speed"}
+          initialConcern="visa_blocks"
+        />
       </div>
     </div>
   );

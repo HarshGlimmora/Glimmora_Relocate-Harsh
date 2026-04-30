@@ -12,28 +12,68 @@ import {
   RisksList,
   ScoreCard,
   SummaryReasoning,
+  ValueLead,
+  FailedValueLead,
+  readyOrNull,
 } from "@/components/backend/envelope-shell";
+import { framingFor } from "@/lib/intent";
+import { FinanceSensitivityPanel } from "./finance-panel";
 
 export const metadata: Metadata = { title: "Financial feasibility" };
 export const dynamic = "force-dynamic";
 
 export default async function FinancePage() {
-  const { caseId } = await requirePrereqs();
+  const { caseId, profile, intent } = await requirePrereqs();
   const row = await finance.ensure(caseId);
+  const ready = readyOrNull(row.envelope);
+  const surplus = ready?.detail.surplus_or_deficit_monthly ?? 0;
+  const ccy = ready?.detail.monthly_net.currency ?? "EUR";
+  const aff = ready?.detail.affordability_score ?? 0;
+  const runway = ready?.detail.savings_runway_months ?? 0;
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="05 · Financial feasibility"
-          title="The numbers, honestly."
+          title="Affordable comfortably, or only on paper?"
           description="Take-home, monthly cost, surplus, runway — derived from your salary + destination."
+          intentFraming={framingFor("finance", intent)}
         />
         <Link href="/app/documents" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Documents →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
       <div className="mt-6 space-y-6">
+        {ready ? (
+          <ValueLead
+            label="Monthly stress test"
+            headline={
+              <>
+                {surplus >= 0 ? "+" : ""}
+                {surplus.toLocaleString()} {ccy}
+                <span className="ml-3 text-[15px] font-mono opacity-70">
+                  · {runway} mo runway · score {aff}/100
+                </span>
+              </>
+            }
+            detail={ready.summary}
+            emphasis={surplus < 0 ? "bad" : aff >= 65 ? "good" : "warn"}
+            cta={{ href: "/app/timeline", text: "How fast you can move" }}
+          />
+        ) : (
+          <FailedValueLead envelope={row.envelope} />
+        )}
+
+        <FinanceSensitivityPanel
+          initialMonthlyBudget=""
+          initialSavings={profile.relocation_budget?.toString() ?? ""}
+          initialRent=""
+          initialFamilySize=""
+          initialSensitivity="medium"
+          initialCurrency={profile.salary_currency ?? "EUR"}
+        />
+
         {!isReadyEnvelope(row.envelope) ? (
           <FailedEnvelopeView envelope={row.envelope} />
         ) : (
