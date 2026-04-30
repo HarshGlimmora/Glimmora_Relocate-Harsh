@@ -38,6 +38,52 @@ model User {
   accounts      Account[]
   preferences   Preferences?
   relocation    Relocation?
+  familyMembers FamilyMember[]
+}
+
+// Static reference catalog for STUDENT-mode Discover pages (admin-curated).
+model University {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  country      String
+  city         String
+  fieldTags    String
+  level        String
+  ranking      Int?
+  tuitionEUR   Int?
+  scholarships Boolean  @default(false)
+  deadline     DateTime?
+  english      Boolean  @default(true)
+  blurb        String?
+  imageHint    String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([country, level])
+}
+
+// Household members tracked by a Family-mode user. Not separate logins.
+model FamilyMember {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName      String
+  lastName       String?
+  relationship   String
+  dateOfBirth    DateTime?
+  nationality    String?
+  passportNumber String?
+
+  visaStatus     String   @default("NOT_STARTED")
+  trackNotes     String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // Active relocation plan, triggered by an offer-accepted event from Glimmora for Employers.

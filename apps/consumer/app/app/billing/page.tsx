@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Check, Sparkles, ArrowUpRight, FileText, CreditCard } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
@@ -13,9 +14,13 @@ const plans = {
   PREMIUM: { name: "Premium",         price: "$240 / year", desc: "Base + Verified Human Experts + priority support." },
 } as const;
 
+const COMING_SOON_TITLE = "Subscription billing arrives soon — UI is preview only.";
+
 export default async function BillingPage() {
   const session = await auth();
-  if (!session?.user?.id) return null;
+  if (!session?.user?.id) {
+    redirect("/sign-in");
+  }
 
   const sub = await prisma.subscription.findUnique({ where: { userId: session.user.id } });
   const currentTier = (sub?.tier ?? "FREE") as keyof typeof plans;
@@ -68,27 +73,27 @@ export default async function BillingPage() {
                 <button
                   type="button"
                   disabled
-                  title="Subscription upgrades ship with W4 (Stripe Connect)."
+                  title={COMING_SOON_TITLE}
                   className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/5 pl-5 pr-4 text-[13.5px] font-semibold text-white/60 cursor-not-allowed"
                 >
                   Upgrade to Base <ArrowUpRight className="h-4 w-4" />
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-white/60">W4</span>
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-white/60">Coming soon</span>
                 </button>
               ) : (
                 <>
                   <button
                     type="button"
                     disabled
-                    title="Subscription management ships with W4 (Stripe Connect)."
+                    title={COMING_SOON_TITLE}
                     className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/5 pl-5 pr-4 text-[13.5px] font-semibold text-white/60 cursor-not-allowed"
                   >
                     Manage plan
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-white/60">W4</span>
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-white/60">Coming soon</span>
                   </button>
                   <button
                     type="button"
                     disabled
-                    title="Subscription management ships with W4 (Stripe Connect)."
+                    title={COMING_SOON_TITLE}
                     className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 text-[13.5px] font-medium text-white/60 cursor-not-allowed"
                   >
                     Cancel
@@ -98,7 +103,7 @@ export default async function BillingPage() {
             </div>
 
             <p className="mt-5 text-[11px] text-white/40">
-              Stripe Connect integration ships in W4 — actions are UI-ready.
+              Subscription billing arrives soon. Buttons above are preview only.
             </p>
           </div>
         </div>
@@ -116,11 +121,11 @@ export default async function BillingPage() {
           <button
             type="button"
             disabled
-            title="Payment method storage ships with W4 (Stripe Connect)."
+            title={COMING_SOON_TITLE}
             className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border border-ink-200 bg-white text-[13px] font-medium text-ink-500 cursor-not-allowed"
           >
             Add payment method
-            <span className="rounded-full bg-ink-100 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-600">W4</span>
+            <span className="rounded-full bg-ink-100 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-600">Coming soon</span>
           </button>
         </div>
       </section>
@@ -181,8 +186,8 @@ export default async function BillingPage() {
                 <button
                   type="button"
                   disabled
-                  title={isCurrent ? "You're on this plan." : "Plan selection ships with W4 (Stripe Connect)."}
-                  className={`mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full text-[13px] font-medium cursor-not-allowed ${
+                  title={isCurrent ? "You're on this plan." : COMING_SOON_TITLE}
+                  className={`mt-6 inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-full text-[13px] font-medium cursor-not-allowed ${
                     isCurrent
                       ? "bg-ink-100 text-ink-500"
                       : isBase
@@ -190,9 +195,9 @@ export default async function BillingPage() {
                       : "border border-ink-200 bg-white text-ink-500"
                   }`}
                 >
-                  {isCurrent ? "Current plan" : `Choose ${plan.name}`}
+                  {isCurrent ? "Current plan" : `Choose ${key === "BASE" ? "Base" : key === "PREMIUM" ? "Premium" : "Explore"}`}
                   {!isCurrent ? (
-                    <span className={`rounded-full px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] ${isBase ? "bg-white/10 text-white/60" : "bg-ink-100 text-ink-600"}`}>W4</span>
+                    <span className={`rounded-full px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] ${isBase ? "bg-white/10 text-white/60" : "bg-ink-100 text-ink-600"}`}>Coming soon</span>
                   ) : null}
                 </button>
               </article>

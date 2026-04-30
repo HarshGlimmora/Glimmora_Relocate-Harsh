@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Building2, GraduationCap, MapPin, Users as UsersIcon, ArrowUpRight, CalendarCheck } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { initials } from "@/lib/utils";
@@ -9,13 +12,21 @@ export const metadata: Metadata = { title: "Profile & Twin" };
 
 export default async function ProfilePage() {
   const session = await auth();
-  if (!session?.user?.id) return null;
+  if (!session?.user?.id) {
+    redirect("/sign-in");
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { profile: true, twin: true },
+    include: { profile: true, twin: true, relocation: true, familyMembers: true },
   });
-  if (!user) return null;
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const mode = (user.mode as "INDIVIDUAL" | "FAMILY" | "STUDENT" | undefined) ?? "INDIVIDUAL";
+  const isStudent = mode === "STUDENT";
+  const isFamily = mode === "FAMILY";
 
   const targetCountries: string[] = user.twin?.targetCountries
     ? (JSON.parse(user.twin.targetCountries) as string[])
@@ -117,14 +128,89 @@ export default async function ProfilePage() {
             />
           </div>
 
+          {/* Read-only "Your move" panel — onboarding-captured facts */}
+          {user.relocation ? (
+            <div className="rounded-2xl border border-ink-200 bg-parchment p-6 md:p-7">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-500 font-medium">Your move</p>
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400 font-medium">
+                  Set in onboarding
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3 text-[13.5px] sm:grid-cols-2">
+                <div className="flex items-center gap-2">
+                  {isStudent ? (
+                    <GraduationCap className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+                  ) : (
+                    <Building2 className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+                  )}
+                  <span className="text-ink-800">{user.relocation.employerName}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+                  <span className="text-ink-800">
+                    {user.relocation.destCity ? `${user.relocation.destCity}, ` : ""}{user.relocation.destCountry}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500 font-medium w-[60px]">
+                    {isStudent ? "Program" : "Role"}
+                  </span>
+                  <span className="text-ink-800">{user.relocation.jobTitle}</span>
+                </div>
+                {user.relocation.startDate ? (
+                  <div className="flex items-center gap-2">
+                    <CalendarCheck className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+                    <span className="text-ink-800">
+                      {isStudent ? "Semester begins" : "Start day"}{" "}
+                      {new Date(user.relocation.startDate).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Family workspace pointer — for family-mode users */}
+          {isFamily ? (
+            <Link
+              href="/app/family"
+              className="group flex items-center justify-between rounded-2xl border border-lagoon-100 bg-lagoon-50/50 p-5 transition-colors hover:border-lagoon-300"
+            >
+              <div className="flex items-start gap-3">
+                <UsersIcon className="mt-0.5 h-4 w-4 text-lagoon-700" strokeWidth={1.75} />
+                <div>
+                  <p className="font-sans text-[14px] font-semibold text-ink-900">Household members</p>
+                  <p className="mt-0.5 text-[12.5px] text-ink-600">
+                    Spouse and children live in the Family workspace —{" "}
+                    {user.familyMembers.length} {user.familyMembers.length === 1 ? "person" : "people"} added.
+                  </p>
+                </div>
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-ink-400 transition-colors group-hover:text-ink-900" />
+            </Link>
+          ) : null}
+
           <div className="rounded-2xl border border-ink-200 bg-white p-6 md:p-8">
             <div className="mb-6 flex items-baseline justify-between">
               <div>
                 <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-500 font-medium">Digital Twin</p>
-                <h2 className="mt-2 font-sans text-[22px] font-semibold tracking-tight text-ink-900">Your situation</h2>
+                <h2 className="mt-2 font-sans text-[22px] font-semibold tracking-tight text-ink-900">
+                  {isStudent ? "Your studies" : "Your situation"}
+                </h2>
+                <p className="mt-1 text-[13px] text-ink-600">
+                  {isStudent
+                    ? "Education and timeline. Helps the Copilot tailor advice to your level and stage."
+                    : "Profession and timeline. Helps the Copilot tailor visa, salary, and corridor advice."}
+                </p>
               </div>
             </div>
             <TwinForm
+              mode={mode}
               initial={{
                 profession: user.twin?.profession ?? "",
                 seniorityLevel: user.twin?.seniorityLevel ?? "",
