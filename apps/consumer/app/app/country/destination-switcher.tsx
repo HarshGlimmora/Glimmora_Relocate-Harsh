@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { switchDestinationAction } from "./actions";
+import { countryName } from "@/lib/countries";
 
 /**
  * Lets the user re-target the analysis to a different destination country
@@ -55,14 +56,15 @@ export function DestinationSwitcher({
               type="button"
               disabled={pending || active}
               onClick={() => pick(c)}
+              data-destination-code={c}
               className={
-                "rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors " +
+                "rounded-full border px-3 py-1 text-[12px] transition-colors " +
                 (active
                   ? "border-ink-900 bg-ink-900 text-parchment"
                   : "border-ink-200 bg-white text-ink-700 hover:border-ink-400 disabled:opacity-50")
               }
             >
-              {c}
+              {countryName(c)}
             </button>
           );
         })}

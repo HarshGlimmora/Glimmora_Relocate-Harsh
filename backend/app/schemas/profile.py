@@ -52,6 +52,69 @@ class Seniority(StrEnum):
     PRINCIPAL = "principal"
 
 
+class RelocationGoal(StrEnum):
+    """Why is the user looking to move? Drives module emphasis + framing.
+
+    Mirrors the `Intent` IDs the consumer DB used to store separately —
+    we now persist this on the backend profile so any client can read it.
+    """
+
+    COMPARE_COUNTRIES = "compare_countries"
+    RELOCATE_WITH_OFFER = "relocate_with_offer"
+    FIND_JOB_ABROAD = "find_job_abroad"
+    VISA_FEASIBILITY = "visa_feasibility"
+    FAMILY_RELOCATION = "family_relocation"
+    STRESS_TEST_AFFORDABILITY = "stress_test_affordability"
+    DOCUMENTS_TIMELINE = "documents_timeline"
+    MOVE_FAST = "move_fast"
+
+
+class FamilyStatus(StrEnum):
+    SINGLE = "single"
+    PARTNERED = "partnered"
+    MARRIED = "married"
+    SEPARATED = "separated"
+    WIDOWED = "widowed"
+
+
+class CostSensitivity(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class FamilyBudgetImpact(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class SchoolRequirement(StrEnum):
+    NONE = "none"
+    PRESCHOOL = "preschool"
+    PRIMARY = "primary"
+    SECONDARY = "secondary"
+    HIGH = "high"
+    TERTIARY = "tertiary"
+    SPECIAL_NEEDS = "special_needs"
+
+
+class ReadinessLevel(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class LanguageConfidence(StrEnum):
+    NONE = "none"
+    A1 = "A1"
+    A2 = "A2"
+    B1 = "B1"
+    B2 = "B2"
+    C1 = "C1"
+    C2 = "C2"
+
+
 # ----- sub-models shared between resume + profile -----
 
 
@@ -132,13 +195,19 @@ class UserProfile(BaseModel):
 
     # identity
     full_name: str | None = Field(default=None, max_length=160)
+    phone: str | None = Field(default=None, max_length=40)
     current_role: str | None = Field(default=None, max_length=160)
+    target_role: str | None = Field(default=None, max_length=160)
+    current_employer: str | None = Field(default=None, max_length=160)
     industry: str | None = Field(default=None, max_length=80)
     years_experience: int | None = Field(default=None, ge=0, le=70)
     seniority: Seniority | None = None
     skills: list[Skill] = Field(default_factory=list)
     education: list[Education] = Field(default_factory=list)
     companies: list[str] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)
+    languages_known: list[str] = Field(default_factory=list)
+    destination_language_confidence: LanguageConfidence | None = None
 
     # relocation context
     current_country: str | None = Field(default=None, min_length=2, max_length=2)
@@ -147,16 +216,37 @@ class UserProfile(BaseModel):
     target_city: str | None = Field(default=None, max_length=80)
     nationality: str | None = Field(default=None, min_length=2, max_length=2)
     current_visa_status: str | None = Field(default=None, max_length=80)
+    open_to_alternatives: bool | None = None
+    alternatives: list[str] = Field(default_factory=list, max_length=5)
+    relocation_goal: RelocationGoal | None = None
+    reason_for_moving: str | None = Field(default=None, max_length=600)
 
     current_salary: int | None = Field(default=None, ge=0)
     expected_salary: int | None = Field(default=None, ge=0)
     salary_currency: str | None = Field(default=None, min_length=3, max_length=3)
+    monthly_budget: int | None = Field(default=None, ge=0)
+    savings: int | None = Field(default=None, ge=0)
+    rent_expectation: int | None = Field(default=None, ge=0)
+    cost_sensitivity: CostSensitivity | None = None
 
     move_urgency: MoveUrgency | None = None
     work_preference: WorkPreference | None = None
     relocation_budget: int | None = Field(default=None, ge=0)
     needs_visa_sponsorship: bool | None = None
     priority_ranking: list[Priority] = Field(default_factory=list, max_length=5)
+
+    # household / lifestyle
+    family_status: FamilyStatus | None = None
+    moving_with_family: bool | None = None
+    children_count: int | None = Field(default=None, ge=0, le=12)
+    parents_moving: bool | None = None
+    family_budget_impact: FamilyBudgetImpact | None = None
+    housing_requirement: str | None = Field(default=None, max_length=200)
+    school_requirement: SchoolRequirement | None = None
+
+    # readiness
+    readiness_level: ReadinessLevel | None = None
+    move_clarity_score: int | None = Field(default=None, ge=0, le=100)
 
     # documents (free-form self-report; documents module reads this)
     # Shape examples:
@@ -192,27 +282,57 @@ PROFILE_REQUIRED_FOR_ANALYSIS = {
 }
 
 PROFILE_PATCHABLE_FIELDS = {
+    # identity
     "full_name",
+    "phone",
     "current_role",
+    "target_role",
+    "current_employer",
     "industry",
     "years_experience",
     "seniority",
     "skills",
     "education",
     "companies",
+    "certifications",
+    "languages_known",
+    "destination_language_confidence",
+    # relocation
     "current_country",
     "current_city",
     "target_country",
     "target_city",
     "nationality",
     "current_visa_status",
+    "open_to_alternatives",
+    "alternatives",
+    "relocation_goal",
+    "reason_for_moving",
+    # finance
     "current_salary",
     "expected_salary",
     "salary_currency",
+    "monthly_budget",
+    "savings",
+    "rent_expectation",
+    "cost_sensitivity",
+    # intent + ranking
     "move_urgency",
     "work_preference",
     "relocation_budget",
     "needs_visa_sponsorship",
     "priority_ranking",
+    # household
+    "family_status",
+    "moving_with_family",
+    "children_count",
+    "parents_moving",
+    "family_budget_impact",
+    "housing_requirement",
+    "school_requirement",
+    # readiness
+    "readiness_level",
+    "move_clarity_score",
+    # documents
     "current_document_status",
 }

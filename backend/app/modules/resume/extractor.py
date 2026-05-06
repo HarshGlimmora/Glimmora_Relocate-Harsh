@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class ResumeExtractor:
     PROMPT_NAME = "resume_extraction"
-    PROMPT_VERSION = "v1"
+    PROMPT_VERSION = "v2"
 
     def __init__(self, gateway: AIGateway) -> None:
         self.gateway = gateway
@@ -34,7 +34,14 @@ class ResumeExtractor:
             prompt_version=self.PROMPT_VERSION,
             model_tier=ModelTier.FAST,
             schema=ResumeExtraction,
-            system="You convert resume text into a strict JSON object matching the schema.",
+            system=(
+                "You are a strict information-extraction system. "
+                "Extract ONLY values that are literally present in the resume text. "
+                "Do not infer, compute, paraphrase, or guess. "
+                "Prefer null/[] over fabrication. "
+                "Output a single JSON object that matches the schema. "
+                "No prose, no commentary."
+            ),
             user=raw_text,
             metadata={"analysis_kind_compat": AnalysisKind.JOBFIT.value},
         )

@@ -64,64 +64,98 @@ class ProfileService:
         row = await self.repo.upsert_blank(user_id)
         d = profile.model_dump(mode="python")
         # Map the pydantic model into ORM columns explicitly.
-        for key in (
-            "full_name",
-            "current_role",
-            "industry",
-            "years_experience",
-            "seniority",
-            "skills",
-            "education",
-            "companies",
-            "current_country",
-            "current_city",
-            "target_country",
-            "target_city",
-            "nationality",
-            "current_visa_status",
-            "current_salary",
-            "expected_salary",
-            "salary_currency",
-            "move_urgency",
-            "work_preference",
-            "relocation_budget",
-            "needs_visa_sponsorship",
-            "priority_ranking",
-            "current_document_status",
-            "completion_percentage",
-        ):
+        for key in _PROFILE_PERSISTED_COLUMNS:
             setattr(row, key, d.get(key))
         # field_sources stored as {field: "resume"|"user"|"merged"}
         row.field_sources = {k: v for k, v in d.get("field_sources", {}).items()}
 
 
+# Single source of truth: every column that round-trips between the ORM
+# and the Pydantic UserProfile. Adding a profile field requires touching
+# only this list + the schema + the migration.
+_PROFILE_PERSISTED_COLUMNS: tuple[str, ...] = (
+    # identity
+    "full_name",
+    "phone",
+    "current_role",
+    "target_role",
+    "current_employer",
+    "industry",
+    "seniority",
+    "years_experience",
+    "skills",
+    "education",
+    "companies",
+    "certifications",
+    "languages_known",
+    "destination_language_confidence",
+    # relocation
+    "current_country",
+    "current_city",
+    "target_country",
+    "target_city",
+    "nationality",
+    "current_visa_status",
+    "open_to_alternatives",
+    "alternatives",
+    "relocation_goal",
+    "reason_for_moving",
+    # finance
+    "current_salary",
+    "expected_salary",
+    "salary_currency",
+    "monthly_budget",
+    "savings",
+    "rent_expectation",
+    "cost_sensitivity",
+    # intent + ranking
+    "move_urgency",
+    "work_preference",
+    "relocation_budget",
+    "needs_visa_sponsorship",
+    "priority_ranking",
+    # household
+    "family_status",
+    "moving_with_family",
+    "children_count",
+    "parents_moving",
+    "family_budget_impact",
+    "housing_requirement",
+    "school_requirement",
+    # readiness
+    "readiness_level",
+    "move_clarity_score",
+    # documents
+    "current_document_status",
+    # meta
+    "completion_percentage",
+)
+
+
 def _orm_to_pydantic(row: UserProfileORM) -> UserProfile:
-    return UserProfile.model_validate(
-        {
-            "full_name": row.full_name,
-            "current_role": row.current_role,
-            "industry": row.industry,
-            "seniority": row.seniority,
-            "years_experience": row.years_experience,
-            "skills": row.skills or [],
-            "education": row.education or [],
-            "companies": row.companies or [],
-            "current_country": row.current_country,
-            "current_city": row.current_city,
-            "target_country": row.target_country,
-            "target_city": row.target_city,
-            "nationality": row.nationality,
-            "current_visa_status": row.current_visa_status,
-            "current_salary": row.current_salary,
-            "expected_salary": row.expected_salary,
-            "salary_currency": row.salary_currency,
-            "move_urgency": row.move_urgency,
-            "work_preference": row.work_preference,
-            "relocation_budget": row.relocation_budget,
-            "needs_visa_sponsorship": row.needs_visa_sponsorship,
-            "priority_ranking": row.priority_ranking or [],
-            "current_document_status": row.current_document_status or {},
-            "field_sources": row.field_sources or {},
-            "completion_percentage": row.completion_percentage or 0,
-        }
-    )
+    payload: dict[str, Any] = {}
+    for key in _PROFILE_PERSISTED_COLUMNS:
+        v = getattr(row, key, None)
+        if isinstance(v, list):
+            payload[key] = list(v)
+        elif isinstance(v, dict):
+            payload[key] = dict(v)
+        else:
+            payload[key] = v
+    # JSON columns can come back as None on a fresh row; coerce.
+    for list_field in (
+        "skills",
+        "education",
+        "companies",
+        "certifications",
+        "languages_known",
+        "alternatives",
+        "priority_ranking",
+    ):
+        if payload.get(list_field) is None:
+            payload[list_field] = []
+    if payload.get("current_document_status") is None:
+        payload["current_document_status"] = {}
+    payload["field_sources"] = row.field_sources or {}
+    payload["completion_percentage"] = row.completion_percentage or 0
+    return UserProfile.model_validate(payload)

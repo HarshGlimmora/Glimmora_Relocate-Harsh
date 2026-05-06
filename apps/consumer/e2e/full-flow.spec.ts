@@ -43,12 +43,16 @@ test("full intent-aware pipeline: signup → intent → resume → profile → 1
   await page.locator('label:has(input[type="checkbox"])').first().click();
   await page.click('button[type="submit"]');
 
-  // ---- Intent capture (NEW) ----
-  await page.waitForURL(/\/app\/onboarding\/intent/, { timeout: 30_000 });
-  await expectNoNextRuntimeError(page, "intent-page-load");
+  // ---- Goal step (relocation_goal + reason_for_moving, replaces /intent) ----
+  await page.waitForURL(/\/app\/onboarding\/goal/, { timeout: 30_000 });
+  await expectNoNextRuntimeError(page, "goal-page-load");
   const intentChosen = "find_job_abroad";
   await page.locator(`button[data-intent="${intentChosen}"]`).click();
-  await page.locator('button:has-text("Continue")').click();
+  // Optional one-line reason; fill so reason_for_moving lands on the profile.
+  await page
+    .getByPlaceholder(/partner has family/i)
+    .fill("targeting EU tech market");
+  await page.locator('button[data-onboarding-next]').click();
 
   // ---- Resume upload ----
   await page.waitForURL(/\/app\/onboarding\/resume/, { timeout: 15_000 });
@@ -72,7 +76,7 @@ test("full intent-aware pipeline: signup → intent → resume → profile → 1
     await page.click('button:has-text("Skip")');
   }
 
-  // ---- Profile review ----
+  // ---- Profile review (identity only — destination etc. moved to later steps) ----
   await page.waitForURL(/\/app\/onboarding\/profile/, { timeout: 30_000 });
   await expectNoNextRuntimeError(page, "profile-page-load");
   const completenessCount = await page.locator("[data-profile-completeness]").count();
@@ -84,16 +88,92 @@ test("full intent-aware pipeline: signup → intent → resume → profile → 1
     await input.waitFor({ state: "visible", timeout: 15_000 });
     await input.fill(value);
   };
-  await fillByLabel(/Current country/i, "IN");
-  await fillByLabel(/Target country/i, "DE");
-  await fillByLabel(/Nationality/i, "IN");
-  await fillByLabel(/Current salary/i, "1500000");
-  await fillByLabel(/Expected salary/i, "85000");
-  await fillByLabel(/Currency/i, "EUR");
+  // Identity fields only. The previous gate (target_country here) moved
+  // to the destination step.
+  await fillByLabel(/Years of experience/i, "8");
+  await fillByLabel(/Seniority/i, "senior");
   await page.locator('form button[type="submit"]').last().click();
-  // First module page runs Vertex synchronously — long wait.
+
+  // ---- Destination step — full country names, no ISO codes in UI ----
+  await page.waitForURL(/\/app\/onboarding\/destination/, { timeout: 30_000 });
+  await expectNoNextRuntimeError(page, "destination-page-load");
+  await page
+    .locator('select[data-country-select]')
+    .first()
+    .selectOption("DE");
+  // Confirm the readable name appears under the picker.
+  const targetNameText = await page
+    .locator("[data-target-country-name]")
+    .innerText()
+    .catch(() => "");
+  if (!/Germany/.test(targetNameText)) {
+    throw new Error(
+      `destination step did not render country name "Germany"; saw: "${targetNameText}"`,
+    );
+  }
+  await page.locator('button[data-onboarding-next]').click();
+
+  // ---- Jobs intake ----
+  await page.waitForURL(/\/app\/onboarding\/jobs/, { timeout: 30_000 });
+  await expectNoNextRuntimeError(page, "jobs-intake-page-load");
+  await page
+    .getByPlaceholder(/Senior backend engineer/i)
+    .fill("Senior Backend Engineer");
+  await page.getByPlaceholder(/fintech/i).fill("fintech");
+  await page.locator('button[data-focus="career"]').click();
+  await page.locator('button[data-onboarding-next]').click();
+
+  // ---- Family intake ----
+  await page.waitForURL(/\/app\/onboarding\/family/, { timeout: 30_000 });
+  await expectNoNextRuntimeError(page, "family-intake-page-load");
+  await page.locator('button[data-onboarding-next]').click();
+
+  // ---- Visa intake (full country names again) ----
+  await page.waitForURL(/\/app\/onboarding\/visa/, { timeout: 30_000 });
+  await expectNoNextRuntimeError(page, "visa-intake-page-load");
+  await page
+    .locator('select[data-country-select="nationality"]')
+    .selectOption("IN");
+  await page
+    .locator('select[data-country-select="current_country"]')
+    .selectOption("IN");
+  const nationalityText = await page
+    .locator("[data-nationality-name]")
+    .innerText()
+    .catch(() => "");
+  if (!/India/.test(nationalityText)) {
+    throw new Error(
+      `visa step did not render nationality name "India"; saw: "${nationalityText}"`,
+    );
+  }
+  await page.locator('button[data-onboarding-next]').click();
+
+  // ---- Budget intake ----
+  await page.waitForURL(/\/app\/onboarding\/budget/, { timeout: 30_000 });
+  await expectNoNextRuntimeError(page, "budget-intake-page-load");
+  await page.getByPlaceholder("1500000").fill("1500000");
+  await page.getByPlaceholder("85000").fill("85000");
+  await page.getByPlaceholder("20000").fill("20000");
+  await page.locator('button[data-onboarding-next]').click();
+  // Budget step kicks off the first analysis page; long wait for Vertex.
   await page.waitForURL(/\/app\/country/, { timeout: 240_000 });
-  await expectNoNextRuntimeError(page, "profile-after-save");
+  await expectNoNextRuntimeError(page, "country-after-onboarding");
+
+  // ---- Country names visible: destination chips show "Germany", not "DE" ----
+  const switcher = page.locator("[data-destination-switcher]");
+  if (await switcher.count()) {
+    const switcherText = await switcher.innerText();
+    if (!/Germany|Netherlands|Ireland/.test(switcherText)) {
+      throw new Error(
+        `destination switcher should show full country names, got: ${switcherText.slice(0, 200)}`,
+      );
+    }
+    // Active chip MUST not be just "DE" / "NL" — that would be an ISO leak.
+    const isoOnly = await switcher.locator("button:text-matches(\"^[A-Z]{2}$\")").count();
+    if (isoOnly > 0) {
+      throw new Error("destination switcher leaked an ISO-only label");
+    }
+  }
 
   // ---- Each module must render: value lead + intent framing + interactive panel ----
   const expected: Record<string, RegExp> = {

@@ -139,6 +139,45 @@ _DEPENDENCY_MAP: dict[str, set[AnalysisKind]] = {
         AnalysisKind.WORKFLOW,
         AnalysisKind.TIMELINE,
     },
+    # --- richer intake fields (data-first onboarding) ---
+    "phone": set(),
+    "target_role": {AnalysisKind.JOBFIT, AnalysisKind.CULTURE},
+    "current_employer": {AnalysisKind.JOBFIT},
+    "certifications": {AnalysisKind.JOBFIT, AnalysisKind.DOCUMENTS},
+    "languages_known": {AnalysisKind.CULTURE, AnalysisKind.JOBFIT},
+    "destination_language_confidence": {AnalysisKind.CULTURE},
+    "open_to_alternatives": {AnalysisKind.COUNTRY_COMPARISON, AnalysisKind.JOBFIT},
+    "alternatives": {AnalysisKind.COUNTRY_COMPARISON, AnalysisKind.JOBFIT},
+    "relocation_goal": set(),  # framing only; no analysis cares
+    "reason_for_moving": {AnalysisKind.COUNTRY_COMPARISON, AnalysisKind.SYNTHESIS},
+    "monthly_budget": {AnalysisKind.FINANCE},
+    "savings": {AnalysisKind.FINANCE},
+    "rent_expectation": {AnalysisKind.FINANCE},
+    "cost_sensitivity": {AnalysisKind.FINANCE},
+    "family_status": {AnalysisKind.FAMILY},
+    "moving_with_family": {
+        AnalysisKind.FAMILY,
+        AnalysisKind.FINANCE,
+        AnalysisKind.DOCUMENTS,
+        AnalysisKind.WORKFLOW,
+        AnalysisKind.TIMELINE,
+    },
+    "children_count": {
+        AnalysisKind.FAMILY,
+        AnalysisKind.FINANCE,
+        AnalysisKind.DOCUMENTS,
+    },
+    "parents_moving": {
+        AnalysisKind.FAMILY,
+        AnalysisKind.DOCUMENTS,
+        AnalysisKind.WORKFLOW,
+        AnalysisKind.TIMELINE,
+    },
+    "family_budget_impact": {AnalysisKind.FAMILY, AnalysisKind.FINANCE},
+    "housing_requirement": {AnalysisKind.FAMILY, AnalysisKind.FINANCE},
+    "school_requirement": {AnalysisKind.FAMILY},
+    "readiness_level": set(),
+    "move_clarity_score": set(),
     # --- preferences ---
     "priority_ranking": set(),  # only synthesis cares; appended automatically
 }

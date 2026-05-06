@@ -91,37 +91,79 @@ class StubProvider:
 
 _EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _PHONE_RE = re.compile(r"\+?\d[\d\s().-]{6,}\d")
-_YEARS_RE = re.compile(r"(\d{1,2})\+?\s*(?:years?|yrs?)\s+(?:of\s+)?experience", re.I)
+_URL_RE = re.compile(
+    r"\b(?:https?://|www\.)\S+|\b(?:linkedin\.com|github\.com)/\S+",
+    re.I,
+)
+_YEARS_RE = re.compile(
+    r"(\d{1,2})\+?\s*(?:years?|yrs?)\s+(?:of\s+)?experience", re.I,
+)
+_SENIORITY_TITLE_RE = re.compile(
+    r"\b(junior|mid|senior|staff|principal)\b", re.I,
+)
+# Heuristic for "this looks like a real human name": 2–4 word tokens,
+# each Title-Cased letters (allows hyphen + apostrophe), nothing else.
+_NAME_TOKEN_RE = re.compile(r"^[A-Z][A-Za-z\-']{1,40}$")
+
+
+def _strict_name_from_first_lines(text: str) -> str | None:
+    """Extract the candidate's name without gluing in phone/email/title.
+
+    Strategy: take the first ~5 non-empty lines, strip emails / phones /
+    URLs / common separators from each, then accept the first remaining
+    fragment that looks like 2–4 capitalized name tokens. If nothing
+    qualifies, return None — never a guess.
+    """
+    head = [ln.strip() for ln in text.splitlines() if ln.strip()][:5]
+    for line in head:
+        cleaned = _EMAIL_RE.sub("", line)
+        cleaned = _PHONE_RE.sub("", cleaned)
+        cleaned = _URL_RE.sub("", cleaned)
+        # Common separators between header bits.
+        cleaned = re.sub(r"[\|·•,;]+", " ", cleaned)
+        cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
+        if not cleaned:
+            continue
+        tokens = cleaned.split()
+        if 2 <= len(tokens) <= 4 and all(_NAME_TOKEN_RE.match(t) for t in tokens):
+            return " ".join(tokens)
+    return None
 
 
 def _stub_resume_extraction(text: str) -> dict[str, Any]:
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-    full_name = lines[0] if lines else None
+    """Resume extraction stub — strict, regex-only.
+
+    The contract matches the LLM prompt: extract only what's literally in
+    the text. We deliberately do NOT derive seniority from years, and we
+    do NOT fabricate years from job dates. If the regex doesn't match, the
+    field stays null. Same rule the prompt enforces for Vertex.
+    """
+    full_name = _strict_name_from_first_lines(text)
 
     emails = sorted(set(_EMAIL_RE.findall(text)))
     phones = sorted(set(_PHONE_RE.findall(text)))
 
+    # Years of experience: only set when an explicit "N years of experience"
+    # phrase is present. No inference from dates, no estimate.
     yrs_match = _YEARS_RE.search(text)
     years_experience = int(yrs_match.group(1)) if yrs_match else None
 
+    # Seniority: only set when one of the canonical title words appears
+    # in the resume. Never derived from years.
     seniority = None
-    if years_experience is not None:
-        if years_experience >= 10:
-            seniority = "principal"
-        elif years_experience >= 8:
-            seniority = "staff"
-        elif years_experience >= 5:
-            seniority = "senior"
-        elif years_experience >= 2:
-            seniority = "mid"
-        else:
-            seniority = "junior"
+    sen_match = _SENIORITY_TITLE_RE.search(text)
+    if sen_match:
+        seniority = sen_match.group(1).lower()
 
-    # Extremely lightweight skill detection: words after the literal "Skills:".
-    skills_block = re.search(r"skills?\s*[:\-]\s*(.+)", text, re.I)
+    # Skills: words after a literal "Skills:" / "Tech Stack:" header.
+    skills_block = re.search(
+        r"(?:skills?|tech\s*stack|technologies|tools)\s*[:\-]\s*(.+)",
+        text,
+        re.I,
+    )
     skills: list[dict[str, Any]] = []
     if skills_block:
-        for raw in skills_block.group(1).split(","):
+        for raw in re.split(r"[,;|/]", skills_block.group(1)):
             name = raw.strip()
             if 1 <= len(name) <= 80:
                 skills.append({"name": name})
@@ -143,7 +185,9 @@ def _stub_resume_extraction(text: str) -> dict[str, Any]:
         "languages": [],
         "inferred_industry": None,
         "inferred_job_category": None,
-        "extraction_confidence": 0.4,
+        # Stub is best-effort only; mark accordingly so downstream UIs can
+        # de-emphasize stub-derived data and ask the user to confirm.
+        "extraction_confidence": 0.3,
     }
 
 

@@ -13,6 +13,7 @@ import { ensureBackendSession } from "./session";
 import { getProfile } from "./client";
 import type { BackendProfile } from "./types";
 import { getIntent, type IntentMeta } from "@/lib/intent";
+import { evaluateOnboarding } from "@/lib/onboarding";
 
 export interface PrereqContext {
   caseId: string;
@@ -21,22 +22,31 @@ export interface PrereqContext {
 }
 
 /**
- * Loads case + profile + intent. Redirects to:
- *   - /app/onboarding/intent if no intent yet
- *   - /app/onboarding/profile if target_country missing
+ * Loads case + profile + intent.
  *
- * Module pages call this so they can rely on a complete prereq state and
- * read `intent` for emphasis-driven copy.
+ * Gating policy: onboarding is a strict 8-step intake. The user is
+ * redirected to the first step whose required fields aren't filled.
+ * Analysis pages only render once every gate-required field is set.
+ *
+ * `target_country` (the previous single-field gate) is still required;
+ * it now lives inside the destination step.
  */
 export async function requirePrereqs(): Promise<PrereqContext> {
   const sess = await ensureBackendSession();
   const intent = await getIntent();
-  if (!intent) {
-    redirect("/app/onboarding/intent");
-  }
   const profile = await getProfile();
-  if (!profile.target_country) {
-    redirect("/app/onboarding/profile?missing=target_country");
+
+  const status = evaluateOnboarding({
+    profile,
+    hasIntent: !!intent,
+    // We can't cheaply detect a prior resume parse from this seat, so
+    // treat manual identity completion as the proxy. The resume step
+    // satisfies itself either way.
+    resumeUploaded: !!(profile.full_name && profile.current_role),
+  });
+  if (status.nextStep) {
+    redirect(status.nextStep.href);
   }
+
   return { caseId: sess.caseId, profile, intent };
 }

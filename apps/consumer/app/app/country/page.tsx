@@ -17,6 +17,7 @@ import {
   readyOrNull,
 } from "@/components/backend/envelope-shell";
 import { framingFor } from "@/lib/intent";
+import { countryName, originDestinationLabel } from "@/lib/countries";
 import { DestinationSwitcher } from "./destination-switcher";
 import { CountryPreferencesPanel } from "./preferences-panel";
 
@@ -52,9 +53,14 @@ export default async function CountryPage() {
       <div className="mt-6 space-y-6">
         {ready ? (
           <ValueLead
-            label={`Match for ${profile.target_country}`}
+            label={`Match for ${countryName(profile.target_country)}`}
             headline={`${score}/100 · ${score >= 70 ? "Strong fit" : score >= 50 ? "Workable with trade-offs" : "Tough match"}`}
-            detail={summary || undefined}
+            detail={
+              <span data-origin-destination>
+                {originDestinationLabel(profile.current_country, profile.target_country)}
+                {summary ? ` — ${summary}` : ""}
+              </span>
+            }
             emphasis={leadEmphasis(score)}
             cta={{ href: "/app/jobs", text: "See your career angle" }}
           />

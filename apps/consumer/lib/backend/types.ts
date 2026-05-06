@@ -451,33 +451,105 @@ export interface SynthesisDetail {
 
 // ---- Profile / Case shapes ----
 
+export type RelocationGoal =
+  | "compare_countries"
+  | "relocate_with_offer"
+  | "find_job_abroad"
+  | "visa_feasibility"
+  | "family_relocation"
+  | "stress_test_affordability"
+  | "documents_timeline"
+  | "move_fast";
+
+export type FamilyStatus =
+  | "single"
+  | "partnered"
+  | "married"
+  | "separated"
+  | "widowed";
+
+export type CostSensitivity = "low" | "medium" | "high";
+export type FamilyBudgetImpact = "low" | "medium" | "high";
+export type ReadinessLevel = "low" | "medium" | "high";
+export type LanguageConfidence =
+  | "none"
+  | "A1"
+  | "A2"
+  | "B1"
+  | "B2"
+  | "C1"
+  | "C2";
+export type SchoolRequirement =
+  | "none"
+  | "preschool"
+  | "primary"
+  | "secondary"
+  | "high"
+  | "tertiary"
+  | "special_needs";
+
 export interface BackendProfile {
+  // identity
   full_name?: string | null;
+  phone?: string | null;
   current_role?: string | null;
+  target_role?: string | null;
+  current_employer?: string | null;
   industry?: string | null;
   seniority?: string | null;
   years_experience?: number | null;
   skills?: { name: string }[];
   education?: unknown[];
   companies?: string[];
+  certifications?: string[];
+  languages_known?: string[];
+  destination_language_confidence?: LanguageConfidence | null;
 
+  // relocation
   current_country?: string | null;
   current_city?: string | null;
   target_country?: string | null;
   target_city?: string | null;
   nationality?: string | null;
   current_visa_status?: string | null;
+  open_to_alternatives?: boolean | null;
+  alternatives?: string[];
+  relocation_goal?: RelocationGoal | null;
+  reason_for_moving?: string | null;
 
+  // finance
   current_salary?: number | null;
   expected_salary?: number | null;
   salary_currency?: string | null;
+  monthly_budget?: number | null;
+  savings?: number | null;
+  rent_expectation?: number | null;
+  cost_sensitivity?: CostSensitivity | null;
+
+  // intent
   move_urgency?: "asap" | "6m" | "12m" | "exploring" | null;
   work_preference?: "onsite" | "hybrid" | "remote" | null;
   relocation_budget?: number | null;
   needs_visa_sponsorship?: boolean | null;
   priority_ranking?: string[];
+
+  // household
+  family_status?: FamilyStatus | null;
+  moving_with_family?: boolean | null;
+  children_count?: number | null;
+  parents_moving?: boolean | null;
+  family_budget_impact?: FamilyBudgetImpact | null;
+  housing_requirement?: string | null;
+  school_requirement?: SchoolRequirement | null;
+
+  // readiness
+  readiness_level?: ReadinessLevel | null;
+  move_clarity_score?: number | null;
+
+  // documents
   current_document_status?: Record<string, { has?: boolean; expires_at?: string; notes?: string }>;
 
+  // meta
   field_sources?: Record<string, string>;
   completion_percentage?: number;
 }

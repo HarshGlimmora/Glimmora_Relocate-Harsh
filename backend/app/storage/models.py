@@ -94,13 +94,19 @@ class UserProfile(Base):
 
     # identity
     full_name: Mapped[str | None] = mapped_column(String(160))
+    phone: Mapped[str | None] = mapped_column(String(40))
     current_role: Mapped[str | None] = mapped_column(String(160))
+    target_role: Mapped[str | None] = mapped_column(String(160))
+    current_employer: Mapped[str | None] = mapped_column(String(160))
     industry: Mapped[str | None] = mapped_column(String(80))
     seniority: Mapped[str | None] = mapped_column(String(20))
     years_experience: Mapped[int | None] = mapped_column(Integer)
     skills: Mapped[list[Any]] = mapped_column(JSON, nullable=False, default=list)
     education: Mapped[list[Any]] = mapped_column(JSON, nullable=False, default=list)
     companies: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    certifications: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    languages_known: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    destination_language_confidence: Mapped[str | None] = mapped_column(String(8))
 
     # relocation context
     current_country: Mapped[str | None] = mapped_column(String(2))
@@ -109,16 +115,38 @@ class UserProfile(Base):
     target_city: Mapped[str | None] = mapped_column(String(80))
     nationality: Mapped[str | None] = mapped_column(String(2))
     current_visa_status: Mapped[str | None] = mapped_column(String(80))
+    open_to_alternatives: Mapped[bool | None] = mapped_column(Boolean)
+    alternatives: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    relocation_goal: Mapped[str | None] = mapped_column(String(40))
+    reason_for_moving: Mapped[str | None] = mapped_column(String(600))
 
     current_salary: Mapped[int | None] = mapped_column(BigInteger)
     expected_salary: Mapped[int | None] = mapped_column(BigInteger)
     salary_currency: Mapped[str | None] = mapped_column(String(3))
+    monthly_budget: Mapped[int | None] = mapped_column(BigInteger)
+    savings: Mapped[int | None] = mapped_column(BigInteger)
+    rent_expectation: Mapped[int | None] = mapped_column(BigInteger)
+    cost_sensitivity: Mapped[str | None] = mapped_column(String(20))
 
     move_urgency: Mapped[str | None] = mapped_column(String(20))
     work_preference: Mapped[str | None] = mapped_column(String(20))
     relocation_budget: Mapped[int | None] = mapped_column(BigInteger)
     needs_visa_sponsorship: Mapped[bool | None] = mapped_column(Boolean)
     priority_ranking: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+
+    # household / lifestyle
+    family_status: Mapped[str | None] = mapped_column(String(20))
+    moving_with_family: Mapped[bool | None] = mapped_column(Boolean)
+    children_count: Mapped[int | None] = mapped_column(Integer)
+    parents_moving: Mapped[bool | None] = mapped_column(Boolean)
+    family_budget_impact: Mapped[str | None] = mapped_column(String(20))
+    housing_requirement: Mapped[str | None] = mapped_column(String(200))
+    school_requirement: Mapped[str | None] = mapped_column(String(20))
+
+    # readiness
+    readiness_level: Mapped[str | None] = mapped_column(String(20))
+    move_clarity_score: Mapped[int | None] = mapped_column(Integer)
+
     current_document_status: Mapped[dict[str, Any]] = mapped_column(
         JSON, nullable=False, default=dict
     )

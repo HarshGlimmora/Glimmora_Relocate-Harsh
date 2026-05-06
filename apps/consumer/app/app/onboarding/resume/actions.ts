@@ -1,7 +1,12 @@
 "use server";
 
 import type { BackendProfile } from "@/lib/backend/types";
-import { uploadResume, applyResumeToProfile } from "@/lib/backend/client";
+import {
+  applyResumeToProfile,
+  getProfile,
+  getResumeStatus,
+  uploadResume,
+} from "@/lib/backend/client";
 
 export async function uploadResumeAction(formData: FormData): Promise<
   | { ok: true; parseId: string; status: string; extracted: BackendProfile | null }
@@ -13,11 +18,31 @@ export async function uploadResumeAction(formData: FormData): Promise<
   }
   try {
     const r = await uploadResume(file);
+    // The upload endpoint already runs extraction synchronously + writes
+    // it to the user's profile via merge. To populate the preview we
+    // read the full profile (which includes the new fields the merge
+    // wrote: certifications, languages_known, target_role,
+    // current_employer, phone) — so the preview shows the actual end
+    // state, not just what the LLM returned.
+    let extracted: BackendProfile | null = null;
+    if (r.status === "ready") {
+      try {
+        extracted = await getProfile();
+      } catch {
+        // Fall back to status-call if profile read flakes.
+        try {
+          const s = await getResumeStatus(r.parse_id);
+          extracted = (s.extracted as unknown as BackendProfile) ?? null;
+        } catch {
+          extracted = null;
+        }
+      }
+    }
     return {
       ok: true,
       parseId: r.parse_id,
       status: r.status,
-      extracted: r.extracted ?? null,
+      extracted,
     };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

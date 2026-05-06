@@ -35,23 +35,15 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    // Identity-only patch. Destination, visa, family, budget all live in
+    // their own onboarding steps now.
     const patch: Partial<BackendProfile> = {
       full_name: state.full_name || null,
       current_role: state.current_role || null,
       industry: state.industry || null,
       seniority: state.seniority || null,
       years_experience: state.years_experience === "" ? null : Number(state.years_experience),
-      current_country: state.current_country?.toUpperCase() || null,
-      current_city: state.current_city || null,
-      target_country: state.target_country?.toUpperCase() || null,
-      target_city: state.target_city || null,
-      nationality: state.nationality?.toUpperCase() || null,
-      needs_visa_sponsorship: state.needs_visa_sponsorship,
-      move_urgency: state.move_urgency,
       work_preference: state.work_preference,
-      current_salary: state.current_salary === "" ? null : Number(state.current_salary),
-      expected_salary: state.expected_salary === "" ? null : Number(state.expected_salary),
-      salary_currency: state.salary_currency || null,
     };
     start(async () => {
       const r = await saveProfileAction(patch);
@@ -59,7 +51,10 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
         setError(r.error);
         return;
       }
-      router.push("/app/country");
+      // After profile (identity) the user moves to the destination step.
+      // The previous flow jumped straight into /app/country — that bypassed
+      // the rest of the data-first intake.
+      router.push("/app/onboarding/destination");
     });
   }
 
@@ -134,63 +129,14 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
         </Field>
       </Section>
 
-      <Section title="Origin & destination *required* ">
-        <Field label="Current country (ISO-2)">
-          <input
-            value={state.current_country}
-            onChange={(e) => set("current_country", e.target.value)}
-            maxLength={2}
-            className="input uppercase"
-          />
-        </Field>
-        <Field label="Current city">
-          <input
-            value={state.current_city}
-            onChange={(e) => set("current_city", e.target.value)}
-            className="input"
-          />
-        </Field>
-        <Field label="Target country (ISO-2)" required>
-          <input
-            value={state.target_country}
-            onChange={(e) => set("target_country", e.target.value)}
-            maxLength={2}
-            required
-            className="input uppercase"
-          />
-        </Field>
-        <Field label="Target city">
-          <input
-            value={state.target_city}
-            onChange={(e) => set("target_city", e.target.value)}
-            className="input"
-          />
-        </Field>
-      </Section>
+      {/*
+        Origin and destination intentionally moved to the destination
+        intake step (`/app/onboarding/destination`) — that step uses
+        full country names instead of ISO-2 codes. We still capture the
+        identity bits here to confirm what the resume gave us.
+      */}
 
-      <Section title="Visa & timing">
-        <Field label="Needs visa sponsorship?">
-          <select
-            value={state.needs_visa_sponsorship ? "yes" : "no"}
-            onChange={(e) => set("needs_visa_sponsorship", e.target.value === "yes")}
-            className="input"
-          >
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </Field>
-        <Field label="Move urgency">
-          <select
-            value={state.move_urgency ?? "12m"}
-            onChange={(e) => set("move_urgency", e.target.value as BackendProfile["move_urgency"])}
-            className="input"
-          >
-            <option value="asap">ASAP</option>
-            <option value="6m">Within 6 months</option>
-            <option value="12m">Within 12 months</option>
-            <option value="exploring">Exploring</option>
-          </select>
-        </Field>
+      <Section title="How you'd work">
         <Field label="Work preference">
           <select
             value={state.work_preference ?? "hybrid"}
@@ -204,34 +150,7 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
         </Field>
       </Section>
 
-      <Section title="Salary">
-        <Field label="Current salary (annual)">
-          <input
-            type="number"
-            min={0}
-            value={state.current_salary}
-            onChange={(e) => set("current_salary", e.target.value)}
-            className="input"
-          />
-        </Field>
-        <Field label="Expected salary (annual, target market)">
-          <input
-            type="number"
-            min={0}
-            value={state.expected_salary}
-            onChange={(e) => set("expected_salary", e.target.value)}
-            className="input"
-          />
-        </Field>
-        <Field label="Currency (ISO 4217)">
-          <input
-            value={state.salary_currency}
-            onChange={(e) => set("salary_currency", e.target.value)}
-            maxLength={3}
-            className="input uppercase"
-          />
-        </Field>
-      </Section>
+      {/* Salary, urgency, sponsorship now live in dedicated intake steps. */}
 
       <div className="flex items-center justify-between border-t border-ink-200 pt-5">
         <button

@@ -1,9 +1,20 @@
 # Glimmora Relocate — Frontend QA Walkthrough
 
 This doc is the runbook for QA-ing the consumer frontend after the
-**intent-aware + interactive redesign**. Follow it top-to-bottom; every
+**data-first, intent-aware redesign**. Follow it top-to-bottom; every
 section says what to click, what should appear, what counts as a fail, and
 which backend contract / data-attribute hooks you can target programmatically.
+
+> **What changed in this rev (2026-05-06).** The flow is now strictly
+> data-first: the user passes through 8 onboarding steps (goal → resume
+> → profile → destination → jobs → family → visa → budget) before
+> reaching any analysis page. The profile schema went from ~17 fields
+> to **48** (32 patchable from the UI, 25 counted toward completion).
+> Country codes (`IN`, `DE`, `NL`) are no longer the primary
+> user-facing label — full country names ("India", "Germany",
+> "Netherlands") render in every chip, headline, and breadcrumb. ISO
+> codes survive only on the wire. See §3 for the new flow, §4a for the
+> step-by-step intake, §6 for the expanded contract.
 
 > **Scope of this rev.** Every major page now has at least one bound
 > interactive panel that round-trips through the backend. The shell (header,
@@ -26,8 +37,21 @@ should only use these — never CSS classes.
 | `[data-emphasis="good\|warn\|bad\|neutral"]` | On the ValueLead | Tone class. Useful for asserting a verdict colour. |
 | `[data-intent-framing]` | Under the eyebrow | The intent-driven framing line. Absence = page isn't intent-aware. |
 | `[data-destination-switcher]` | Country page | Re-target chips. Each chip is a `<button>` with active `disabled`. |
+| `[data-destination-code="<iso>"]` | Inside switcher | ISO of each chip; chip TEXT shows the full country name. |
+| `[data-origin-destination]` | Country page ValueLead detail | "India → Germany" rendered with full names. |
 | `[data-resume-preview]` | Resume page after parse | Container for the extracted-vs-missing preview. |
-| `[data-resume-extracted]` | Inside `[data-resume-preview]` | Two-column "We pulled / Still need" block. |
+| `[data-resume-extracted]` | Inside `[data-resume-preview]` | Two-column "We pulled / We'll still ask" block. |
+| `[data-onboarding-step="<id>"]` | Onboarding page root | Identifies the active step page (goal/resume/profile/destination/jobs/family/visa/budget). |
+| `[data-onboarding-stepper]` | Top of each onboarding page | The 8-step pill strip. |
+| `[data-step="<id>"][data-step-state="active\|past\|future"]` | Stepper item | Which step is current vs past vs future. |
+| `[data-onboarding-next]` | Continue button on every step | Submits the step form. |
+| `[data-country-select]` / `[data-country-select="<purpose>"]` | Country pickers | `<select>` with country names; values are ISO-2. |
+| `[data-target-country-name]` | Destination step | Confirms the picked country's full name renders. |
+| `[data-nationality-name]` | Visa step | "<Country> passport". |
+| `[data-current-country-name]` | Visa step | "Living in <Country>". |
+| `[data-alt="<iso>"]` + `[data-alt-active]` | Destination step alternates | Each alternate chip + selected state. |
+| `[data-focus="<id>"]` + `[data-focus-active]` | Jobs step focus chips | Career/cost/speed/family/lifestyle. |
+| `[data-with-family]` | Family step | The "family is moving with me" checkbox. |
 | `[data-profile-completeness]` | Profile review form, top | Bar + percentage + inferred-count pill. |
 | `[data-module-panel="<slug>"]` | Each module page | The interactive panel shell. Slug is one of: `country`, `jobs`, `visa`, `family`, `finance`, `documents`, `workflow`, `culture`, `timeline`, `synthesis`. |
 | `[data-panel-apply]` | Inside a module-panel | The submit button. |
@@ -152,22 +176,154 @@ re-run.
 
 ---
 
-## 3. The new intent-aware flow
+## 2b. Profile schema (48 fields)
+
+The backend profile is the single source of context. Every field below is
+on `UserProfile` (Pydantic) and `user_profiles` (SQLAlchemy/SQLite). Source
+tracking lives in `field_sources: dict[str, "resume" | "user" | "merged"]`.
+
+### Identity (resume-fillable)
+`full_name`, `phone`, `current_role`, `target_role`, `current_employer`,
+`industry`, `years_experience`, `seniority`, `skills[]`, `education[]`,
+`companies[]`, `certifications[]`, `languages_known[]`,
+`destination_language_confidence` (none / A1 / A2 / B1 / B2 / C1 / C2).
+
+### Relocation context
+`current_country` (ISO-2), `current_city`, `target_country` (ISO-2),
+`target_city`, `nationality` (ISO-2), `current_visa_status`,
+`open_to_alternatives`, `alternatives[]` (ISO-2 list, max 5),
+`relocation_goal` (the 8 intent IDs), `reason_for_moving`.
+
+### Finance
+`current_salary`, `expected_salary`, `salary_currency` (ISO-4217),
+`monthly_budget`, `savings`, `rent_expectation`, `cost_sensitivity`
+(low / medium / high).
+
+### Intent + ranking
+`move_urgency` (asap / 6m / 12m / exploring), `work_preference`
+(onsite / hybrid / remote), `relocation_budget`, `needs_visa_sponsorship`,
+`priority_ranking[]` (career / family / cost / lifestyle / speed; max 5).
+
+### Household + lifestyle
+`family_status` (single / partnered / married / separated / widowed),
+`moving_with_family`, `children_count` (0–12), `parents_moving`,
+`family_budget_impact` (low / medium / high), `housing_requirement`
+(free text), `school_requirement` (none / preschool / primary /
+secondary / high / tertiary / special_needs).
+
+### Readiness
+`readiness_level` (low / medium / high), `move_clarity_score` (0–100).
+
+### Documents
+`current_document_status: dict[str, {has?, expires_at?, notes?}]`.
+
+### Meta
+`field_sources` (per-field source map), `completion_percentage` (auto-
+computed across the 25 `COMPLETION_FIELDS` in
+[backend/app/modules/profile/merge.py](backend/app/modules/profile/merge.py)).
+
+### Resume → profile auto-fill
+
+[merge_resume_into_profile](backend/app/modules/profile/merge.py) writes
+these fields from a successful resume parse, **without ever overriding a
+field the user has already touched**:
+
+| Resume signal | Profile field |
+|---|---|
+| `full_name` | `full_name` |
+| `phones[0]` | `phone` |
+| `current_role` | `current_role` |
+| `inferred_job_category` | `target_role` (soft hint) |
+| `current_company` | `current_employer` |
+| `inferred_industry` | `industry` |
+| `years_experience` | `years_experience` |
+| `seniority` | `seniority` |
+| `skills[]` | `skills[]` |
+| `education[]` | `education[]` |
+| `experience[].company` | `companies[]` |
+| `certifications[].name` | `certifications[]` (flattened to names) |
+| `languages[]` | `languages_known[]` (formatted "name (level)") |
+
+What the resume **does not** fill (and the user must answer in the
+intake): `target_country`, `target_city`, `nationality`,
+`current_country`, `current_visa_status`, `move_urgency`,
+`needs_visa_sponsorship`, `relocation_goal`, `reason_for_moving`,
+`family_status`, `moving_with_family`, `children_count`,
+`current_salary`, `expected_salary`, `savings`, `cost_sensitivity`.
+
+---
+
+## 2c. Country display layer
+
+Backend stores ISO-3166-1 alpha-2 (e.g. `DE`). Frontend never renders
+that as the primary label. Use [lib/countries.ts](apps/consumer/lib/countries.ts):
+
+```ts
+import { countryName, originDestinationLabel, lookupCountryByName, countryOptions } from "@/lib/countries";
+
+countryName("DE");                          // "Germany"
+countryName(profile.target_country);        // "Germany" (or "" if null)
+originDestinationLabel("IN", "DE");         // "India → Germany"
+lookupCountryByName("germany");             // "DE"
+lookupCountryByName("uk");                  // "GB" (alias)
+countryOptions();                           // [{value:"AT",label:"Austria"}, ...] sorted
+```
+
+The catalogue is curated to ~50 countries — the destinations the product
+actively supports plus common origin countries. Adding more: append to
+`COUNTRIES` in [lib/countries.ts](apps/consumer/lib/countries.ts).
+
+Where the layer is used today:
+- Onboarding destination step (target country picker + chip grid).
+- Onboarding visa step (nationality + current country pickers).
+- Country page ValueLead headline ("Match for Germany") + origin →
+  destination subtitle (`[data-origin-destination]`).
+- Country page DestinationSwitcher chips (`[data-destination-code="DE"]`
+  on each chip; chip text is `countryName(c)`).
+
+Where ISO codes still legitimately appear (do **not** flag these):
+- Hidden form `value=` attributes on `<select>` / `<button>` elements.
+- HTTP request bodies (the wire format).
+- The `[data-destination-code]` attribute (present so Playwright can
+  target chips by ISO).
+
+Anywhere else, an ISO-only label visible to the user is a regression.
+
+---
+
+## 3. The data-first onboarding flow
 
 ```
 Sign-up
   ↓
-/app/onboarding/intent       ← NEW. Required step.
+/app/onboarding/goal          ← Step 1. Relocation goal + reason for moving.
   ↓
-/app/onboarding/resume       ← Auto-fill profile from PDF/DOCX
+/app/onboarding/resume        ← Step 2. Auto-fill from PDF/DOCX.
   ↓
-/app/onboarding/profile      ← Confirm + fill missing essentials
+/app/onboarding/profile       ← Step 3. Confirm identity gaps the resume couldn't fill.
+  ↓
+/app/onboarding/destination   ← Step 4. Target country (full name) + city + alternates.
+  ↓
+/app/onboarding/jobs          ← Step 5. Target role, focus, sponsorship, work mode.
+  ↓
+/app/onboarding/family        ← Step 6. Family status, who's moving, schooling.
+  ↓
+/app/onboarding/visa          ← Step 7. Nationality + current country/visa status.
+  ↓
+/app/onboarding/budget        ← Step 8. Salary, savings, monthly budget, sensitivity.
   ↓
 /app/country  /app/jobs  /app/visa  /app/family  /app/finance
 /app/documents  /app/workflow  /app/culture  /app/timeline
   ↓
-/app/synthesis               ← Verdict + recommended path
+/app/synthesis                ← Verdict + recommended path.
 ```
+
+The legacy URL `/app/onboarding/intent` redirects to `/app/onboarding/goal`.
+The gate (`requirePrereqs`) now uses `evaluateOnboarding()` from
+[lib/onboarding.ts](apps/consumer/lib/onboarding.ts), which inspects the
+profile and redirects the user to the **first incomplete step**. A user
+landing on `/app/jobs` mid-onboarding is bounced back to the right step
+automatically — no module page renders against a thin profile.
 
 The user picks one of these intents; the system reorders sidebar,
 emphasises specific modules, and reframes module copy:
@@ -193,39 +349,114 @@ framing line + `intentFraming` copy slot).
 
 For each page: **what you click → what should appear → fail signals**.
 
+> Every onboarding page is wrapped in `OnboardingShell` and has the
+> `[data-onboarding-step="<id>"]` attribute on its root and a stepper
+> (`[data-onboarding-stepper]`) at the top showing all 8 steps. The
+> active step is `[data-step="<id>"][data-step-state="active"]`.
+
 ### Sign-up `/sign-up`
 - Click: fill name/email/password, accept terms, submit.
-- Should: redirect to `/app/onboarding/intent`. *(Used to redirect to /app — that's a regression now.)*
+- Should: redirect to `/app/onboarding/goal` (data-first onboarding step 1).
 - Fail: stays on /sign-up with a red error; or lands directly on /app.
 
-### Intent `/app/onboarding/intent`
-- Click: pick a tile → "Continue".
-- Should: pill highlights black, `User.intent` saved, redirect to
-  `/app/onboarding/resume`. Sidebar now shows "Your goal: <label>" badge
-  and the Analysis section reorders to lead with the intent's lead module.
+### Step 1 — Goal `/app/onboarding/goal`
+- Click: pick one of 8 tiles (`[data-intent="<id>"]`) → optionally fill
+  the "why this move?" line → Continue.
+- Should: `User.intent` AND `profile.relocation_goal` AND
+  `profile.reason_for_moving` saved, redirect to `/app/onboarding/resume`.
+  Sidebar now shows "Your goal: <label>" badge and the Analysis section
+  reorders to lead with the intent's lead module.
 - Fail: button disabled (no selection), redirect doesn't happen, sidebar
   unchanged.
-- **Unique value**: the system understood what kind of mover you are.
+- **Unique value**: the system asks the only question that frames every
+  page that follows.
 
-### Resume `/app/onboarding/resume`
+### Step 2 — Resume `/app/onboarding/resume`
 - Click: pick PDF/DOCX → "Upload + parse". Wait ~30–60s for AI.
-- Should: status `ready` → **extracted preview** appears (data-resume-preview)
-  with a "We pulled" column (name, role, industry, seniority, years, skills,
-  companies) and a "Still need from you" column (always lists target country).
+- Should: status `ready` → **extracted preview** appears
+  (`[data-resume-preview]`) with a "We pulled" column showing name, phone,
+  current role, current employer, target role (inferred), industry,
+  seniority, years experience, skills, certifications, languages,
+  education, companies. The right column lists "We'll still ask"
+  (destination, family, visa, budget — always at the bottom).
   Click "Looks right · Apply to my profile" → redirect to profile.
 - Status `failed` → "Couldn't parse this file" callout with retry/skip.
-- **Unique value**: turns a resume into a starting profile, then asks you to
-  confirm what was lifted before it goes any further.
+- **Unique value**: turns a resume into a 14-field starting profile in
+  one shot — then asks you to confirm what was lifted before it goes any
+  further.
 
-### Profile `/app/onboarding/profile`
+### Step 3 — Profile `/app/onboarding/profile`
 - Should see at the top: **completeness meter** (`data-profile-completeness`)
   with bar tone (red <40%, gilt <75%, green ≥75%) and an "N fields from resume"
   pill. Resume-inferred fields are tagged with `(from resume)` next to the label.
-- Click: confirm inferred fields, fill any blanks (target country, current
-  country, nationality required), → "Save & start analysis →".
-- Should: redirect to `/app/country`.
-- **Unique value**: confirm what the AI inferred, fill only what's missing,
-  see at a glance how complete the snapshot is.
+- The form is now identity-only (full name, current role, industry,
+  seniority, years experience, work preference). Destination, salary,
+  visa, and family fields have moved into dedicated later steps.
+- Click: confirm inferred fields, fill any blanks → Save.
+- Should: redirect to `/app/onboarding/destination`.
+- **Unique value**: confirm what the AI inferred, no longer asked to
+  re-type things the resume already provided.
+
+### Step 4 — Destination `/app/onboarding/destination`
+- Visual: a country picker that shows full names ("Germany", "Netherlands")
+  via [lib/countries.ts](apps/consumer/lib/countries.ts) — never ISO codes.
+- Inputs:
+  - Target country select (`[data-country-select]`). Confirms by rendering
+    `[data-target-country-name]` with the chosen full name.
+  - Target city — free text, optional.
+  - "Open to alternates" toggle — when on, shows a chip grid of country
+    names; pick up to 3 to send as `alternatives` on the run body.
+- Click: Continue.
+- Saves: `target_country`, `target_city`, `open_to_alternatives`,
+  `alternatives` (filtered to exclude target).
+- Redirect: `/app/onboarding/jobs`.
+- **Unique value**: destination chosen by name, plus a real shortlist
+  the country comparison module reads.
+
+### Step 5 — Jobs intake `/app/onboarding/jobs`
+- Inputs: target role (text, max 160), industry (text, max 80),
+  focus chips (multi, max 2: career/cost/speed/family/lifestyle), expected
+  salary + currency, work preference (onsite/hybrid/remote), open-to-role-change
+  toggle, needs-visa-sponsorship toggle.
+- Saves: `target_role`, `industry`, `priority_ranking`, `expected_salary`,
+  `salary_currency`, `work_preference`, `needs_visa_sponsorship`.
+- Redirect: `/app/onboarding/family`.
+- **Unique value**: the jobfit + culture analyses now have a real career
+  angle to score against, not just resume scrap.
+
+### Step 6 — Family intake `/app/onboarding/family`
+- Inputs: family status (single/partnered/married/separated/widowed),
+  "family is moving with me" toggle, then conditional: children count
+  (0–12), schooling need, parents-moving toggle, housing requirement
+  (free text), family budget pressure.
+- Saves: `family_status`, `moving_with_family`, `children_count`,
+  `school_requirement`, `parents_moving`, `housing_requirement`,
+  `family_budget_impact`.
+- Redirect: `/app/onboarding/visa`.
+- **Unique value**: the family analysis is no longer guessing — solo vs
+  household decides budget, visa route, school search, timeline.
+
+### Step 7 — Visa intake `/app/onboarding/visa`
+- Inputs: nationality (country picker, full names), current country
+  (country picker), current city (text), current visa / residence status
+  (text).
+- Confirms by rendering `[data-nationality-name]` ("India passport") and
+  `[data-current-country-name]` ("Living in India").
+- Saves: `nationality`, `current_country`, `current_city`,
+  `current_visa_status`.
+- Redirect: `/app/onboarding/budget`.
+- **Unique value**: the visa module knows your passport and your sit
+  before it tries to recommend a route.
+
+### Step 8 — Budget intake `/app/onboarding/budget`
+- Inputs: current annual salary, expected annual salary (target market),
+  savings/runway, monthly post-move budget, currency (3-letter ISO),
+  cost sensitivity (low/medium/high), move urgency (asap/6m/12m/exploring).
+- Saves: `current_salary`, `expected_salary`, `savings`, `monthly_budget`,
+  `salary_currency`, `cost_sensitivity`, `move_urgency`.
+- Redirect: `/app/country` — the first analysis page.
+- **Unique value**: the finance module gets a real cost picture, not a
+  default; the gate also unblocks all 10 analysis pages.
 
 > **Per-module pattern.** Every module page below renders **three** required
 > elements:
@@ -942,3 +1173,62 @@ backend/
     ai/
       gateway.py             ← VertexProvider + StubProvider fallback
 ```
+
+---
+
+## 12. Deferred items + assumptions (data-first rev)
+
+### Deferred (intentionally not done in this rev)
+
+| Item | Why deferred | What it would take |
+|---|---|---|
+| Streaming the analyses while onboarding finishes | Current synthesis is synchronous; SSE would need a backend route + client EventSource. Not a flow correctness issue. | New `GET /api/v1/case/{id}/run-stream` plus a client EventSource hook. |
+| `ResumeUploadOut.extracted` field | Backend currently doesn't return the extraction inline on POST /upload; consumer chains `getProfile()` instead, which is fine because the upload flow merges synchronously. | Add `extracted: ResumeExtraction \| None` to `ResumeUploadOut` + populate in `service.upload()`. |
+| Multi-target side-by-side country comparison | Country panel sends `alternatives` but the UI still shows a single-target view. | A new `/app/country/compare` route that runs `country.run` per alternate and lays them side-by-side. |
+| Resume-extracted email merging into profile | `extraction.emails[]` exists but isn't written; the user's account email already lives on `User`. | One-line fill in `merge_resume_into_profile`. |
+| Per-language confidence levels broken into structured records | Today `languages_known` is a flat `string[]` ("English (C2)"). | Sub-schema `Language { name, level }` mirrored on the profile. |
+| Onboarding "skip" buttons | All 8 steps are required by `evaluateOnboarding`; you cannot bypass. We considered "skip for now" but decided gate strictness was the point. | Per-step skip → mark step as user-skipped, lower completion threshold. |
+| Country map auto-translated label (e.g. Spanish UI) | UI is English-only today. | Replace the `name` field with an i18n key + per-locale catalog. |
+| Sidebar "Your goal" badge re-render after goal update | Today the goal change requires a full reload to update the sidebar (server component). | RouterRefresh on goal save (already redirects, so this is a non-issue in practice). |
+| Profile completeness > 80 → "ready to analyze" inline status | Profile shows the completeness bar but the analysis page still gates on `evaluateOnboarding` returning null `nextStep`. | A second derived signal `analysisReady = completion >= 80 && requiredMissing.length === 0`. |
+
+### Assumptions
+
+1. **The 50-country catalogue covers our supported destinations + common
+   origins.** Adding more is a pure data edit in `lib/countries.ts`.
+2. **Resume extractor still uses gemini-2.5-flash via Vertex.** Stub
+   fallback covers Vertex outages. The richer `merge_resume_into_profile`
+   doesn't introduce new LLM calls — it just maps existing extracted
+   fields to additional profile keys.
+3. **`User.intent` (consumer DB) and `profile.relocation_goal` (backend)
+   stay in sync.** The goal step writes to both. If a future codepath
+   updates one without the other, sidebar reorder + module framing will
+   diverge.
+4. **The `evaluateOnboarding` gate uses target completion of "every
+   `missing()` returns []".** It does NOT use the Pydantic
+   `completion_percentage`. The two signals are related but not
+   identical: completion % counts more fields than the gate strictly
+   requires, so a user can be at 60% and still pass the gate.
+5. **Resume field merge stamps `field_sources[key] = "resume"` only on
+   newly-filled keys.** A user-edited field that was previously set by
+   the resume keeps `"user"` after the patch — never reverted.
+6. **Existing rows survive the migration.** `0004_profile_richer_intake`
+   adds nullable scalar columns and JSON-default-empty list columns —
+   no data migration required.
+7. **The legacy `/app/onboarding/intent` URL still works** via redirect.
+   Bookmarked links from prior sessions land on `/app/onboarding/goal`.
+8. **ISO-2 codes are still the wire format.** Backend Pydantic enforces
+   `min_length=2 max_length=2` and uppercases. The frontend country layer
+   only converts at the display boundary.
+
+### Things that would now warrant a re-test
+
+- Existing users whose profiles were created before this rev have
+  no `relocation_goal` on the backend (only on consumer `User.intent`).
+  The first time they hit the gate, they'll be redirected to
+  `/app/onboarding/goal` to populate the backend record. After that,
+  their old data flows normally.
+- The `completion_percentage` numbers shift: previously 15 fields
+  counted, now 25. Users who saw "73%" before may now see "44%" until
+  they complete the new steps. This is intentional — the data was
+  always thin; the meter now reports the truth.

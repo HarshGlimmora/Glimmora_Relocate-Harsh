@@ -161,7 +161,10 @@ export function ResumeUploadCard() {
 function ExtractedPreview({ profile }: { profile: BackendProfile }) {
   const items: { k: string; v: string | null }[] = [
     { k: "Name", v: profile.full_name ?? null },
+    { k: "Phone", v: profile.phone ?? null },
     { k: "Current role", v: profile.current_role ?? null },
+    { k: "Current employer", v: profile.current_employer ?? null },
+    { k: "Target role (inferred)", v: profile.target_role ?? null },
     { k: "Industry", v: profile.industry ?? null },
     { k: "Seniority", v: profile.seniority ?? null },
     {
@@ -172,10 +175,33 @@ function ExtractedPreview({ profile }: { profile: BackendProfile }) {
       k: "Skills",
       v: profile.skills?.length
         ? profile.skills
-            .slice(0, 8)
+            .slice(0, 10)
             .map((s) => s.name)
-            .join(", ") + (profile.skills.length > 8 ? "…" : "")
+            .join(", ") + (profile.skills.length > 10 ? "…" : "")
         : null,
+    },
+    {
+      k: "Certifications",
+      v: profile.certifications?.length
+        ? profile.certifications.slice(0, 6).join(", ")
+        : null,
+    },
+    {
+      k: "Languages",
+      v: profile.languages_known?.length
+        ? profile.languages_known.join(", ")
+        : null,
+    },
+    {
+      k: "Education",
+      v:
+        profile.education && (profile.education as Array<{ school?: string }>).length
+          ? (profile.education as Array<{ school?: string }>)
+              .slice(0, 2)
+              .map((e) => e.school)
+              .filter(Boolean)
+              .join(", ")
+          : null,
     },
     {
       k: "Companies",
@@ -205,11 +231,11 @@ function ExtractedPreview({ profile }: { profile: BackendProfile }) {
       </div>
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-gilt-700">
-          Still need from you
+          We'll still ask
         </p>
         <ul className="mt-1.5 space-y-1 text-[12.5px]">
           {missing.length === 0 ? (
-            <li className="text-ink-500">Nothing — you can keep going.</li>
+            <li className="text-ink-500">Nothing further from your CV.</li>
           ) : (
             missing.map((it) => (
               <li key={it.k} className="text-ink-700">
@@ -217,7 +243,8 @@ function ExtractedPreview({ profile }: { profile: BackendProfile }) {
               </li>
             ))
           )}
-          <li className="text-ink-700">· Target country (always required)</li>
+          <li className="text-ink-700">· Destination country (next step)</li>
+          <li className="text-ink-700">· Family + visa + budget (later steps)</li>
         </ul>
       </div>
     </div>

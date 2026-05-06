@@ -24,22 +24,41 @@ from app.schemas.profile import (
 
 
 # Fields counted toward completion %. Kept explicit so changes are deliberate.
+# Now includes the data-first intake fields collected during the multi-step
+# onboarding (destination, jobs, family, visa, budget). The user is gated
+# off the analysis pages until completion is high enough.
 COMPLETION_FIELDS: tuple[str, ...] = (
+    # identity (resume-fillable)
     "full_name",
     "current_role",
+    "target_role",
     "industry",
     "years_experience",
     "seniority",
     "skills",
+    "languages_known",
+    # location
     "current_country",
     "target_country",
+    "nationality",
+    # finance
     "current_salary",
     "expected_salary",
     "salary_currency",
+    "savings",
+    "cost_sensitivity",
+    # intent
+    "relocation_goal",
+    "reason_for_moving",
     "move_urgency",
     "work_preference",
     "needs_visa_sponsorship",
     "priority_ranking",
+    # household
+    "family_status",
+    "moving_with_family",
+    # readiness
+    "readiness_level",
 )
 
 
@@ -77,9 +96,18 @@ def merge_resume_into_profile(
 
     fill("full_name", extraction.full_name)
     fill("current_role", extraction.current_role)
+    # `inferred_job_category` is the LLM's guess at where this person could
+    # next role-shift to. Treat that as a soft target_role hint when the user
+    # hasn't said otherwise.
+    fill("target_role", extraction.inferred_job_category)
+    fill("current_employer", extraction.current_company)
     fill("industry", extraction.inferred_industry)
     fill("years_experience", extraction.years_experience)
     fill("seniority", extraction.seniority.value if extraction.seniority else None)
+
+    # Contact info that the resume frequently has.
+    if extraction.phones:
+        fill("phone", extraction.phones[0])
 
     # Lists: fill if empty.
     if _is_empty(data.get("skills")) and extraction.skills:
@@ -96,6 +124,24 @@ def merge_resume_into_profile(
         data["companies"] = [exp.company for exp in extraction.experience if exp.company]
         sources["companies"] = FieldSource.RESUME
         delta["companies"] = FieldSource.RESUME
+
+    if _is_empty(data.get("certifications")) and extraction.certifications:
+        # Profile stores a flat list of names — that's what the UI shows in
+        # one line. Detail (issuer, date) lives on the resume parse only.
+        data["certifications"] = [c.name for c in extraction.certifications if c.name]
+        if data["certifications"]:
+            sources["certifications"] = FieldSource.RESUME
+            delta["certifications"] = FieldSource.RESUME
+
+    if _is_empty(data.get("languages_known")) and extraction.languages:
+        data["languages_known"] = [
+            (lang.name + (f" ({lang.level})" if lang.level else ""))
+            for lang in extraction.languages
+            if lang.name
+        ]
+        if data["languages_known"]:
+            sources["languages_known"] = FieldSource.RESUME
+            delta["languages_known"] = FieldSource.RESUME
 
     data["field_sources"] = sources
     new_profile = UserProfile.model_validate(data)
