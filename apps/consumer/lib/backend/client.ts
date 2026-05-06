@@ -23,6 +23,8 @@ import type {
   FinanceDetail,
   JobFitDetail,
   ModuleResponse,
+  ShortlistRequest,
+  ShortlistResponse,
   SynthesisDetail,
   TimelineDetail,
   VisaDirectionDetail,
@@ -359,6 +361,15 @@ export const country = {
     ensureLatestOrRun<CountryComparisonDetail>(caseId, "country_comparison"),
   run: (caseId: string, body?: Record<string, unknown>) =>
     moduleRun<CountryComparisonDetail>(caseId, "country_comparison", body),
+  /**
+   * Deterministic multi-country decision board. Cheap (no Vertex);
+   * safe to call on every weight slider change.
+   */
+  shortlist: (caseId: string, body: ShortlistRequest) =>
+    backend<ShortlistResponse>(
+      `/api/v1/case/${caseId}/country-comparison/shortlist`,
+      { method: "POST", body },
+    ),
 };
 
 export const jobfit = {

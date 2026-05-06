@@ -3,146 +3,130 @@ import Link from "next/link";
 import { country } from "@/lib/backend/client";
 import { requirePrereqs } from "@/lib/backend/page-helpers";
 import {
-  AssumptionsList,
   EnvelopeMeta,
-  FailedEnvelopeView,
-  isReadyEnvelope,
-  NextActionsList,
   PageHeader,
-  RisksList,
-  ScoreCard,
-  SummaryReasoning,
-  ValueLead,
-  FailedValueLead,
-  readyOrNull,
 } from "@/components/backend/envelope-shell";
 import { framingFor } from "@/lib/intent";
-import { countryName, originDestinationLabel } from "@/lib/countries";
-import { DestinationSwitcher } from "./destination-switcher";
-import { CountryPreferencesPanel } from "./preferences-panel";
+import { CountryDecisionBoard } from "./decision-board";
+import type {
+  ShortlistResponse,
+  ShortlistWeights,
+} from "@/lib/backend/types";
 
 export const metadata: Metadata = { title: "Country comparison" };
 export const dynamic = "force-dynamic";
 
-function leadEmphasis(score: number): "good" | "warn" | "bad" {
-  if (score >= 70) return "good";
-  if (score >= 50) return "warn";
-  return "bad";
-}
+const FALLBACK_DESTINATIONS = ["DE", "NL", "AE", "SG"];
 
 export default async function CountryPage() {
   const { caseId, profile, intent } = await requirePrereqs();
-  const row = await country.ensure(caseId);
-  const ready = readyOrNull(row.envelope);
-  const score = ready?.detail.overall_comparison_score ?? 0;
-  const summary = ready?.summary ?? "";
+
+  // Build the initial shortlist: target_country first, then alternatives
+  // from the profile, then fallback destinations to fill to at least 3.
+  const seen = new Set<string>();
+  const initialShortlist: string[] = [];
+  const push = (c: string | null | undefined) => {
+    if (!c) return;
+    const upper = c.toUpperCase();
+    if (seen.has(upper)) return;
+    seen.add(upper);
+    initialShortlist.push(upper);
+  };
+  push(profile.target_country);
+  for (const alt of profile.alternatives ?? []) push(alt);
+  for (const fb of FALLBACK_DESTINATIONS) {
+    if (initialShortlist.length >= 3) break;
+    push(fb);
+  }
+
+  const initialWeights: ShortlistWeights = {
+    career: 3,
+    cost: 3,
+    family: 3,
+    lifestyle: 3,
+    speed: 3,
+  };
+  // Bias toward the profile's saved priority_ranking (top → 5, next → 4, …).
+  const ranking = profile.priority_ranking ?? [];
+  ranking.forEach((lever, i) => {
+    if (lever === "career" || lever === "cost" || lever === "family"
+        || lever === "lifestyle" || lever === "speed") {
+      initialWeights[lever] = Math.max(1, 5 - i);
+    }
+  });
+
+  // Server-side prefetch the first ranking so the page paints instantly.
+  let initialResponse: ShortlistResponse | null = null;
+  if (initialShortlist.length >= 2) {
+    try {
+      initialResponse = await country.shortlist(caseId, {
+        countries: initialShortlist,
+        weights: initialWeights,
+      });
+    } catch {
+      // Swallow — the client will retry on first interaction.
+      initialResponse = null;
+    }
+  }
+
+  // Wrap a synthetic "row" for EnvelopeMeta so the meta strip stays
+  // consistent with other module pages.
+  const fauxRow = {
+    id: "shortlist",
+    case_id: caseId,
+    kind: "country_comparison" as const,
+    status: "ready" as const,
+    envelope: {
+      status: "ready" as const,
+      score: initialResponse?.countries[0]?.weighted_score ?? null,
+      summary: "",
+      reasoning: "",
+      risks: [],
+      next_actions: [],
+      confidence: initialResponse?.fingerprint
+        ? Math.round(initialResponse.source.confidence * 100) / 100
+        : 0.7,
+      metadata: {
+        generated_at: new Date().toISOString(),
+        model: initialResponse?.source.source ?? "shortlist_engine",
+      },
+      detail: {},
+      analysis_version: 1,
+      stale: false,
+      recompute_required: false,
+      stale_reason: null,
+      input_hash: "shortlist",
+      assumptions: [],
+    },
+    analysis_version: 1,
+    stale: false,
+    recompute_required: false,
+    stale_reason: null,
+    cached: true,
+    model: initialResponse?.source.source ?? null,
+  };
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="01 · Country comparison"
-          title="Why this country, and why now?"
-          description="Paired scores for the dimensions that matter most for a relocation decision."
+          title="Pick your shortlist. We rank it."
+          description="Drop 2–5 countries in. Tune what matters most. The board re-ranks instantly and tells you what would have to change for a different country to win."
           intentFraming={framingFor("country", intent)}
         />
-        <Link href="/app/jobs" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Job fit →</Link>
+        <Link href="/app/jobs" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">
+          Next: Job fit →
+        </Link>
       </div>
-      <EnvelopeMeta row={row} />
+      <EnvelopeMeta row={fauxRow as never} />
 
-      <div className="mt-6 space-y-6">
-        {ready ? (
-          <ValueLead
-            label={`Match for ${countryName(profile.target_country)}`}
-            headline={`${score}/100 · ${score >= 70 ? "Strong fit" : score >= 50 ? "Workable with trade-offs" : "Tough match"}`}
-            detail={
-              <span data-origin-destination>
-                {originDestinationLabel(profile.current_country, profile.target_country)}
-                {summary ? ` — ${summary}` : ""}
-              </span>
-            }
-            emphasis={leadEmphasis(score)}
-            cta={{ href: "/app/jobs", text: "See your career angle" }}
-          />
-        ) : (
-          <FailedValueLead envelope={row.envelope} />
-        )}
-
-        <DestinationSwitcher
-          current={profile.target_country ?? ""}
-          alternates={["DE", "NL", "IE", "GB", "CA", "AU", "AE", "SG"]}
+      <div className="mt-6">
+        <CountryDecisionBoard
+          initialShortlist={initialShortlist}
+          initialResponse={initialResponse}
+          initialWeights={initialWeights}
         />
-
-        <CountryPreferencesPanel
-          initialPriorities={(profile.priority_ranking ?? []) as ("career" | "family" | "cost" | "lifestyle" | "speed")[]}
-          initialReason={null}
-          initialAlternatives={[]}
-        />
-
-        {!isReadyEnvelope(row.envelope) ? (
-          <FailedEnvelopeView envelope={row.envelope} />
-        ) : (
-          <>
-            <SummaryReasoning envelope={row.envelope} />
-
-            <section className="grid gap-4 md:grid-cols-3">
-              <ScoreCard label="Overall comparison" value={row.envelope.detail.overall_comparison_score} />
-              <ScoreCard label="Destination suitability" value={row.envelope.detail.destination_suitability_score} />
-              <ScoreCard label="Origin pressure" value={row.envelope.detail.origin_pressure_score} />
-            </section>
-
-            <section>
-              <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">Access points (origin → destination)</h2>
-              <div className="grid gap-3 md:grid-cols-2">
-                {Object.entries(row.envelope.detail.access_points).map(([k, v]) => (
-                  <div key={k} className="rounded-xl border border-ink-200 bg-white p-4">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">{k.replace(/_/g, " ")}</p>
-                    <p className="mt-1 text-[14.5px] text-ink-900">
-                      <span>{v.origin}</span>
-                      <span className="mx-2 text-ink-400">→</span>
-                      <span className="font-semibold">{v.destination}</span>
-                      <span className={"ml-2 text-[12px] " + (v.delta >= 0 ? "text-success-700" : "text-danger-700")}>
-                        {v.delta >= 0 ? "+" : ""}{v.delta}
-                      </span>
-                    </p>
-                    <p className="mt-1 text-[12px] text-ink-600">{v.note}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="grid gap-4 md:grid-cols-2">
-              <div>
-                <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">Strengths</h2>
-                <ul className="space-y-2">
-                  {row.envelope.detail.strengths.map((s, i) => (
-                    <li key={i} className="rounded-xl border border-ink-200 bg-white p-4">
-                      <p className="text-[13.5px] font-semibold text-ink-900">{s.title}</p>
-                      <p className="mt-1 text-[12.5px] text-ink-600">{s.detail}</p>
-                      <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">{s.side}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">Blockers</h2>
-                <ul className="space-y-2">
-                  {row.envelope.detail.blockers.map((s, i) => (
-                    <li key={i} className="rounded-xl border border-ink-200 bg-white p-4">
-                      <p className="text-[13.5px] font-semibold text-ink-900">{s.title}</p>
-                      <p className="mt-1 text-[12.5px] text-ink-600">{s.detail}</p>
-                      <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">{s.side}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-
-            <RisksList risks={row.envelope.risks} />
-            <NextActionsList actions={row.envelope.next_actions} />
-            <AssumptionsList items={row.envelope.assumptions} />
-          </>
-        )}
       </div>
     </div>
   );

@@ -125,6 +125,128 @@ export interface StrengthOrBlocker {
   side: "origin" | "destination" | "both";
 }
 
+// ---- Country shortlist (visual decision board) ----
+
+export interface ShortlistWeights {
+  career: number;
+  cost: number;
+  family: number;
+  lifestyle: number;
+  speed: number;
+}
+
+export interface ShortlistRequest {
+  countries: string[];
+  weights: ShortlistWeights;
+}
+
+export interface ShortlistScoreBreakdown {
+  job_market: number;
+  salary_power: number;
+  employer_sponsor_density: number;
+  visa_friction: number;
+  speed_to_land: number;
+  cost_of_living: number;
+  housing_pressure: number;
+  quality_of_life: number;
+  family_fit: number;
+  language_fit: number;
+}
+
+export interface ShortlistRankedCountry {
+  code: string;
+  name: string;
+  region: string;
+  rank: number;
+  weighted_score: number;
+  breakdown: ShortlistScoreBreakdown;
+  top_strength: string;
+  top_risk: string;
+  confidence: number;
+}
+
+export interface ShortlistCategoryWinner {
+  category: string;
+  winner_code: string;
+  winner_name: string;
+  winning_score: number;
+  runner_up_name: string | null;
+  margin: number;
+}
+
+export interface ShortlistTransitionDelta {
+  metric: string;
+  origin_score: number;
+  destination_score: number;
+  delta: number;
+  direction: "gain" | "loss" | "same";
+  note: string;
+}
+
+export interface ShortlistTransitionStrip {
+  origin_code: string;
+  origin_name: string;
+  destination_code: string;
+  destination_name: string;
+  deltas: ShortlistTransitionDelta[];
+  headline_gain: string;
+  headline_loss: string;
+}
+
+export interface ShortlistCounterfactual {
+  challenger_code: string;
+  challenger_name: string;
+  over_code: string;
+  over_name: string;
+  lever: "career" | "cost" | "family" | "lifestyle" | "speed";
+  direction: "increase" | "decrease";
+  threshold_pct: number;
+  one_line: string;
+}
+
+export type DecisionFingerprintStyle =
+  | "career_first"
+  | "cost_sensitive"
+  | "family_heavy"
+  | "speed_driven"
+  | "visa_risk_averse"
+  | "lifestyle_focused"
+  | "balanced";
+
+export interface ShortlistDecisionFingerprint {
+  style: DecisionFingerprintStyle;
+  label: string;
+  one_line: string;
+  weight_distribution: Record<string, number>;
+}
+
+export interface ShortlistFinalRecommendation {
+  winner_code: string;
+  winner_name: string;
+  why_one_line: string;
+  next_action_label: string;
+  next_action_href: string;
+  margin_over_runner_up: number;
+}
+
+export interface ShortlistDataSourceMeta {
+  source: string;
+  last_updated: string;
+  confidence: number;
+  availability: "live" | "cached" | "inferred";
+}
+
+export interface ShortlistResponse {
+  countries: ShortlistRankedCountry[];
+  category_winners: ShortlistCategoryWinner[];
+  transitions: ShortlistTransitionStrip[];
+  counterfactuals: ShortlistCounterfactual[];
+  fingerprint: ShortlistDecisionFingerprint;
+  final: ShortlistFinalRecommendation;
+  source: ShortlistDataSourceMeta;
+  assumptions: string[];
+}
+
 export interface CountryComparisonDetail {
   origin: { country?: string; city?: string };
   destination: { country?: string; city?: string };

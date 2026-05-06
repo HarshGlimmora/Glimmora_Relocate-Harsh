@@ -36,9 +36,28 @@ should only use these — never CSS classes.
 | `[data-value-lead]` | Top of every module page | The single unique-insight headline. Must exist exactly once per module. |
 | `[data-emphasis="good\|warn\|bad\|neutral"]` | On the ValueLead | Tone class. Useful for asserting a verdict colour. |
 | `[data-intent-framing]` | Under the eyebrow | The intent-driven framing line. Absence = page isn't intent-aware. |
-| `[data-destination-switcher]` | Country page | Re-target chips. Each chip is a `<button>` with active `disabled`. |
-| `[data-destination-code="<iso>"]` | Inside switcher | ISO of each chip; chip TEXT shows the full country name. |
-| `[data-origin-destination]` | Country page ValueLead detail | "India → Germany" rendered with full names. |
+| `[data-country-decision-board]` | Country page root | The visual decision board container. |
+| `[data-country-shortlist]` | Country page | The shortlist chip row (full country names). |
+| `[data-shortlist-code="<iso>"]` | On each shortlist chip | ISO target for click; chip TEXT shows the full name. |
+| `[data-add-country]` / `[data-add-country-grid]` | Country page | "+ Add country" toggle + the country grid it opens. |
+| `[data-add-option="<iso>"]` | Inside add-country grid | One country option button (text = full name). |
+| `[data-weights-row]` | Country page | The 5-slider weight row. |
+| `[data-weight="<lever>"]` + `[data-weight-step="<n>"]` + `[data-weight-active]` | Each weight slider | Lever buttons; click step n to set weight 1–5. |
+| `[data-decision-fingerprint]` + `[data-fingerprint-style]` | Country page | The decision fingerprint badge + style (career_first / cost_sensitive / etc.). |
+| `[data-ranking-board]` | Country page | The ranked-list section. |
+| `[data-ranked-country="<iso>"]` + `[data-rank="<n>"]` | Each ranking row | The country + its rank. |
+| `[data-score-strip="<iso>"]` | Inside each ranking row | The 10-bar metric strip. |
+| `[data-metric="<key>"]` | Inside score strip | One metric column (job_market, salary_power, …). |
+| `[data-category-winners]` | Country page | "Who wins on what" 6-card grid. |
+| `[data-counterfactuals]` | Country page | "What would change the result?" section. |
+| `[data-counterfactual="<i>"]` + `[data-cf-lever]` + `[data-cf-direction]` + `[data-cf-threshold]` | Each counterfactual row | The lever + direction + smallest % flip. |
+| `[data-counterfactual-empty]` | Inside counterfactuals | Shown when the top pick is robust. |
+| `[data-transitions]` + `[data-transition="<iso>"]` | Country page | Origin → destination strips. |
+| `[data-delta-pill]` + `[data-delta-direction="gain\|loss\|same"]` | Inside transition strips | One metric delta. |
+| `[data-final-recommendation]` (also `[data-value-lead]`) | Country page bottom | Black card with winner + CTA. |
+| `[data-final-cta]` | Inside final recommendation | The deep-link button to the next module. |
+| `[data-pin-shortlist]` | Inside final recommendation | "Save shortlist to profile" button. |
+| `[data-destination-switcher]` (legacy) | — | The old single-target chip row. Removed in this rev; selectors above replace it. |
 | `[data-resume-preview]` | Resume page after parse | Container for the extracted-vs-missing preview. |
 | `[data-resume-extracted]` | Inside `[data-resume-preview]` | Two-column "We pulled / We'll still ask" block. |
 | `[data-onboarding-step="<id>"]` | Onboarding page root | Identifies the active step page (goal/resume/profile/destination/jobs/family/visa/budget). |
@@ -467,18 +486,91 @@ For each page: **what you click → what should appear → fail signals**.
 >    `[data-panel-status="pending"]` then `="applied"` and the page refreshes
 >    with the new analysis.
 
-### Country `/app/country`
-- ValueLead: `Match for DE · 73/100 · Strong fit` with rationale.
-- DestinationSwitcher chips (DE / NL / IE / GB / CA / AU / AE / SG) — click
-  one to re-run the analysis for that target.
-- **Module panel — "What matters most for this comparison?"**:
-  - Priority chips (career / cost / family / lifestyle / speed, max 3).
-  - "Why this country?" one-liner.
-  - Comma-separated alternates (ISO-2, max 3) for cross-comparison.
-  - Apply → patches `priority_ranking`, calls `country.run` with
-    `open_to_alternatives` + `alternatives` + `reason_for_moving`.
-- **Unique value**: one verdict + the ability to swap target *and* tell the
-  system what to weight.
+### Country `/app/country` — visual decision board (rebuilt)
+
+The page is no longer a single-country analysis read; it's a multi-country
+decision engine. Backed by a deterministic scoring engine
+([`shortlist_service.py`](backend/app/modules/country_comparison/shortlist_service.py))
+that re-ranks instantly on every weight slider change — no Vertex per
+shortlist run.
+
+Layout, top to bottom:
+
+1. **Shortlist row** (`[data-country-shortlist]`) — chips show full
+   country names. Up to 5 countries; user can remove (down to 2 min)
+   via × on each chip, or click "+ Add country" to open
+   `[data-add-country-grid]` and pick one of ~24 destinations.
+2. **Weights row** (`[data-weights-row]` + `[data-module-panel="country"]`)
+   — five 1–5 sliders for career / cost / family / lifestyle / speed.
+   The board re-ranks via a debounced `useEffect`; an explicit
+   "Re-rank" button (`[data-panel-apply]`) re-asserts the same
+   computation for explicit triggers.
+3. **Decision fingerprint** (`[data-decision-fingerprint]`,
+   `[data-fingerprint-style]`) — compact badge classifying the user's
+   weighted vector into one of: `career_first`, `cost_sensitive`,
+   `family_heavy`, `speed_driven`, `lifestyle_focused`, `balanced`.
+   Shows the top-3 weights as percentages.
+4. **Ranking board** (`[data-ranking-board]`) — one row per country
+   with `[data-ranked-country]` + `[data-rank]`. Each row has:
+   - Rank badge (winner highlighted black).
+   - Country name + weighted score + confidence dot.
+   - Top strength + top risk (single phrases).
+   - **Score strip** — 10 vertical bars covering job market, salary
+     power, sponsor density, visa, speed, cost, housing, QoL, family,
+     language. Coloured by tier (≥70 green, ≥50 gilt, <50 red).
+5. **Category winners** (`[data-category-winners]`) — six small cards
+   showing who wins on Career / Cost / Family / Lifestyle / Speed /
+   Visa friendliness, with margin over runner-up.
+6. **Counterfactual board** (`[data-counterfactuals]`) — the **first
+   unique feature**. One-line "what would change the result?"
+   statements like *"raise your lifestyle weight ~100% and Netherlands
+   overtakes United Arab Emirates."* Computed by sweeping each lever's
+   weight (and pair-swaps when single-lever fails) until the ranking
+   flips.
+   - Each entry has `[data-counterfactual]`, `[data-cf-lever]`,
+     `[data-cf-direction]`, `[data-cf-threshold]`.
+   - Empty-state pill `[data-counterfactual-empty]` shows when the top
+     pick is robust.
+7. **Origin → destination transitions** (`[data-transitions]`) — one
+   strip per shortlisted destination, showing the largest +metric and
+   −metric versus the user's `current_country`. Pills
+   (`[data-delta-pill]`, `[data-delta-direction]`) make the gain/loss
+   instantly visual. Skipped if `current_country` isn't on the profile.
+8. **Final recommendation card** (`[data-final-recommendation]`,
+   `[data-value-lead]`) — black card with winner, one-line "why",
+   margin over runner-up, source/availability metadata, deep-link CTA
+   (`[data-final-cta]`) to the next module page (jobs / finance /
+   family / timeline / visa, picked by the heaviest lever). "Save
+   shortlist to profile" button (`[data-pin-shortlist]`) writes
+   target_country + alternatives + priority_ranking back to the
+   profile.
+
+**Unique value × 2:**
+- **Counterfactual simulator** — competitors say "X is best." We say
+  "X is best, AND here's the smallest weight change for Y to overtake
+  X." Concrete, numeric, lever-specific.
+- **Decision fingerprint** — the page visibly shows what kind of mover
+  the user is and how that drives the ranking. Same shortlist + same
+  data → different winner depending on the fingerprint.
+
+**Backend contract:**
+- Endpoint: `POST /api/v1/case/{caseId}/country-comparison/shortlist`
+- Body: `{ countries: ["DE","NL","AE","IT"], weights: { career, cost, family, lifestyle, speed } }`
+- Response: see `ShortlistResponse` in
+  [`shortlist_schemas.py`](backend/app/modules/country_comparison/shortlist_schemas.py).
+- Engine is deterministic (no Vertex). Sub-50ms per call. Safe to fire
+  on every slider tick.
+
+**Data source:**
+- Curated country metrics file
+  ([`shortlist_data.py`](backend/app/modules/country_comparison/shortlist_data.py))
+  — best-effort approximations from Numbeo / OECD / WEF / public visa
+  processing tables. ~30 countries covered.
+- Source name + last_updated + availability are exposed in the
+  response (`response.source.*`) and printed at the bottom of the
+  final card so the user can disclose freshness.
+- Each metric is 0–100 where higher = better for the relocator. Adding
+  a country = appending to `COUNTRY_METRICS`.
 
 ### Job fit `/app/jobs`
 - ValueLead: "Direction we'd back · <inferred role>" + fastest pathway.
@@ -1176,7 +1268,55 @@ backend/
 
 ---
 
-## 12. Deferred items + assumptions (data-first rev)
+## 12. Deferred items + assumptions
+
+### Country decision board (this rev)
+
+What's done:
+- Multi-country shortlist (2–5) with visual ranking board.
+- Weight sliders that re-rank instantly via deterministic engine.
+- Decision fingerprint (7 styles) classifying the user's weight vector.
+- Counterfactual simulator — single-lever and pair-swap sweeps.
+- Origin → destination transition deltas.
+- Curated metrics dataset for ~30 countries with source disclosure.
+- Pin-to-profile (saves target_country + alternatives + priority_ranking).
+
+Deferred:
+- **Live external data adapters** (Numbeo / OECD / WEF). The dataset is
+  curated quarterly; adapters would replace the in-file constants. The
+  schema already supports `availability="live"` so swapping in adapters
+  is a service-layer change.
+- **Per-metric "no data" tagging** in the UI. Today every supported
+  country has every metric. When live adapters introduce holes, the
+  ScoreStrip needs an "n/a" column variant.
+- **Drag-to-reorder shortlist**. Today users add/remove; ranking is
+  driven entirely by weighted score, not user drag.
+- **Metric drill-down**. Clicking a bar in the ScoreStrip could open a
+  drawer explaining where the number comes from. Not built yet.
+- **Compare-to-baseline mode**. We could pin one country as a "baseline"
+  and show all others relative to it. Adds clarity but also complexity.
+- **Cross-shortlist persistence**. The pin button writes the current
+  ranking; the user's previous shortlists aren't saved as history.
+
+Assumptions:
+1. The curated metrics file is ground truth until real adapters exist.
+   `source.availability` is hardcoded to `"cached"` — never `"live"`
+   today.
+2. Lever-to-metric coefficients in `_lever_score()` are tuned to give
+   plausible rankings for typical mover types. They are explicit and
+   easy to change.
+3. The counterfactual engine searches up to 200% perturbation per
+   lever, then a paired swap. If neither flips the ranking, the
+   counterfactual is omitted (handled by the empty-state pill).
+4. The origin country must be in `COUNTRY_METRICS` for transitions to
+   render. Origins not in the dataset = no transition strips.
+5. Pinning the shortlist invalidates downstream analyses (target_country
+   change cascades via `_DEPENDENCY_MAP`). Workflow + visa + finance
+   etc. will recompute on next visit.
+
+---
+
+## 12b. Deferred items + assumptions (data-first onboarding rev)
 
 ### Deferred (intentionally not done in this rev)
 

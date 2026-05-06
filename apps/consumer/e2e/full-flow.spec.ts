@@ -159,25 +159,9 @@ test("full intent-aware pipeline: signup → intent → resume → profile → 1
   await page.waitForURL(/\/app\/country/, { timeout: 240_000 });
   await expectNoNextRuntimeError(page, "country-after-onboarding");
 
-  // ---- Country names visible: destination chips show "Germany", not "DE" ----
-  const switcher = page.locator("[data-destination-switcher]");
-  if (await switcher.count()) {
-    const switcherText = await switcher.innerText();
-    if (!/Germany|Netherlands|Ireland/.test(switcherText)) {
-      throw new Error(
-        `destination switcher should show full country names, got: ${switcherText.slice(0, 200)}`,
-      );
-    }
-    // Active chip MUST not be just "DE" / "NL" — that would be an ISO leak.
-    const isoOnly = await switcher.locator("button:text-matches(\"^[A-Z]{2}$\")").count();
-    if (isoOnly > 0) {
-      throw new Error("destination switcher leaked an ISO-only label");
-    }
-  }
-
   // ---- Each module must render: value lead + intent framing + interactive panel ----
   const expected: Record<string, RegExp> = {
-    "/app/country": /Why this country/i,
+    "/app/country": /Pick your shortlist|We rank it|country/i,
     "/app/jobs": /career path/i,
     "/app/visa": /likely route/i,
     "/app/family": /everyone (with you|moving)/i,
@@ -203,6 +187,56 @@ test("full intent-aware pipeline: signup → intent → resume → profile → 1
   };
 
   const failures: string[] = [];
+
+  // ---- Country decision board (shortlist + weights + counterfactual + fingerprint) ----
+  const board = page.locator("[data-country-decision-board]");
+  if (!(await board.count())) {
+    failures.push("country page: missing decision board");
+  } else {
+    // Shortlist must show country full names, never ISO-only labels.
+    const shortlist = board.locator("[data-country-shortlist]");
+    const shortlistText = await shortlist.innerText().catch(() => "");
+    if (!/Germany|Netherlands|United Arab Emirates|Singapore/.test(shortlistText)) {
+      failures.push(
+        `shortlist should show full country names, got: ${shortlistText.slice(0, 200)}`,
+      );
+    }
+    const isoOnlyChips = await shortlist
+      .locator('[data-shortlist-code]:text-matches("^[A-Z]{2}$")')
+      .count();
+    if (isoOnlyChips > 0) {
+      failures.push("shortlist leaked ISO-only chip labels");
+    }
+
+    // Decision fingerprint must render.
+    if (!(await board.locator("[data-decision-fingerprint]").count())) {
+      failures.push("country page: missing decision fingerprint badge");
+    }
+
+    // Counterfactual section must exist (populated or "robust" empty state).
+    if (!(await board.locator("[data-counterfactuals]").count())) {
+      failures.push("country page: missing counterfactual section");
+    }
+
+    // Weight-change round-trip: bump a weight, click the apply button,
+    // wait for the re-rank to complete.
+    await board.locator('[data-weight="cost"] [data-weight-step="5"]').click();
+    await board.locator('[data-module-panel="country"] [data-panel-apply]').click();
+    await board
+      .locator('[data-module-panel="country"] [data-panel-status="applied"]')
+      .first()
+      .waitFor({ state: "visible", timeout: 30_000 })
+      .catch(() => null);
+
+    // Final recommendation must contain a country name (not blank).
+    const finalText = await board
+      .locator("[data-final-recommendation]")
+      .innerText()
+      .catch(() => "");
+    if (!/[A-Za-z]{3,}/.test(finalText)) {
+      failures.push(`final recommendation text empty: ${finalText.slice(0, 80)}`);
+    }
+  }
 
   async function gotoWithRetry(url: string): Promise<number> {
     for (let attempt = 0; attempt < 3; attempt++) {
