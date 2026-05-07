@@ -11,7 +11,9 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
     full_name: initial.full_name ?? "",
     current_role: initial.current_role ?? "",
     industry: initial.industry ?? "",
-    seniority: initial.seniority ?? "",
+    // Backend enum is lowercase; coerce whatever the resume parser stored
+    // so a "Junior" or "Senior" doesn't reach the PATCH unchanged.
+    seniority: (initial.seniority ?? "").toLowerCase(),
     years_experience: initial.years_experience ?? "",
     current_country: initial.current_country ?? "",
     current_city: initial.current_city ?? "",
@@ -110,12 +112,18 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
           />
         </Field>
         <Field label={`Seniority ${inferredKey("seniority")}`}>
-          <input
+          <select
             value={state.seniority}
             onChange={(e) => set("seniority", e.target.value)}
             className="input"
-            placeholder="mid / senior / staff / principal"
-          />
+          >
+            <option value="">—</option>
+            <option value="junior">Junior</option>
+            <option value="mid">Mid</option>
+            <option value="senior">Senior</option>
+            <option value="staff">Staff</option>
+            <option value="principal">Principal</option>
+          </select>
         </Field>
         <Field label={`Years of experience ${inferredKey("years_experience")}`}>
           <input

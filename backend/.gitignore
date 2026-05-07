@@ -10,3 +10,6 @@ htmlcov/
 *.egg-info/
 build/
 dist/
+
+# server-side error log (written by app/logging_setup.py)
+.logs/

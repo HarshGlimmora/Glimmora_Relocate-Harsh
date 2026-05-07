@@ -13,6 +13,7 @@
  */
 
 import { ensureBackendSession } from "./session";
+import { logBackendError } from "@/lib/server-logger";
 import type {
   BackendProfile,
   CaseSummary,
@@ -108,7 +109,21 @@ async function _doBackend<T>(
   }
 
   const t0 = Date.now();
-  const res = await fetch(url, reqInit);
+  let res: Response;
+  try {
+    res = await fetch(url, reqInit);
+  } catch (e) {
+    // Network-level failure (ECONNREFUSED, DNS, TLS, abort). Without this
+    // unwrap, Next.js would just print "TypeError: fetch failed" — useless.
+    logBackendError({
+      source: "backend-client",
+      method,
+      url,
+      durationMs: Date.now() - t0,
+      error: e,
+    });
+    throw e;
+  }
   const ms = Date.now() - t0;
 
   let payload: unknown = null;
@@ -136,7 +151,17 @@ async function _doBackend<T>(
     const err = payload as { error?: { code?: string; message?: string } } | null;
     const code = err?.error?.code ?? `http_${res.status}`;
     const message = err?.error?.message ?? `Backend ${method} ${path} failed`;
-    throw new BackendApiError(res.status, code, message, payload);
+    const apiError = new BackendApiError(res.status, code, message, payload);
+    logBackendError({
+      source: "backend-client",
+      method,
+      url,
+      status: res.status,
+      durationMs: ms,
+      error: apiError,
+      extra: { responseBody: payload },
+    });
+    throw apiError;
   }
 
   return payload as T;

@@ -134,7 +134,12 @@ class VertexGeminiProvider:
                 permanent = status in _PERMANENT_STATUSES
                 exhausted = attempt > self._max_retries
                 logger.warning(
-                    "vertex call failed",
+                    "vertex call failed: model=%s attempt=%d status=%s permanent=%s error=%s",
+                    model,
+                    attempt,
+                    status,
+                    permanent,
+                    e,
                     extra={
                         "request_id": request_id,
                         "model": model,

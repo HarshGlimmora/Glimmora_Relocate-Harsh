@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
+from app.logging_setup import install as install_file_logger
 from app.middleware import error_handler
 from app.startup import bootstrap
 from app.modules.auth.routes import router as auth_router
@@ -29,6 +30,7 @@ from app.modules.workflow.routes import router as workflow_router
 def create_app() -> FastAPI:
     s = get_settings()
     logging.basicConfig(level=getattr(logging, s.log_level, logging.INFO))
+    install_file_logger()
     s.ensure_local_dirs()
     bootstrap()
 

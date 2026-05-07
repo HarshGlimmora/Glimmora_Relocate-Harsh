@@ -15,6 +15,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { logBackendError } from "@/lib/server-logger";
 
 const BACKEND_BASE_URL =
   process.env.GLIMMORA_BACKEND_URL ?? "http://localhost:8000";
@@ -59,15 +60,39 @@ async function backendAuthCall<T>(
   path: string,
   body: unknown,
 ): Promise<T> {
-  const res = await fetch(`${BACKEND_BASE_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+  const url = `${BACKEND_BASE_URL}${path}`;
+  const t0 = Date.now();
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch (e) {
+    logBackendError({
+      source: "backend-auth",
+      method: "POST",
+      url,
+      durationMs: Date.now() - t0,
+      error: e,
+    });
+    throw e;
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`backend ${path} failed: ${res.status} ${text.slice(0, 200)}`);
+    const err = new Error(`backend ${path} failed: ${res.status} ${text.slice(0, 200)}`);
+    logBackendError({
+      source: "backend-auth",
+      method: "POST",
+      url,
+      status: res.status,
+      durationMs: Date.now() - t0,
+      error: err,
+      extra: { responseBody: text.slice(0, 500) },
+    });
+    throw err;
   }
   return (await res.json()) as T;
 }
