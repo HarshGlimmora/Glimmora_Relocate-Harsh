@@ -44,7 +44,7 @@ export default async function VisaPage() {
           description="Direction only — not legal advice. Confirm with a licensed adviser."
           intentFraming={framingFor("visa", intent)}
         />
-        <Link href="/app/family" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Family →</Link>
+        <Link href="/app/finance" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Finance →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
@@ -59,7 +59,7 @@ export default async function VisaPage() {
                 : `Difficulty ${route.difficulty}. ${ready.summary}`
             }
             emphasis={DIFFICULTY_EMPHASIS[route.difficulty] ?? "neutral"}
-            cta={{ href: "/app/documents", text: "What you'll need on paper" }}
+            cta={{ href: "/app/finance", text: "How affordable is it" }}
           />
         ) : (
           <FailedValueLead envelope={row.envelope} />

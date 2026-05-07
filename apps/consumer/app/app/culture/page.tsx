@@ -32,12 +32,12 @@ export default async function CulturePage() {
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
-          eyebrow="08 · Culture & language"
+          eyebrow="07 · Culture & language"
           title="What to nail in your first week."
           description="Workplace norms, daily life, language basics, dos and don'ts."
           intentFraming={framingFor("culture", intent)}
         />
-        <Link href="/app/timeline" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Timeline →</Link>
+        <Link href="/app" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Back to dashboard →</Link>
       </div>
       <EnvelopeMeta row={row} />
 

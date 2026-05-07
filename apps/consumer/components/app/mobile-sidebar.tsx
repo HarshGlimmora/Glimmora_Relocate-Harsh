@@ -5,13 +5,15 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { AppSidebar } from "./sidebar";
 import { cn } from "@/lib/utils";
+import type { WorkflowCompletion } from "@/lib/workflow";
 
 interface MobileSidebarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  completion?: WorkflowCompletion;
 }
 
-export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
+export function MobileSidebar({ open, onOpenChange, completion }: MobileSidebarProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -35,7 +37,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
           >
             <X className="h-4 w-4" />
           </DialogPrimitive.Close>
-          <AppSidebar onNavigate={() => onOpenChange(false)} />
+          <AppSidebar onNavigate={() => onOpenChange(false)} completion={completion} />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

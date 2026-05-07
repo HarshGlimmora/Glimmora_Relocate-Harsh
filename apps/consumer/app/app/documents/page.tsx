@@ -33,12 +33,12 @@ export default async function DocumentsPage() {
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
-          eyebrow="06 · Documents"
+          eyebrow="05 · Documents"
           title="What's missing — and what blocks the route."
           description="Generated from your destination + visa route + family shape."
           intentFraming={framingFor("documents", intent)}
         />
-        <Link href="/app/workflow" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Workflow →</Link>
+        <Link href="/app/family" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Family →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
@@ -53,7 +53,7 @@ export default async function DocumentsPage() {
                 : ready.summary
             }
             emphasis={pct >= 75 ? "good" : pct >= 40 ? "warn" : "bad"}
-            cta={{ href: "/app/timeline", text: "Effect on your timeline" }}
+            cta={{ href: "/app/family", text: "Who's coming with you" }}
           />
         ) : (
           <FailedValueLead envelope={row.envelope} />

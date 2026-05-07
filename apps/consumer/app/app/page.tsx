@@ -2,8 +2,14 @@
  * Backend-driven dashboard.
  *
  * Reads the FastAPI profile + every module's latest envelope and renders
- * a minimal status grid: which modules have been run, their score, and
- * whether they are stale. Routes the user into the next pipeline step.
+ * a minimal status grid that mirrors the approved consumer workflow:
+ *
+ *   Dashboard → Resume → Profile → Country → Job fit → Visa →
+ *   Finance → Documents → Family → Culture
+ *
+ * The dashboard is also the **auto-skip entry point**: a "Continue your
+ * journey" CTA jumps the user straight to the first step they haven't
+ * completed yet (or the synthesis verdict once everything is done).
  */
 
 import Link from "next/link";
@@ -16,17 +22,21 @@ import {
   getProfile,
   jobfit,
   synthesis,
-  timeline,
   visa,
-  workflow,
 } from "@/lib/backend/client";
 import { ensureBackendSession } from "@/lib/backend/session";
 import type { ModuleResponse } from "@/lib/backend/types";
+import {
+  WORKFLOW_STEPS,
+  computeCompletion,
+  firstIncompleteStep,
+  type WorkflowStepId,
+} from "@/lib/workflow";
 
 export const dynamic = "force-dynamic";
 
 interface ModuleRow {
-  kind: string;
+  stepId: WorkflowStepId;
   label: string;
   href: string;
   row: ModuleResponse<unknown> | null;
@@ -42,30 +52,44 @@ export default async function DashboardPage() {
     return p.catch(() => null);
   }
 
-  const [c, j, v, f, fin, d, w, cu, t, syn] = await Promise.all([
+  const [c, j, v, f, fin, d, cu, syn] = await Promise.all([
     safe(country.latest(caseId)),
     safe(jobfit.latest(caseId)),
     safe(visa.latest(caseId)),
     safe(family.latest(caseId)),
     safe(finance.latest(caseId)),
     safe(documents.latest(caseId)),
-    safe(workflow.latest(caseId)),
     safe(culture.latest(caseId)),
-    safe(timeline.latest(caseId)),
     safe(synthesis.latest(caseId)),
   ]);
 
+  // Workflow ordering: Country → Job fit → Visa → Finance → Documents → Family → Culture.
   const modules: ModuleRow[] = [
-    { kind: "country_comparison", label: "Country comparison", href: "/app/country", row: c },
-    { kind: "jobfit", label: "Job fit", href: "/app/jobs", row: j },
-    { kind: "visa", label: "Visa direction", href: "/app/visa", row: v },
-    { kind: "family", label: "Family", href: "/app/family", row: f },
-    { kind: "finance", label: "Finance", href: "/app/finance", row: fin },
-    { kind: "documents", label: "Documents", href: "/app/documents", row: d },
-    { kind: "workflow", label: "Workflow", href: "/app/workflow", row: w },
-    { kind: "culture", label: "Culture", href: "/app/culture", row: cu },
-    { kind: "timeline", label: "Timeline", href: "/app/timeline", row: t },
+    { stepId: "country",   label: "Country",   href: "/app/country",   row: c },
+    { stepId: "jobs",      label: "Job fit",   href: "/app/jobs",      row: j },
+    { stepId: "visa",      label: "Visa",      href: "/app/visa",      row: v },
+    { stepId: "finance",   label: "Finance",   href: "/app/finance",   row: fin },
+    { stepId: "documents", label: "Documents", href: "/app/documents", row: d },
+    { stepId: "family",    label: "Family",    href: "/app/family",    row: f },
+    { stepId: "culture",   label: "Culture",   href: "/app/culture",   row: cu },
   ];
+
+  const completion = computeCompletion({
+    profile,
+    modules: {
+      country: c,
+      jobs: j,
+      visa: v,
+      finance: fin,
+      documents: d,
+      family: f,
+      culture: cu,
+    },
+  });
+  const nextStep = firstIncompleteStep(completion);
+  const allComplete = WORKFLOW_STEPS.every(
+    (s) => s.id === "dashboard" || completion[s.id],
+  );
 
   const profileReady = !!profile?.target_country;
   const ranCount = modules.filter((m) => m.row).length;
@@ -83,28 +107,37 @@ export default async function DashboardPage() {
             : "Let's get started."}
         </h1>
         <p className="mt-3 max-w-xl text-[14px] leading-[1.6] text-ink-600">
-          The pipeline runs in order: <strong>Profile → Country → Jobs → Visa → Family → Finance → Documents → Workflow → Culture → Timeline → Synthesis.</strong>
+          The journey runs in order: <strong>Resume → Profile → Country → Job fit → Visa → Finance → Documents → Family → Culture.</strong>
         </p>
       </header>
 
-      {!profileReady ? (
-        <div className="mb-8 rounded-2xl border border-gilt-200 bg-gilt-50 p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-gilt-800">Step 1</p>
-          <p className="mt-1 text-[14px] font-semibold text-gilt-900">Tell us where you're going.</p>
-          <p className="mt-1 text-[12.5px] text-gilt-900/80">Upload your resume and confirm your target country to unlock every analysis.</p>
-          <div className="mt-3 flex gap-3">
+      {/* Auto-skip CTA: jumps straight to the first incomplete step. */}
+      {!allComplete ? (
+        <div className="mb-8 rounded-2xl border border-ink-200 bg-white p-5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-500">
+            Continue your journey
+          </p>
+          <p className="mt-1 text-[14px] font-semibold text-ink-900">
+            Pick up at <span className="text-ink-900">{nextStep.label}</span>
+          </p>
+          <p className="mt-1 text-[12.5px] text-ink-600">
+            We'll skip the steps you've already completed and take you straight there.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
             <Link
-              href="/app/onboarding/resume"
+              href={nextStep.href}
               className="rounded-full bg-ink-900 px-4 py-2 text-[13px] font-medium text-parchment hover:bg-ink-800"
             >
-              Upload resume →
+              Continue → {nextStep.label}
             </Link>
-            <Link
-              href="/app/onboarding/profile"
-              className="rounded-full border border-ink-300 bg-white px-4 py-2 text-[13px] font-medium text-ink-800 hover:bg-ink-50"
-            >
-              Skip — fill profile manually
-            </Link>
+            {!profileReady ? (
+              <Link
+                href="/app/onboarding/profile"
+                className="rounded-full border border-ink-300 bg-white px-4 py-2 text-[13px] font-medium text-ink-800 hover:bg-ink-50"
+              >
+                Skip — fill profile manually
+              </Link>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -136,44 +169,54 @@ export default async function DashboardPage() {
         <h2 className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
           Modules · {ranCount}/{totalCount} run
         </h2>
-        {profileReady ? (
-          <Link href="/app/country" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">
+        {profileReady && !allComplete ? (
+          <Link href={nextStep.href} className="text-[13px] text-ink-600 underline-offset-4 hover:underline">
             Run next →
           </Link>
         ) : null}
       </section>
 
       <ul className="grid gap-2 md:grid-cols-2">
-        {modules.map((m) => (
-          <li key={m.kind}>
-            <Link
-              href={m.href}
-              className="flex items-center justify-between rounded-2xl border border-ink-200 bg-white p-4 hover:bg-ink-50/60"
-            >
-              <div className="min-w-0">
-                <p className="text-[13.5px] font-semibold text-ink-900">{m.label}</p>
-                {m.row ? (
-                  <p className="mt-0.5 truncate font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-500">
-                    v{m.row.analysis_version} ·
-                    {m.row.stale ? " stale" : " current"}
-                    {m.row.envelope.status !== "ready" ? " · failed" : ""}
+        {modules.map((m) => {
+          const done = !!completion[m.stepId];
+          return (
+            <li key={m.stepId}>
+              <Link
+                href={m.href}
+                className="flex items-center justify-between rounded-2xl border border-ink-200 bg-white p-4 hover:bg-ink-50/60"
+              >
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold text-ink-900">
+                    {m.label}
+                    {done ? (
+                      <span className="ml-2 rounded-full bg-success-100 px-2 py-0.5 align-middle font-mono text-[9.5px] uppercase tracking-[0.18em] text-success-700">
+                        done
+                      </span>
+                    ) : null}
                   </p>
-                ) : (
-                  <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-400">not run yet</p>
-                )}
-              </div>
-              <div className="ml-3 text-right">
-                {m.row && m.row.envelope.status === "ready" && "score" in m.row.envelope ? (
-                  <p className="font-sans text-[20px] font-semibold leading-none text-ink-900">
-                    {m.row.envelope.score ?? "—"}
-                  </p>
-                ) : (
-                  <p className="text-[12px] text-ink-400">→</p>
-                )}
-              </div>
-            </Link>
-          </li>
-        ))}
+                  {m.row ? (
+                    <p className="mt-0.5 truncate font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-500">
+                      v{m.row.analysis_version} ·
+                      {m.row.stale ? " stale" : " current"}
+                      {m.row.envelope.status !== "ready" ? " · failed" : ""}
+                    </p>
+                  ) : (
+                    <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-400">not run yet</p>
+                  )}
+                </div>
+                <div className="ml-3 text-right">
+                  {m.row && m.row.envelope.status === "ready" && "score" in m.row.envelope ? (
+                    <p className="font-sans text-[20px] font-semibold leading-none text-ink-900">
+                      {m.row.envelope.score ?? "—"}
+                    </p>
+                  ) : (
+                    <p className="text-[12px] text-ink-400">→</p>
+                  )}
+                </div>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
 
       <div className="mt-8 flex gap-3">

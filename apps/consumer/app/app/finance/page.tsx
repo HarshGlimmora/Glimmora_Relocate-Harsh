@@ -35,7 +35,7 @@ export default async function FinancePage() {
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
-          eyebrow="05 · Financial feasibility"
+          eyebrow="04 · Financial feasibility"
           title="Affordable comfortably, or only on paper?"
           description="Take-home, monthly cost, surplus, runway — derived from your salary + destination."
           intentFraming={framingFor("finance", intent)}
@@ -59,7 +59,7 @@ export default async function FinancePage() {
             }
             detail={ready.summary}
             emphasis={surplus < 0 ? "bad" : aff >= 65 ? "good" : "warn"}
-            cta={{ href: "/app/timeline", text: "How fast you can move" }}
+            cta={{ href: "/app/documents", text: "What you'll need on paper" }}
           />
         ) : (
           <FailedValueLead envelope={row.envelope} />

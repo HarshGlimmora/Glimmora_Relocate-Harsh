@@ -35,12 +35,12 @@ export default async function FamilyPage() {
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <div className="mb-3 flex items-center justify-between gap-4">
         <PageHeader
-          eyebrow="04 · Family relocation"
+          eyebrow="06 · Family relocation"
           title="How the move changes for everyone with you."
           description="Spouse, children, parents, housing fit — what shifts at the household level."
           intentFraming={framingFor("family", intent)}
         />
-        <Link href="/app/finance" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Finance →</Link>
+        <Link href="/app/culture" className="text-[13px] text-ink-600 underline-offset-4 hover:underline">Next: Culture →</Link>
       </div>
       <EnvelopeMeta row={row} />
 
@@ -51,7 +51,7 @@ export default async function FamilyPage() {
             headline={`Family-fit ${score}/100`}
             detail={ready.summary}
             emphasis={score >= 70 ? "good" : score >= 50 ? "warn" : "bad"}
-            cta={{ href: "/app/finance", text: "What it costs the household" }}
+            cta={{ href: "/app/culture", text: "What to nail in your first week" }}
           />
         ) : (
           <FailedValueLead envelope={row.envelope} />

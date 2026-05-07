@@ -53,10 +53,11 @@ export function ProfileReviewForm({ initial }: { initial: BackendProfile }) {
         setError(r.error);
         return;
       }
-      // After profile (identity) the user moves to the destination step.
-      // The previous flow jumped straight into /app/country — that bypassed
-      // the rest of the data-first intake.
-      router.push("/app/onboarding/destination");
+      // Approved consumer workflow: Profile → Country (the analysis
+      // landing). The data-first intake steps (destination/jobs/family/
+      // visa/budget) still exist as standalone routes for ad-hoc edits,
+      // but the primary flow now hops straight into Country.
+      router.push("/app/country");
     });
   }
 

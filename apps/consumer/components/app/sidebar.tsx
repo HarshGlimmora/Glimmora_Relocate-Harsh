@@ -2,18 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Check } from "lucide-react";
 import { GlimmoraMark } from "@/components/shared/glimmora-mark";
 import { navSections, navSectionsForIntent, accountNav, type NavSection } from "@/lib/nav";
+import type { WorkflowCompletion } from "@/lib/workflow";
 import { cn } from "@/lib/utils";
 
 export function AppSidebar({
   onNavigate,
   intentEmphasis,
   intentLabel,
+  completion,
 }: {
   onNavigate?: () => void;
   intentEmphasis?: readonly string[] | null;
   intentLabel?: string | null;
+  completion?: WorkflowCompletion;
 }) {
   const pathname = usePathname();
   const sections: NavSection[] = intentEmphasis
@@ -59,11 +63,16 @@ export function AppSidebar({
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
+                const isCompleted =
+                  !!item.stepId &&
+                  item.stepId !== "dashboard" &&
+                  !!completion?.[item.stepId];
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
                       onClick={onNavigate}
+                      aria-current={active ? "page" : undefined}
                       className={cn(
                         "group flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] transition-colors",
                         active
@@ -79,6 +88,20 @@ export function AppSidebar({
                         strokeWidth={1.75}
                       />
                       <span className="flex-1 truncate">{item.label}</span>
+                      {isCompleted ? (
+                        <span
+                          aria-label="completed"
+                          title="Completed"
+                          className={cn(
+                            "ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
+                            active
+                              ? "bg-parchment/15 text-parchment"
+                              : "bg-success-100 text-success-700"
+                          )}
+                        >
+                          <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                        </span>
+                      ) : null}
                     </Link>
                   </li>
                 );

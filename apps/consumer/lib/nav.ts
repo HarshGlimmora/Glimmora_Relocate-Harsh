@@ -1,12 +1,12 @@
 /**
- * Sidebar navigation — ordered to mirror the backend pipeline:
- *   Auth → Resume → Profile → Country → Jobfit → Visa → Family →
- *   Finance → Documents → Workflow → Culture → Timeline → Synthesis.
+ * Sidebar navigation — driven by the approved consumer workflow order:
  *
- * Older routes (`/app/discover`, `/app/career`, `/app/life`,
- * `/app/marketplace`, `/app/messages`, `/app/plan`) are kept available
- * but de-emphasized under "Other" since the user's main flow goes
- * through the backend-driven analysis pages above.
+ *   Dashboard → Resume → Profile → Country → Job fit → Visa →
+ *   Finance → Documents → Family → Culture
+ *
+ * Source of truth for the order is `lib/workflow.ts`; this file maps each
+ * workflow step to its sidebar icon and exposes the legacy "Other"
+ * entries that aren't part of the primary flow.
  */
 
 import {
@@ -29,6 +29,11 @@ import {
   Route,
   type LucideIcon,
 } from "lucide-react";
+import {
+  WORKFLOW_STEPS,
+  type WorkflowCompletion,
+  type WorkflowStepId,
+} from "@/lib/workflow";
 
 export interface NavItem {
   label: string;
@@ -36,6 +41,8 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: string;
   description?: string;
+  /** Workflow step this item maps to, when applicable. */
+  stepId?: WorkflowStepId;
 }
 
 export interface NavSection {
@@ -43,89 +50,64 @@ export interface NavSection {
   items: NavItem[];
 }
 
-/**
- * Per-module slug used for intent emphasis. Only Analysis items have one.
- */
-type ModuleSlug =
-  | "country" | "jobs" | "visa" | "family" | "finance"
-  | "documents" | "workflow" | "culture" | "timeline";
-
-const SLUG_BY_HREF: Record<string, ModuleSlug> = {
-  "/app/country": "country",
-  "/app/jobs": "jobs",
-  "/app/visa": "visa",
-  "/app/family": "family",
-  "/app/finance": "finance",
-  "/app/documents": "documents",
-  "/app/workflow": "workflow",
-  "/app/culture": "culture",
-  "/app/timeline": "timeline",
+const ICON_BY_STEP: Record<WorkflowStepId, LucideIcon> = {
+  dashboard: Home,
+  resume: FileSpreadsheet,
+  profile: IdCard,
+  country: Globe2,
+  jobs: Briefcase,
+  visa: IdCard,
+  finance: Coins,
+  documents: FolderClosed,
+  family: Users,
+  culture: Languages,
 };
 
-/**
- * Reorders the Analysis section so the user's intent-priority modules sit
- * at the top. `emphasis` is the ordered list from `lib/intent.ts`.
- */
-export function navSectionsForIntent(emphasis: readonly string[] | null): NavSection[] {
-  if (!emphasis?.length) return navSections;
-  const order = new Map<string, number>();
-  emphasis.forEach((slug, i) => order.set(slug, i));
-  return navSections.map((s) => {
-    if (s.title !== "Analysis") return s;
-    const items = [...s.items].sort((a, b) => {
-      const sa = SLUG_BY_HREF[a.href];
-      const sb = SLUG_BY_HREF[b.href];
-      const ra = sa ? order.get(sa) ?? 99 : 99;
-      const rb = sb ? order.get(sb) ?? 99 : 99;
-      return ra - rb;
-    });
-    return { ...s, items };
-  });
-}
+const DESCRIPTION_BY_STEP: Partial<Record<WorkflowStepId, string>> = {
+  dashboard: "Today's status",
+  resume: "Upload & parse",
+  profile: "Confirm details",
+  country: "Origin vs destination",
+  jobs: "Role, salary, sponsor",
+  visa: "Route & blockers",
+  finance: "Affordability",
+  documents: "Checklist",
+  family: "Household impact",
+  culture: "Norms & language",
+};
+
+const workflowItems: NavItem[] = WORKFLOW_STEPS.map((s) => ({
+  label: s.label,
+  href: s.href,
+  icon: ICON_BY_STEP[s.id],
+  description: DESCRIPTION_BY_STEP[s.id],
+  stepId: s.id,
+}));
 
 export const navSections: NavSection[] = [
+  { title: "Workflow", items: workflowItems },
   {
-    title: "Home",
+    title: "More",
     items: [
-      { label: "Dashboard", href: "/app", icon: Home, description: "Today's status" },
-    ],
-  },
-  {
-    title: "Onboarding",
-    items: [
-      { label: "Resume", href: "/app/onboarding/resume", icon: FileSpreadsheet, description: "Upload & parse" },
-      { label: "Profile", href: "/app/onboarding/profile", icon: IdCard, description: "Confirm details" },
-    ],
-  },
-  {
-    title: "Analysis",
-    items: [
-      { label: "Country", href: "/app/country", icon: Globe2, description: "Origin vs destination" },
-      { label: "Job fit", href: "/app/jobs", icon: Briefcase, description: "Role, salary, sponsor" },
-      { label: "Visa", href: "/app/visa", icon: IdCard, description: "Route & blockers" },
-      { label: "Family", href: "/app/family", icon: Users, description: "Household impact" },
-      { label: "Finance", href: "/app/finance", icon: Coins, description: "Affordability" },
-      { label: "Documents", href: "/app/documents", icon: FolderClosed, description: "Checklist" },
-      { label: "Workflow", href: "/app/workflow", icon: Network, description: "Dependencies" },
-      { label: "Culture", href: "/app/culture", icon: Languages, description: "Norms & language" },
-      { label: "Timeline", href: "/app/timeline", icon: CalendarRange, description: "Phases & milestones" },
-    ],
-  },
-  {
-    title: "Decision",
-    items: [
-      { label: "Final synthesis", href: "/app/synthesis", icon: Trophy, description: "Verdict & next actions" },
-    ],
-  },
-  {
-    title: "Other",
-    items: [
+      { label: "Workflow graph", href: "/app/workflow", icon: Network },
+      { label: "Timeline", href: "/app/timeline", icon: CalendarRange },
+      { label: "Final synthesis", href: "/app/synthesis", icon: Trophy },
       { label: "Discover", href: "/app/discover", icon: Compass },
       { label: "Plan", href: "/app/plan", icon: Route },
       { label: "Marketplace", href: "/app/marketplace", icon: Store },
     ],
   },
 ];
+
+/**
+ * Intent emphasis is no longer used to reorder the sidebar — the
+ * approved workflow has a fixed sequence. Kept as a no-op so older
+ * call sites continue to type-check while we phase intent-driven
+ * ordering out of the consumer flow.
+ */
+export function navSectionsForIntent(_emphasis: readonly string[] | null): NavSection[] {
+  return navSections;
+}
 
 export const accountNav: NavItem[] = [
   { label: "Settings", href: "/app/settings", icon: Settings },
@@ -135,3 +117,5 @@ export const accountNav: NavItem[] = [
 export function flattenNav(): NavItem[] {
   return [...navSections.flatMap((s) => s.items), ...accountNav];
 }
+
+export type { WorkflowCompletion };
