@@ -140,6 +140,10 @@ export interface ShortlistRequest {
   weights: ShortlistWeights;
 }
 
+/** Hard cap on simultaneous shortlist size — mirrors `SHORTLIST_MAX` in
+ *  the backend's `shortlist_schemas.py`. */
+export const SHORTLIST_MAX = 3;
+
 export interface ShortlistScoreBreakdown {
   job_market: number;
   salary_power: number;
@@ -153,6 +157,61 @@ export interface ShortlistScoreBreakdown {
   language_fit: number;
 }
 
+export interface ShortlistLeverScores {
+  career: number;
+  cost: number;
+  family: number;
+  lifestyle: number;
+  speed: number;
+  visa: number;
+}
+
+export interface ShortlistSensitivityPoint {
+  weight: number;
+  score: number;
+  rank: number;
+}
+
+export interface ShortlistSensitivityCurve {
+  lever: "career" | "cost" | "family" | "lifestyle" | "speed";
+  points: ShortlistSensitivityPoint[];
+  crossover_weight: number | null;
+}
+
+export interface ShortlistTransitionCurvePoint {
+  metric: string;
+  origin: number;
+  destination: number;
+}
+
+export interface ShortlistScoreComponent {
+  lever: "career" | "cost" | "family" | "lifestyle" | "speed";
+  raw_score: number;
+  weight: number;
+  contribution: number;
+}
+
+export interface ShortlistLeverThreshold {
+  lever: "career" | "cost" | "family" | "lifestyle" | "speed";
+  direction: "increase" | "decrease";
+  threshold_pct: number;
+  flips_to_rank: number;
+  one_line: string;
+}
+
+export interface ShortlistCountryDrilldown {
+  code: string;
+  summary_one_line: string;
+  biggest_advantage: string;
+  biggest_risk: string;
+  lever_scores: ShortlistLeverScores;
+  breakdown: ShortlistScoreBreakdown;
+  sensitivity_curves: ShortlistSensitivityCurve[];
+  transition_curve: ShortlistTransitionCurvePoint[];
+  rank_change_thresholds: ShortlistLeverThreshold[];
+  score_components: ShortlistScoreComponent[];
+}
+
 export interface ShortlistRankedCountry {
   code: string;
   name: string;
@@ -160,18 +219,55 @@ export interface ShortlistRankedCountry {
   rank: number;
   weighted_score: number;
   breakdown: ShortlistScoreBreakdown;
+  lever_scores: ShortlistLeverScores;
   top_strength: string;
   top_risk: string;
   confidence: number;
+  drilldown: ShortlistCountryDrilldown;
 }
 
-export interface ShortlistCategoryWinner {
-  category: string;
+export interface ShortlistDimensionScore {
+  code: string;
+  name: string;
+  score: number;
+}
+
+export interface ShortlistDimensionContributingMetric {
+  metric_key: string;
+  metric_label: string;
+  weight: number;
+  series: ShortlistDimensionScore[];
+}
+
+export interface ShortlistDimensionWinner {
+  dimension: "career" | "cost" | "family" | "lifestyle" | "speed" | "visa";
+  label: string;
   winner_code: string;
   winner_name: string;
   winning_score: number;
+  runner_up_code: string | null;
   runner_up_name: string | null;
   margin: number;
+  series: ShortlistDimensionScore[];
+  contributing_metrics: ShortlistDimensionContributingMetric[];
+  reason_one_line: string;
+}
+
+export interface ShortlistComparisonSeries {
+  code: string;
+  name: string;
+  values: number[];
+}
+
+export interface ShortlistSwitchabilityRow {
+  challenger_code: string;
+  challenger_name: string;
+  over_code: string;
+  over_name: string;
+  lever: "career" | "cost" | "family" | "lifestyle" | "speed";
+  direction: "increase" | "decrease";
+  threshold_pct: number | null;
+  one_line: string;
 }
 
 export interface ShortlistTransitionDelta {
@@ -238,9 +334,12 @@ export interface ShortlistDataSourceMeta {
 
 export interface ShortlistResponse {
   countries: ShortlistRankedCountry[];
-  category_winners: ShortlistCategoryWinner[];
+  dimension_labels: string[];
+  comparison_series: ShortlistComparisonSeries[];
+  dimension_winners: ShortlistDimensionWinner[];
   transitions: ShortlistTransitionStrip[];
   counterfactuals: ShortlistCounterfactual[];
+  switchability: ShortlistSwitchabilityRow[];
   fingerprint: ShortlistDecisionFingerprint;
   final: ShortlistFinalRecommendation;
   source: ShortlistDataSourceMeta;

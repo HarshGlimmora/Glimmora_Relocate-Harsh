@@ -1,4 +1,4 @@
-"""Country shortlist scoring + ranking + counterfactual + fingerprint.
+"""Country shortlist scoring + drilldowns + switchability + fingerprint.
 
 Pure computation, no I/O, no LLM. Fast enough to run on every weight
 slider change. Backed by the curated CountryMetrics dataset.
@@ -8,9 +8,13 @@ Design choices
 - Weighted score is an explicit linear combo of metrics grouped by
   lever (career / cost / family / lifestyle / speed). The grouping is
   visible in `_lever_score()` so the UI can explain "why this won".
-- Counterfactuals are computed by brute-forcing the smallest weight
-  bump on each lever that flips ranking — always concrete, never
-  hand-waving.
+- For every shortlisted country we compute a *drilldown* payload —
+  five sensitivity curves (one per lever), score components, transition
+  curve, and per-country thresholds — so the frontend can paint
+  rich line charts instantly without a second round-trip.
+- The switchability matrix exposes EVERY (challenger × lever ×
+  direction) threshold so the UI can render a complete sensitivity
+  picture, not just headline counterfactuals.
 - Decision fingerprint is a deterministic classification of the
   normalised weight vector, so the same weights always produce the
   same fingerprint.
@@ -29,16 +33,28 @@ from app.modules.country_comparison.shortlist_data import (
     get_country,
 )
 from app.modules.country_comparison.shortlist_schemas import (
-    CategoryWinner,
+    SHORTLIST_MAX,
+    ComparisonSeries,
     Counterfactual,
+    CountryDrilldown,
     DataSourceMeta,
     DecisionFingerprint,
+    DimensionContributingMetric,
+    DimensionScore,
+    DimensionWinner,
     FinalRecommendation,
+    LeverScores,
+    LeverThreshold,
     RankedCountry,
     ScoreBreakdown,
+    ScoreComponent,
+    SensitivityCurve,
+    SensitivityPoint,
     ShortlistRequest,
     ShortlistResponse,
     ShortlistWeights,
+    SwitchabilityRow,
+    TransitionCurvePoint,
     TransitionDelta,
     TransitionStrip,
 )
@@ -49,35 +65,75 @@ logger = logging.getLogger(__name__)
 # ---- Lever decomposition ---------------------------------------------------
 # Each "lever" is a weighted aggregation of the underlying metrics.
 # Tuned so each lever is in [0, 100]. Coefficients sum to 1.0 per lever.
+# `_LEVER_COMPONENTS` is the source of truth for both lever scores AND
+# the dimension drilldown chart data.
 
-_LEVERS = ("career", "cost", "family", "lifestyle", "speed")
+_LEVERS: tuple[str, ...] = ("career", "cost", "family", "lifestyle", "speed")
+
+_LEVER_COMPONENTS: dict[str, list[tuple[str, float]]] = {
+    "career": [
+        ("job_market", 0.40),
+        ("salary_power", 0.35),
+        ("employer_sponsor_density", 0.25),
+    ],
+    "cost": [
+        ("cost_of_living", 0.55),
+        ("housing_pressure", 0.45),
+    ],
+    "family": [
+        ("family_fit", 0.50),
+        ("quality_of_life", 0.25),
+        ("housing_pressure", 0.25),
+    ],
+    "lifestyle": [
+        ("quality_of_life", 0.45),
+        ("language_fit", 0.30),
+        ("cost_of_living", 0.25),
+    ],
+    "speed": [
+        ("speed_to_land", 0.55),
+        ("visa_friction", 0.45),
+    ],
+}
+
+_LEVER_LABELS: dict[str, str] = {
+    "career": "Career",
+    "cost": "Cost",
+    "family": "Family",
+    "lifestyle": "Lifestyle",
+    "speed": "Speed",
+    "visa": "Visa friendliness",
+}
+
+_LEVER_REASON_LINE: dict[str, str] = {
+    "career": "Aggregates job-market depth, salary power, and sponsor density.",
+    "cost": "Cost of living + housing pressure index combined.",
+    "family": "Family fit, quality-of-life, and housing slack combined.",
+    "lifestyle": "Quality of life, language usability, and cost combined.",
+    "speed": "Speed to land + visa friction (lower friction = higher speed).",
+    "visa": "Visa friendliness only — independent of the speed lever.",
+}
 
 
 def _lever_score(m: CountryMetrics, lever: str) -> int:
-    if lever == "career":
-        # Career: roles available + salary power + sponsor density.
-        return round(
-            0.40 * m.job_market
-            + 0.35 * m.salary_power
-            + 0.25 * m.employer_sponsor_density
-        )
-    if lever == "cost":
-        return round(0.55 * m.cost_of_living + 0.45 * m.housing_pressure)
-    if lever == "family":
-        return round(
-            0.50 * m.family_fit
-            + 0.25 * m.quality_of_life
-            + 0.25 * m.housing_pressure
-        )
-    if lever == "lifestyle":
-        return round(
-            0.45 * m.quality_of_life
-            + 0.30 * m.language_fit
-            + 0.25 * m.cost_of_living
-        )
-    if lever == "speed":
-        return round(0.55 * m.speed_to_land + 0.45 * m.visa_friction)
-    raise ValueError(f"unknown lever: {lever}")
+    if lever == "visa":
+        # Visa is exposed as a 6th radar axis but isn't a user-weighted lever.
+        return m.visa_friction
+    components = _LEVER_COMPONENTS.get(lever)
+    if not components:
+        raise ValueError(f"unknown lever: {lever}")
+    return round(sum(coeff * getattr(m, key) for key, coeff in components))
+
+
+def _lever_scores(m: CountryMetrics) -> LeverScores:
+    return LeverScores(
+        career=_lever_score(m, "career"),
+        cost=_lever_score(m, "cost"),
+        family=_lever_score(m, "family"),
+        lifestyle=_lever_score(m, "lifestyle"),
+        speed=_lever_score(m, "speed"),
+        visa=_lever_score(m, "visa"),
+    )
 
 
 def _normalize_weights(w: ShortlistWeights) -> dict[str, float]:
@@ -100,6 +156,10 @@ def _weighted_score(m: CountryMetrics, normalized: dict[str, float]) -> int:
     for lever, w in normalized.items():
         s += w * _lever_score(m, lever)
     return max(0, min(100, round(s)))
+
+
+def _weighted_score_from_dict(m: CountryMetrics, w: dict[str, float]) -> float:
+    return sum(w[lever] * _lever_score(m, lever) for lever in _LEVERS)
 
 
 # ---- Per-country narrative ----------------------------------------------
@@ -148,43 +208,91 @@ def _breakdown(m: CountryMetrics) -> ScoreBreakdown:
     )
 
 
-# ---- Category winners ------------------------------------------------------
+# ---- Dimension winners (replaces flat category_winners) -------------------
 
 
-_CATEGORIES: dict[str, str] = {
-    "Career": "career",  # uses lever score
-    "Cost": "cost",
-    "Family": "family",
-    "Lifestyle": "lifestyle",
-    "Speed": "speed",
-    "Visa friendliness": "visa_friction_metric",
-}
-
-
-def _category_winners(metrics: list[CountryMetrics]) -> list[CategoryWinner]:
-    out: list[CategoryWinner] = []
-    for label, key in _CATEGORIES.items():
-        scored: list[tuple[CountryMetrics, int]] = []
-        for m in metrics:
-            if key == "visa_friction_metric":
-                v = m.visa_friction
-            else:
-                v = _lever_score(m, key)
-            scored.append((m, v))
+def _dimension_winners(metrics: list[CountryMetrics]) -> list[DimensionWinner]:
+    """One DimensionWinner per lever (+ visa) with a full reasoning trail."""
+    out: list[DimensionWinner] = []
+    # 5 user-weighted levers + 1 visa axis = 6 dimensions.
+    for dim in (*_LEVERS, "visa"):
+        scored: list[tuple[CountryMetrics, int]] = [
+            (m, _lever_score(m, dim)) for m in metrics
+        ]
         scored.sort(key=lambda x: -x[1])
-        top = scored[0]
+        top, top_score = scored[0]
         runner = scored[1] if len(scored) > 1 else None
+        runner_country, runner_score = runner if runner else (None, 0)
+
+        # Per-country bar chart series.
+        series = [
+            DimensionScore(code=m.code, name=m.name, score=s)
+            for (m, s) in scored
+        ]
+
+        # Sub-metric reasoning. Visa surfaces just `visa_friction`.
+        if dim == "visa":
+            contributing = [
+                DimensionContributingMetric(
+                    metric_key="visa_friction",
+                    metric_label=_METRIC_LABELS["visa_friction"],
+                    weight=1.0,
+                    series=[
+                        DimensionScore(code=m.code, name=m.name, score=m.visa_friction)
+                        for m, _ in scored
+                    ],
+                )
+            ]
+        else:
+            contributing = [
+                DimensionContributingMetric(
+                    metric_key=key,
+                    metric_label=_METRIC_LABELS[key],
+                    weight=coeff,
+                    series=[
+                        DimensionScore(
+                            code=m.code, name=m.name, score=getattr(m, key),
+                        )
+                        for m, _ in scored
+                    ],
+                )
+                for key, coeff in _LEVER_COMPONENTS[dim]
+            ]
+
+        margin = top_score - runner_score
         out.append(
-            CategoryWinner(
-                category=label,
-                winner_code=top[0].code,
-                winner_name=top[0].name,
-                winning_score=top[1],
-                runner_up_name=runner[0].name if runner else None,
-                margin=top[1] - (runner[1] if runner else 0),
+            DimensionWinner(
+                dimension=dim,
+                label=_LEVER_LABELS[dim],
+                winner_code=top.code,
+                winner_name=top.name,
+                winning_score=top_score,
+                runner_up_code=runner_country.code if runner_country else None,
+                runner_up_name=runner_country.name if runner_country else None,
+                margin=margin,
+                series=series,
+                contributing_metrics=contributing,
+                reason_one_line=_LEVER_REASON_LINE[dim],
             )
         )
     return out
+
+
+# ---- Comparison series (cross-shortlist line chart) ------------------------
+
+
+def _comparison_series(metrics: list[CountryMetrics]) -> tuple[list[str], list[ComparisonSeries]]:
+    keys = list(_METRIC_LABELS.keys())
+    labels = [_METRIC_LABELS[k] for k in keys]
+    series = [
+        ComparisonSeries(
+            code=m.code,
+            name=m.name,
+            values=[getattr(m, k) for k in keys],
+        )
+        for m in metrics
+    ]
+    return labels, series
 
 
 # ---- Transition deltas ----------------------------------------------------
@@ -214,7 +322,6 @@ def _transitions(
                     note=_transition_note(label, o, d, diff),
                 )
             )
-        # Pick headlines: the largest positive delta + largest negative delta.
         positives = sorted(deltas, key=lambda x: -x.delta)
         negatives = sorted(deltas, key=lambda x: x.delta)
         gain = positives[0]
@@ -241,6 +348,22 @@ def _transitions(
     return strips
 
 
+def _transition_curve(
+    origin: CountryMetrics | None,
+    destination: CountryMetrics,
+) -> list[TransitionCurvePoint]:
+    if origin is None:
+        return []
+    return [
+        TransitionCurvePoint(
+            metric=_METRIC_LABELS[k],
+            origin=getattr(origin, k),
+            destination=getattr(destination, k),
+        )
+        for k in _METRIC_LABELS
+    ]
+
+
 def _transition_note(label: str, o: int, d: int, diff: int) -> str:
     if abs(diff) <= 4:
         return f"≈ {o}/100"
@@ -249,36 +372,177 @@ def _transition_note(label: str, o: int, d: int, diff: int) -> str:
     return f"{o} → {d}"
 
 
-# ---- Counterfactual simulator ---------------------------------------------
+# ---- Sensitivity curves --------------------------------------------------
+
+
+def _sensitivity_curve(
+    target: CountryMetrics,
+    others: list[CountryMetrics],
+    lever: str,
+    base: dict[str, float],
+    *,
+    steps: int = 21,
+) -> SensitivityCurve:
+    """Sweep one lever's weight share from 0.0 → 1.0 and record what
+    happens to `target`'s rank + score across `steps` samples.
+
+    The remaining levers keep their *relative* shares, scaled to fill
+    the remaining (1 - swept) budget. We catch the first crossover of
+    `target`'s rank to surface as `crossover_weight`.
+    """
+    points: list[SensitivityPoint] = []
+    starting_rank: int | None = None
+    crossover: float | None = None
+    others_sum = sum(base[k] for k in base if k != lever)
+
+    for i in range(steps):
+        w_lever = i / (steps - 1)  # 0.0 → 1.0
+        if others_sum > 0:
+            scale = (1.0 - w_lever) / others_sum
+        else:
+            scale = 0.0
+        w = {k: base[k] * scale for k in base}
+        w[lever] = w_lever
+        # Score every shortlisted country at this weight.
+        scored = sorted(
+            ((c, _weighted_score_from_dict(c, w)) for c in [target, *others]),
+            key=lambda x: -x[1],
+        )
+        rank = next(idx + 1 for idx, (c, _s) in enumerate(scored) if c.code == target.code)
+        score = next(round(s) for c, s in scored if c.code == target.code)
+        points.append(
+            SensitivityPoint(
+                weight=round(w_lever, 3),
+                score=max(0, min(100, score)),
+                rank=rank,
+            )
+        )
+        if starting_rank is None:
+            starting_rank = rank
+        elif crossover is None and rank != starting_rank:
+            crossover = round(w_lever, 3)
+
+    return SensitivityCurve(
+        lever=lever,
+        points=points,
+        crossover_weight=crossover,
+    )
+
+
+# ---- Per-country drilldown ------------------------------------------------
+
+
+def _country_drilldown(
+    target: CountryMetrics,
+    others: list[CountryMetrics],
+    base: dict[str, float],
+    rank: int,
+    weighted_score: int,
+    origin: CountryMetrics | None,
+) -> CountryDrilldown:
+    sensitivity = [
+        _sensitivity_curve(target, others, lever, base) for lever in _LEVERS
+    ]
+    components = [
+        ScoreComponent(
+            lever=lever,
+            raw_score=_lever_score(target, lever),
+            weight=round(base[lever], 3),
+            contribution=round(_lever_score(target, lever) * base[lever]),
+        )
+        for lever in _LEVERS
+    ]
+
+    # Per-country thresholds: for each lever, find the smallest single-
+    # lever shift (in either direction) that flips this country's rank.
+    rank_thresholds: list[LeverThreshold] = []
+    if rank == 1:
+        # The leader: no rank change available — the user is already at #1.
+        # We could compute "drop to #2" but that's the inverse of the
+        # challenger thresholds covered by switchability_matrix below.
+        pass
+    else:
+        for lever in _LEVERS:
+            best = _smallest_self_flip(target, others, base, lever, target_rank=rank)
+            if best is not None:
+                pct, direction, new_rank = best
+                rank_thresholds.append(
+                    LeverThreshold(
+                        lever=lever,
+                        direction=direction,
+                        threshold_pct=pct,
+                        flips_to_rank=new_rank,
+                        one_line=(
+                            f"{'+' if direction == 'increase' else '−'}{pct}% on "
+                            f"{lever} weight → {target.name} reaches rank {new_rank}."
+                        ),
+                    )
+                )
+
+    return CountryDrilldown(
+        code=target.code,
+        summary_one_line=_drilldown_summary(target, weighted_score, rank),
+        biggest_advantage=_top_strength(target),
+        biggest_risk=_top_risk(target),
+        lever_scores=_lever_scores(target),
+        breakdown=_breakdown(target),
+        sensitivity_curves=sensitivity,
+        transition_curve=_transition_curve(origin, target),
+        rank_change_thresholds=rank_thresholds,
+        score_components=components,
+    )
+
+
+def _drilldown_summary(m: CountryMetrics, score: int, rank: int) -> str:
+    if rank == 1:
+        return f"Ranked #1 with {score}/100. Leads on {_top_strength(m).split(' (')[0].lower()}."
+    return (
+        f"Ranked #{rank} with {score}/100. "
+        f"Held back by {_top_risk(m).split(' (')[0].lower()}."
+    )
+
+
+def _smallest_self_flip(
+    target: CountryMetrics,
+    others: list[CountryMetrics],
+    base: dict[str, float],
+    lever: str,
+    *,
+    target_rank: int,
+) -> tuple[int, str, int] | None:
+    """For a non-#1 country, find the smallest single-lever bump that
+    improves its rank. Returns (pct, direction, new_rank) or None.
+    """
+    for direction in ("increase", "decrease"):
+        for pct in range(5, 205, 5):
+            new = _perturb(base, lever, direction, pct)
+            scored = sorted(
+                ((c, _weighted_score_from_dict(c, new)) for c in [target, *others]),
+                key=lambda x: -x[1],
+            )
+            new_rank = next(
+                idx + 1 for idx, (c, _s) in enumerate(scored) if c.code == target.code
+            )
+            if new_rank < target_rank:
+                return pct, direction, new_rank
+    return None
+
+
+# ---- Counterfactual simulator (headlines) ---------------------------------
 
 
 def _counterfactuals(
     metrics: list[CountryMetrics],
     weights: ShortlistWeights,
 ) -> list[Counterfactual]:
-    """Find the smallest weight perturbation per lever that flips the ranking.
-
-    For each pair (winner, challenger) where challenger is currently
-    ranked below winner, we sweep each lever's weight upward (or another
-    lever's weight downward) until the challenger's weighted score
-    exceeds the winner's. The smallest such bump becomes the
-    counterfactual for that pair.
-
-    We surface up to 4 counterfactuals — typically (#1 vs #2),
-    (#1 vs #3), and one or two cross-lever swaps.
-    """
     if len(metrics) < 2:
         return []
     base = _normalize_weights(weights)
-    ranked = sorted(
-        metrics,
-        key=lambda m: -_weighted_score_from_dict(m, base),
-    )
+    ranked = sorted(metrics, key=lambda m: -_weighted_score_from_dict(m, base))
     winner = ranked[0]
     out: list[Counterfactual] = []
 
     for challenger in ranked[1:]:
-        # First pass: single-lever bump (direct, easiest to explain).
         best: tuple[int, str, str] | None = None
         for lever in _LEVERS:
             cf = _smallest_bump(winner, challenger, base, lever)
@@ -287,11 +551,6 @@ def _counterfactuals(
             pct, direction = cf
             if best is None or pct < best[0]:
                 best = (pct, lever, direction)
-
-        # Second pass: if no single-lever flip exists, find the smallest
-        # paired swap — bump the challenger's best lever AND demote the
-        # winner's best lever. This is the realistic case when one country
-        # dominates a heavily-weighted dimension.
         if best is None:
             best = _smallest_swap(winner, challenger, base)
 
@@ -316,19 +575,66 @@ def _counterfactuals(
     return out
 
 
+def _switchability(
+    metrics: list[CountryMetrics],
+    weights: ShortlistWeights,
+) -> list[SwitchabilityRow]:
+    """Full switchability matrix: every (challenger, lever) threshold.
+
+    Unlike `_counterfactuals` (which surfaces only the single best
+    threshold per challenger), this returns all 5 levers × N challengers
+    so the UI can render a complete sensitivity panel. Unreachable
+    thresholds get `threshold_pct=None`.
+    """
+    if len(metrics) < 2:
+        return []
+    base = _normalize_weights(weights)
+    ranked = sorted(metrics, key=lambda m: -_weighted_score_from_dict(m, base))
+    winner = ranked[0]
+    rows: list[SwitchabilityRow] = []
+    for challenger in ranked[1:]:
+        for lever in _LEVERS:
+            res = _smallest_bump(winner, challenger, base, lever)
+            if res is None:
+                rows.append(
+                    SwitchabilityRow(
+                        challenger_code=challenger.code,
+                        challenger_name=challenger.name,
+                        over_code=winner.code,
+                        over_name=winner.name,
+                        lever=lever,
+                        direction="increase",
+                        threshold_pct=None,
+                        one_line=(
+                            f"No single-lever shift on {lever} weight will let "
+                            f"{challenger.name} overtake {winner.name}."
+                        ),
+                    )
+                )
+                continue
+            pct, direction = res
+            rows.append(
+                SwitchabilityRow(
+                    challenger_code=challenger.code,
+                    challenger_name=challenger.name,
+                    over_code=winner.code,
+                    over_name=winner.name,
+                    lever=lever,
+                    direction=direction,
+                    threshold_pct=pct,
+                    one_line=_counterfactual_phrase(
+                        challenger.name, winner.name, lever, direction, pct,
+                    ),
+                )
+            )
+    return rows
+
+
 def _smallest_swap(
     winner: CountryMetrics,
     challenger: CountryMetrics,
     base: dict[str, float],
 ) -> tuple[int, str, str] | None:
-    """Find the smallest paired swap that flips ranking.
-
-    A swap moves weight from the winner's strongest lever to the
-    challenger's strongest lever. This is what most "what would change
-    the result?" answers are in practice — "give cost more weight than
-    career and X wins."
-    """
-    # Pick the lever where the challenger has the largest delta over the winner.
     deltas = sorted(
         ((lever, _lever_score(challenger, lever) - _lever_score(winner, lever))
          for lever in _LEVERS),
@@ -337,7 +643,6 @@ def _smallest_swap(
     if not deltas or deltas[0][1] <= 0:
         return None
     challenger_lever = deltas[0][0]
-    # Step the swap from 5% → 200%.
     for pct in range(5, 205, 5):
         new = _perturb(base, challenger_lever, "increase", pct)
         if (
@@ -345,8 +650,10 @@ def _smallest_swap(
             > _weighted_score_from_dict(winner, new)
         ):
             return pct, challenger_lever, "increase"
-    # If even doubling weights doesn't flip, try also zeroing the winner's lever.
-    winner_lever = max(_LEVERS, key=lambda l: _lever_score(winner, l) - _lever_score(challenger, l))
+    winner_lever = max(
+        _LEVERS,
+        key=lambda l: _lever_score(winner, l) - _lever_score(challenger, l),
+    )
     if winner_lever != challenger_lever:
         new = dict(base)
         new[winner_lever] = 0.0
@@ -354,13 +661,12 @@ def _smallest_swap(
         total = sum(new.values())
         if total > 0:
             new = {k: v / total for k, v in new.items()}
-            if _weighted_score_from_dict(challenger, new) > _weighted_score_from_dict(winner, new):
+            if (
+                _weighted_score_from_dict(challenger, new)
+                > _weighted_score_from_dict(winner, new)
+            ):
                 return 100, challenger_lever, "increase"
     return None
-
-
-def _weighted_score_from_dict(m: CountryMetrics, w: dict[str, float]) -> float:
-    return sum(w[lever] * _lever_score(m, lever) for lever in _LEVERS)
 
 
 def _smallest_bump(
@@ -369,12 +675,6 @@ def _smallest_bump(
     base: dict[str, float],
     lever: str,
 ) -> tuple[int, str] | None:
-    """Find the smallest single-lever perturbation that flips the ranking.
-
-    We check both directions: increase this lever's relative weight
-    (taking from the others proportionally) and decrease it. Step size
-    is 5 percentage points; we stop at 200% perturbation.
-    """
     for direction in ("increase", "decrease"):
         for pct in range(5, 205, 5):
             new = _perturb(base, lever, direction, pct)
@@ -389,9 +689,6 @@ def _smallest_bump(
 def _perturb(
     base: dict[str, float], lever: str, direction: str, pct: int,
 ) -> dict[str, float]:
-    """Bump one lever by `pct` % (relative to its current weight) and
-    re-normalise so all weights sum to 1.0.
-    """
     multiplier = 1.0 + pct / 100.0 if direction == "increase" else max(
         0.0, 1.0 - pct / 100.0
     )
@@ -422,22 +719,17 @@ def _counterfactual_phrase(
 
 
 def _fingerprint(weights: dict[str, float]) -> DecisionFingerprint:
-    """Classify the weighted vector into a discrete style."""
     items = sorted(weights.items(), key=lambda x: -x[1])
     top, top_w = items[0]
     second, second_w = items[1]
 
-    # If top dominates ( ≥ 0.40 AND ≥ 1.5x the next ), pick a single style.
     if top_w >= 0.40 and top_w >= 1.5 * second_w:
         style, label = _STYLES_BY_TOP[top]
     elif top_w - items[-1][1] < 0.08:
         style, label = "balanced", "Balanced mover"
     else:
-        # Hybrid styles when top + second dominate together.
         pair = frozenset((top, second))
-        style, label = _PAIR_STYLES.get(
-            pair, _STYLES_BY_TOP[top]
-        )
+        style, label = _PAIR_STYLES.get(pair, _STYLES_BY_TOP[top])
 
     one_line = _FINGERPRINT_LINE[style]
     return DecisionFingerprint(
@@ -484,7 +776,6 @@ def _final(
     winner = ranked[0]
     runner = ranked[1] if len(ranked) > 1 else None
     margin = winner.weighted_score - (runner.weighted_score if runner else 0)
-    # Pick the next action based on which lever drove the win.
     top_lever = max(weights_normalized.items(), key=lambda x: x[1])[0]
     next_label, next_href = _next_action_for_lever(top_lever)
     why = (
@@ -517,12 +808,6 @@ def _next_action_for_lever(lever: str) -> tuple[str, str]:
 
 
 def _country_confidence(m: CountryMetrics) -> float:
-    """Spread tells us how confident we should be in the score.
-
-    Tight metrics (everything bunched in one band) means low confidence
-    — there's no clear differentiator. Wide spread = the country has a
-    strong identity, so the score is meaningful.
-    """
     values = [
         m.job_market, m.salary_power, m.employer_sponsor_density,
         m.visa_friction, m.speed_to_land,
@@ -530,7 +815,6 @@ def _country_confidence(m: CountryMetrics) -> float:
         m.quality_of_life, m.family_fit, m.language_fit,
     ]
     spread = max(values) - min(values)
-    # Map spread 0..80 → 0.55..0.95
     return round(0.55 + min(0.40, spread / 200.0), 2)
 
 
@@ -542,12 +826,17 @@ def compute_shortlist(
     *,
     origin_country_code: str | None = None,
 ) -> ShortlistResponse:
-    """Score, rank, and explain a 2–5 country shortlist."""
+    """Score, rank, and explain a 2–3 country shortlist with full drilldowns."""
     metrics = _resolve_metrics(request.countries)
     if len(metrics) < 2:
         raise ValueError(
             "Need at least 2 known countries in the shortlist; got "
             f"{len(metrics)} after resolving."
+        )
+    if len(metrics) > SHORTLIST_MAX:
+        raise ValueError(
+            f"Shortlist exceeds the {SHORTLIST_MAX}-country cap; "
+            "remove a country first."
         )
 
     weights = _normalize_weights(request.weights)
@@ -556,31 +845,44 @@ def compute_shortlist(
     ]
     scored.sort(key=lambda x: -x[1])
 
-    ranked: list[RankedCountry] = [
-        RankedCountry(
-            code=m.code,
-            name=m.name,
-            region=m.region,
-            rank=i + 1,
-            weighted_score=score,
-            breakdown=_breakdown(m),
-            top_strength=_top_strength(m),
-            top_risk=_top_risk(m),
-            confidence=_country_confidence(m),
-        )
-        for i, (m, score) in enumerate(scored)
-    ]
-
     origin = get_country(origin_country_code) if origin_country_code else None
-    transitions = _transitions(origin, [m for m, _ in scored])
 
+    ranked: list[RankedCountry] = []
+    for i, (m, score) in enumerate(scored):
+        rank = i + 1
+        others = [other for other, _s in scored if other.code != m.code]
+        ranked.append(
+            RankedCountry(
+                code=m.code,
+                name=m.name,
+                region=m.region,
+                rank=rank,
+                weighted_score=score,
+                breakdown=_breakdown(m),
+                lever_scores=_lever_scores(m),
+                top_strength=_top_strength(m),
+                top_risk=_top_risk(m),
+                confidence=_country_confidence(m),
+                drilldown=_country_drilldown(
+                    m, others, weights, rank, score, origin,
+                ),
+            )
+        )
+
+    transitions = _transitions(origin, [m for m, _ in scored])
     counterfactuals = _counterfactuals(metrics, request.weights)
+    switchability = _switchability(metrics, request.weights)
     fingerprint = _fingerprint(weights)
     final = _final(ranked, weights)
+
+    dimension_labels, comparison_series = _comparison_series(
+        [m for m, _ in scored],
+    )
 
     assumptions: list[str] = [
         "Scores aggregate curated 2026-Q1 country metrics; cost-of-living is a relative index, not absolute amounts.",
         "Visa-ease is a heuristic from public processing-time tables — not legal advice.",
+        f"Shortlist is capped at {SHORTLIST_MAX} countries to keep the comparison readable.",
     ]
     if origin is None:
         assumptions.append(
@@ -589,9 +891,12 @@ def compute_shortlist(
 
     return ShortlistResponse(
         countries=ranked,
-        category_winners=_category_winners([m for m, _ in scored]),
+        dimension_labels=dimension_labels,
+        comparison_series=comparison_series,
+        dimension_winners=_dimension_winners([m for m, _ in scored]),
         transitions=transitions,
         counterfactuals=counterfactuals,
+        switchability=switchability,
         fingerprint=fingerprint,
         final=final,
         source=DataSourceMeta(

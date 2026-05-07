@@ -33,7 +33,10 @@ export default async function CountryPage() {
     initialShortlist.push(upper);
   };
   push(profile.target_country);
-  for (const alt of profile.alternatives ?? []) push(alt);
+  for (const alt of profile.alternatives ?? []) {
+    if (initialShortlist.length >= 3) break;
+    push(alt);
+  }
   for (const fb of FALLBACK_DESTINATIONS) {
     if (initialShortlist.length >= 3) break;
     push(fb);

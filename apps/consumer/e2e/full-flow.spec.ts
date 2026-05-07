@@ -188,7 +188,7 @@ test("full intent-aware pipeline: signup → intent → resume → profile → 1
 
   const failures: string[] = [];
 
-  // ---- Country decision board (shortlist + weights + counterfactual + fingerprint) ----
+  // ---- Country decision board (shortlist + weights + drilldown + switchability) ----
   const board = page.locator("[data-country-decision-board]");
   if (!(await board.count())) {
     failures.push("country page: missing decision board");
@@ -208,14 +208,25 @@ test("full intent-aware pipeline: signup → intent → resume → profile → 1
       failures.push("shortlist leaked ISO-only chip labels");
     }
 
+    // Three-country cap: header advertises "/3" and the cap attribute is set.
+    const capAttr = await shortlist.getAttribute("data-shortlist-cap");
+    if (capAttr !== "3") {
+      failures.push(`shortlist cap should be 3, got data-shortlist-cap=${capAttr}`);
+    }
+
     // Decision fingerprint must render.
     if (!(await board.locator("[data-decision-fingerprint]").count())) {
       failures.push("country page: missing decision fingerprint badge");
     }
 
-    // Counterfactual section must exist (populated or "robust" empty state).
-    if (!(await board.locator("[data-counterfactuals]").count())) {
-      failures.push("country page: missing counterfactual section");
+    // Switchability section must exist (populated or "robust" empty state).
+    if (!(await board.locator("[data-switchability]").count())) {
+      failures.push("country page: missing switchability panel");
+    }
+
+    // Cross-shortlist comparison line chart must render with real data.
+    if (!(await board.locator("[data-comparison-chart] [data-line-chart]").count())) {
+      failures.push("country page: missing comparison line chart");
     }
 
     // Weight-change round-trip: bump a weight, click the apply button,
@@ -227,6 +238,96 @@ test("full intent-aware pipeline: signup → intent → resume → profile → 1
       .first()
       .waitFor({ state: "visible", timeout: 30_000 })
       .catch(() => null);
+
+    // Click the rank-1 country to expand its drilldown panel.
+    const topCountry = board.locator('[data-ranked-country][data-rank="1"]').first();
+    const topCode = await topCountry.getAttribute("data-ranked-country");
+    if (topCode) {
+      await topCountry.locator(`[data-country-toggle="${topCode}"]`).click();
+      const drilldown = board.locator(`[data-country-drilldown="${topCode}"]`);
+      await drilldown.waitFor({ state: "visible", timeout: 5_000 }).catch(() => null);
+      if (!(await drilldown.count())) {
+        failures.push(`country drilldown did not expand for ${topCode}`);
+      } else {
+        // Required drilldown blocks: composition radar + sensitivity line +
+        // components bars + comparison line.
+        const expectedBlocks = ["composition", "sensitivity", "components", "comparison"];
+        for (const block of expectedBlocks) {
+          const c = await drilldown
+            .locator(`[data-drilldown-block="${block}"]`)
+            .count();
+          if (c === 0) {
+            failures.push(`drilldown for ${topCode}: missing block "${block}"`);
+          }
+        }
+        // Both chart types must be present and non-empty.
+        const radar = drilldown.locator("[data-radar-chart]");
+        if (!(await radar.count())) {
+          failures.push(`drilldown for ${topCode}: missing radar chart`);
+        }
+        const lineCharts = drilldown.locator("[data-line-chart]");
+        const lineCount = await lineCharts.count();
+        if (lineCount < 2) {
+          failures.push(
+            `drilldown for ${topCode}: expected ≥2 line charts, got ${lineCount}`,
+          );
+        }
+        // Charts must NOT be in the placeholder/empty state.
+        const emptyCharts = await drilldown
+          .locator('[data-line-chart][data-empty="true"]')
+          .count();
+        if (emptyCharts > 0) {
+          failures.push(
+            `drilldown for ${topCode}: ${emptyCharts} line chart(s) rendered as empty placeholder`,
+          );
+        }
+      }
+    }
+
+    // "Who wins on what" must expand on click and show parameter-level reasoning.
+    const dimRows = board.locator("[data-dimension-row]");
+    if (!(await dimRows.count())) {
+      failures.push("country page: missing dimension-winner rows");
+    } else {
+      const firstDim = dimRows.first();
+      const firstDimKey = await firstDim.getAttribute("data-dimension-row");
+      if (firstDimKey) {
+        await firstDim.locator(`[data-dimension-toggle="${firstDimKey}"]`).click();
+        const drill = board.locator(`[data-dimension-drilldown="${firstDimKey}"]`);
+        await drill
+          .waitFor({ state: "visible", timeout: 3_000 })
+          .catch(() => null);
+        if (!(await drill.count())) {
+          failures.push(`dimension drilldown did not expand for ${firstDimKey}`);
+        }
+        const params = await drill.locator("[data-dimension-metric]").count();
+        if (params < 1) {
+          failures.push(
+            `dimension drilldown for ${firstDimKey}: missing parameter rows`,
+          );
+        }
+      }
+    }
+
+    // Switchability matrix expansion: clicking the toggle reveals the full matrix.
+    const switchToggle = board.locator("[data-switchability-toggle]");
+    if (await switchToggle.count()) {
+      await switchToggle.click();
+      const matrix = board.locator("[data-switchability-matrix]");
+      await matrix
+        .waitFor({ state: "visible", timeout: 3_000 })
+        .catch(() => null);
+      if (!(await matrix.count())) {
+        failures.push("switchability matrix did not expand");
+      } else {
+        const challengers = await matrix
+          .locator("[data-switchability-challenger]")
+          .count();
+        if (challengers < 1) {
+          failures.push("switchability matrix: no challenger groups");
+        }
+      }
+    }
 
     // Final recommendation must contain a country name (not blank).
     const finalText = await board

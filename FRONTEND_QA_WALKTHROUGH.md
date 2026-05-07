@@ -37,21 +37,38 @@ should only use these — never CSS classes.
 | `[data-emphasis="good\|warn\|bad\|neutral"]` | On the ValueLead | Tone class. Useful for asserting a verdict colour. |
 | `[data-intent-framing]` | Under the eyebrow | The intent-driven framing line. Absence = page isn't intent-aware. |
 | `[data-country-decision-board]` | Country page root | The visual decision board container. |
-| `[data-country-shortlist]` | Country page | The shortlist chip row (full country names). |
-| `[data-shortlist-code="<iso>"]` | On each shortlist chip | ISO target for click; chip TEXT shows the full name. |
+| `[data-country-shortlist]` + `[data-shortlist-cap="3"]` + `[data-shortlist-at-cap="true\|false"]` | Country page | Shortlist chip row + the hard cap (always 3) + whether the cap is hit right now. |
+| `[data-shortlist-code="<iso>"]` + `[data-shortlist-remove="<iso>"]` | On each shortlist chip | ISO target for click; chip TEXT shows the full name. The × button removes it (only visible when `>2` countries are shortlisted). |
+| `[data-shortlist-message]` | Below shortlist row | Inline message — fires when user tries to add a 4th country. |
 | `[data-add-country]` / `[data-add-country-grid]` | Country page | "+ Add country" toggle + the country grid it opens. |
-| `[data-add-option="<iso>"]` | Inside add-country grid | One country option button (text = full name). |
+| `[data-add-option="<iso>"]` + `[data-add-option-disabled]` | Inside add-country grid | One country option button (text = full name); disabled when at cap or already shortlisted. |
 | `[data-weights-row]` | Country page | The 5-slider weight row. |
 | `[data-weight="<lever>"]` + `[data-weight-step="<n>"]` + `[data-weight-active]` | Each weight slider | Lever buttons; click step n to set weight 1–5. |
 | `[data-decision-fingerprint]` + `[data-fingerprint-style]` | Country page | The decision fingerprint badge + style (career_first / cost_sensitive / etc.). |
 | `[data-ranking-board]` | Country page | The ranked-list section. |
-| `[data-ranked-country="<iso>"]` + `[data-rank="<n>"]` | Each ranking row | The country + its rank. |
+| `[data-ranked-country="<iso>"]` + `[data-rank="<n>"]` + `[data-expanded="true\|false"]` | Each ranking row | The country, its rank, and whether the drilldown is open. |
+| `[data-country-toggle="<iso>"]` | Each ranking row header | Click target — toggles the country drilldown panel. |
+| `[data-country-drilldown="<iso>"]` | Inside an expanded ranking row | Container for the country's deep-dive charts. |
+| `[data-drilldown-block="composition\|sensitivity\|components\|comparison\|transition\|thresholds"]` | Inside a drilldown | One block of the deep dive — radar, sensitivity line, contribution bars, cross-shortlist line, transition line, rank-change thresholds. |
+| `[data-drilldown-summary]` | Top of a drilldown | One-line "ranked #N because X" summary. |
+| `[data-rank-threshold="<lever>"]` | Inside a drilldown's threshold list | One row showing how to flip this country's rank by tuning a single lever. |
+| `[data-line-chart="<id>"]` + `[data-line-chart-legend]` + `[data-empty="true"]` | Any LineChart instance | The SVG line chart container. `data-empty="true"` only when the data array was empty — must NOT be present in valid drilldowns. |
+| `[data-line-series="<label>"]` | Inside a line chart | One polyline series (used to scope axis-specific assertions). |
+| `[data-radar-chart="<id>"]` | Score-composition chart | Per-country lever radar (Career/Cost/Family/Lifestyle/Speed/Visa). |
+| `[data-multi-bar="<id>"]` + `[data-bar-row="<label>"]` | Reasoning bar charts | Horizontal bars used in dimension drilldowns + per-country score components. |
+| `[data-comparison-chart]` | Below ranking board | Cross-shortlist line chart (every country plotted across all 10 dimensions). |
 | `[data-score-strip="<iso>"]` | Inside each ranking row | The 10-bar metric strip. |
 | `[data-metric="<key>"]` | Inside score strip | One metric column (job_market, salary_power, …). |
-| `[data-category-winners]` | Country page | "Who wins on what" 6-card grid. |
-| `[data-counterfactuals]` | Country page | "What would change the result?" section. |
-| `[data-counterfactual="<i>"]` + `[data-cf-lever]` + `[data-cf-direction]` + `[data-cf-threshold]` | Each counterfactual row | The lever + direction + smallest % flip. |
-| `[data-counterfactual-empty]` | Inside counterfactuals | Shown when the top pick is robust. |
+| `[data-dimension-winners]` | Country page | "Who wins on what" panel — replaces the old `[data-category-winners]`. |
+| `[data-dimension-row="<lever>"]` + `[data-dimension-open]` + `[data-dimension-toggle="<lever>"]` | Each dimension row | The clickable card; `<lever>` = career/cost/family/lifestyle/speed/visa. |
+| `[data-dimension-drilldown="<lever>"]` | Inside an expanded dimension row | The reasoning panel that opens on click. |
+| `[data-dimension-metric="<metric_key>"]` | Inside a dimension drilldown | One contributing metric (e.g. `salary_power`) with per-country bars. |
+| `[data-switchability]` | Country page | The unique-feature panel — "what would have to change for another country to win?" |
+| `[data-counterfactuals]` + `[data-counterfactual="<i>"]` + `[data-cf-lever]` + `[data-cf-direction]` + `[data-cf-threshold]` | Inside switchability | Headline rows — the smallest single-lever flip per challenger. |
+| `[data-counterfactual-empty]` | Inside switchability | Shown when the top pick is robust to all single-lever shifts. |
+| `[data-switchability-toggle]` + `[data-switchability-matrix]` | Inside switchability | "Show full matrix" reveal — exposes every (challenger × lever) threshold. |
+| `[data-switchability-challenger="<iso>"]` + `[data-switchability-row="<lever>"]` | Inside the matrix | One challenger group + one (lever) row inside it. |
+| `[data-threshold-bar]` + `[data-threshold-reachable="true\|false"]` + `[data-threshold-direction]` + `[data-threshold-pct]` | Inside switchability rows + drilldown thresholds | Visual bar — `reachable=false` means no single-lever shift in [-100%, +200%] flips the ranking. |
 | `[data-transitions]` + `[data-transition="<iso>"]` | Country page | Origin → destination strips. |
 | `[data-delta-pill]` + `[data-delta-direction="gain\|loss\|same"]` | Inside transition strips | One metric delta. |
 | `[data-final-recommendation]` (also `[data-value-lead]`) | Country page bottom | Black card with winner + CTA. |
@@ -486,57 +503,102 @@ For each page: **what you click → what should appear → fail signals**.
 >    `[data-panel-status="pending"]` then `="applied"` and the page refreshes
 >    with the new analysis.
 
-### Country `/app/country` — visual decision board (rebuilt)
+### Country `/app/country` — interactive decision board
 
-The page is no longer a single-country analysis read; it's a multi-country
-decision engine. Backed by a deterministic scoring engine
+The page is a multi-country decision engine, not a static report. Backed
+by the deterministic scoring engine
 ([`shortlist_service.py`](backend/app/modules/country_comparison/shortlist_service.py))
-that re-ranks instantly on every weight slider change — no Vertex per
-shortlist run.
+which re-ranks instantly on every weight slider change — no Vertex per
+shortlist run. Every chart is fed real numeric data from the curated
+metrics dataset; nothing is faked.
+
+**Hard rules:**
+- The shortlist is capped at **3 countries**. The cap is enforced in
+  the schema, the service, and the UI. Trying to add a 4th surfaces
+  the inline message in `[data-shortlist-message]` and the "+ Add
+  country" button is `aria-disabled` until one is removed.
+- Every line/radar/bar chart is rendered from `ShortlistResponse` data —
+  there are no template values. If a data array is empty (e.g. no
+  `current_country`, so `transition_curve=[]`) the corresponding block
+  is omitted, never replaced with a placeholder.
 
 Layout, top to bottom:
 
-1. **Shortlist row** (`[data-country-shortlist]`) — chips show full
-   country names. Up to 5 countries; user can remove (down to 2 min)
-   via × on each chip, or click "+ Add country" to open
-   `[data-add-country-grid]` and pick one of ~24 destinations.
+1. **Shortlist row** (`[data-country-shortlist]` +
+   `[data-shortlist-cap="3"]`) — chips show full country names. Up to
+   3 countries; user can remove (down to 2 min) via × on each chip
+   (`[data-shortlist-remove]`), or click "+ Add country" to open
+   `[data-add-country-grid]` and pick one of ~24 destinations. When at
+   the cap, every option in the grid carries
+   `[data-add-option-disabled="true"]`.
 2. **Weights row** (`[data-weights-row]` + `[data-module-panel="country"]`)
    — five 1–5 sliders for career / cost / family / lifestyle / speed.
-   The board re-ranks via a debounced `useEffect`; an explicit
+   The board re-ranks via a debounced `useEffect`; the explicit
    "Re-rank" button (`[data-panel-apply]`) re-asserts the same
    computation for explicit triggers.
-3. **Decision fingerprint** (`[data-decision-fingerprint]`,
+3. **Decision fingerprint** (`[data-decision-fingerprint]` +
    `[data-fingerprint-style]`) — compact badge classifying the user's
    weighted vector into one of: `career_first`, `cost_sensitive`,
    `family_heavy`, `speed_driven`, `lifestyle_focused`, `balanced`.
-   Shows the top-3 weights as percentages.
-4. **Ranking board** (`[data-ranking-board]`) — one row per country
-   with `[data-ranked-country]` + `[data-rank]`. Each row has:
-   - Rank badge (winner highlighted black).
-   - Country name + weighted score + confidence dot.
-   - Top strength + top risk (single phrases).
-   - **Score strip** — 10 vertical bars covering job market, salary
-     power, sponsor density, visa, speed, cost, housing, QoL, family,
-     language. Coloured by tier (≥70 green, ≥50 gilt, <50 red).
-5. **Category winners** (`[data-category-winners]`) — six small cards
-   showing who wins on Career / Cost / Family / Lifestyle / Speed /
-   Visa friendliness, with margin over runner-up.
-6. **Counterfactual board** (`[data-counterfactuals]`) — the **first
-   unique feature**. One-line "what would change the result?"
-   statements like *"raise your lifestyle weight ~100% and Netherlands
-   overtakes United Arab Emirates."* Computed by sweeping each lever's
-   weight (and pair-swaps when single-lever fails) until the ranking
-   flips.
-   - Each entry has `[data-counterfactual]`, `[data-cf-lever]`,
-     `[data-cf-direction]`, `[data-cf-threshold]`.
-   - Empty-state pill `[data-counterfactual-empty]` shows when the top
-     pick is robust.
-7. **Origin → destination transitions** (`[data-transitions]`) — one
+4. **Ranking board** (`[data-ranking-board]`) — one expandable row per
+   country with `[data-ranked-country]` + `[data-rank]` +
+   `[data-expanded]`. The whole header is a button
+   (`[data-country-toggle]`); clicking it expands/collapses the
+   drilldown panel below.
+   - Header shows: rank badge, country name, weighted score,
+     confidence dot, top strength, top risk, and the 10-bar score
+     strip (`[data-score-strip]`).
+   - Expanded drilldown (`[data-country-drilldown]`) renders five real
+     chart blocks under `[data-drilldown-block]`:
+     - `composition` — radar chart over the 6 lever axes
+       (`[data-radar-chart]`).
+     - `sensitivity` — line chart of the country's score as **each**
+       lever's weight share sweeps 0→100% (5 polylines). Crossover
+       points where the country's rank flips are marked with a
+       dashed vertical guide.
+     - `components` — multi-bar chart showing each lever's
+       contribution to the weighted score (raw × weight).
+     - `comparison` — line chart with this country's lever scores
+       plotted against the rest of the shortlist on the same axes.
+     - `transition` — origin → destination line across all 10
+       metrics (only when `current_country` is set).
+     - `thresholds` (only on rank-2 / rank-3) — list of
+       `[data-rank-threshold]` rows with a `[data-threshold-bar]`
+       and one-line "lift career weight by +25% to reach rank 1"
+       statements.
+5. **Cross-shortlist comparison** (`[data-comparison-chart]`) — single
+   line chart with one polyline per country across the 10 underlying
+   metrics. Lets the user see the full shape of each country side-by-
+   side at a glance.
+6. **Who wins on what** (`[data-dimension-winners]`) — six clickable
+   rows, one per dimension (career / cost / family / lifestyle /
+   speed / visa). Each row collapses by default to "winner + score +
+   margin." Clicking the row (`[data-dimension-toggle]`) opens
+   `[data-dimension-drilldown]` which shows:
+   - The bar chart of every shortlisted country on this dimension.
+   - The reasoning trail: every contributing sub-metric
+     (`[data-dimension-metric]`) with its lever weight and per-country
+     bars. E.g. for "Career" you see how each country scores on
+     `job_market` (weight 40%), `salary_power` (35%), and
+     `employer_sponsor_density` (25%).
+7. **Switchability** (`[data-switchability]`) — the unique feature.
+   Headline rows (`[data-counterfactual]`) are still the smallest
+   single-lever flips per challenger, but each row has a "Show full
+   matrix" toggle (`[data-switchability-toggle]`). The matrix
+   (`[data-switchability-matrix]`) groups by challenger
+   (`[data-switchability-challenger]`) and lists every (lever,
+   direction) threshold including unreachable ones. Each row has a
+   `[data-threshold-bar]` whose `data-threshold-reachable="false"`
+   means "no single-lever shift in [-100%, +200%] flips the
+   ranking" — so the UI never shows a fake or capped value.
+   Empty-state pill `[data-counterfactual-empty]` is shown when the
+   top pick is robust to all single-lever shifts.
+8. **Origin → destination transitions** (`[data-transitions]`) — one
    strip per shortlisted destination, showing the largest +metric and
    −metric versus the user's `current_country`. Pills
    (`[data-delta-pill]`, `[data-delta-direction]`) make the gain/loss
    instantly visual. Skipped if `current_country` isn't on the profile.
-8. **Final recommendation card** (`[data-final-recommendation]`,
+9. **Final recommendation card** (`[data-final-recommendation]`,
    `[data-value-lead]`) — black card with winner, one-line "why",
    margin over runner-up, source/availability metadata, deep-link CTA
    (`[data-final-cta]`) to the next module page (jobs / finance /
@@ -545,21 +607,44 @@ Layout, top to bottom:
    target_country + alternatives + priority_ranking back to the
    profile.
 
-**Unique value × 2:**
-- **Counterfactual simulator** — competitors say "X is best." We say
-  "X is best, AND here's the smallest weight change for Y to overtake
-  X." Concrete, numeric, lever-specific.
+**Unique value:**
+- **Switchability engine** — competitors say "X is best." We say "X
+  is best, AND here's the smallest weight change for Y to overtake X
+  for **every** lever, with reachability flagged when no shift can do
+  it." Concrete, numeric, lever-specific.
+- **Per-country drilldown with real charts** — every ranked country
+  expands to show *why* it ranks where it does: the score sensitivity
+  to every lever, the contribution breakdown, the cross-shortlist
+  shape, and the origin→destination transition curve.
 - **Decision fingerprint** — the page visibly shows what kind of mover
   the user is and how that drives the ranking. Same shortlist + same
   data → different winner depending on the fingerprint.
 
 **Backend contract:**
 - Endpoint: `POST /api/v1/case/{caseId}/country-comparison/shortlist`
-- Body: `{ countries: ["DE","NL","AE","IT"], weights: { career, cost, family, lifestyle, speed } }`
-- Response: see `ShortlistResponse` in
-  [`shortlist_schemas.py`](backend/app/modules/country_comparison/shortlist_schemas.py).
-- Engine is deterministic (no Vertex). Sub-50ms per call. Safe to fire
-  on every slider tick.
+- Body: `{ countries: ["DE","NL","AE"], weights: { career, cost, family, lifestyle, speed } }`
+- Schema is hard-capped: `countries.max_length = 3` (mirrors
+  `SHORTLIST_MAX` in
+  [`shortlist_schemas.py`](backend/app/modules/country_comparison/shortlist_schemas.py)
+  and `lib/backend/types.ts`).
+- Response (`ShortlistResponse`) carries:
+  - `countries[].drilldown` — chart-ready per-country payload
+    (`lever_scores`, `sensitivity_curves[5]`, `transition_curve`,
+    `score_components[5]`, `rank_change_thresholds[]`,
+    `breakdown`, `summary_one_line`).
+  - `dimension_labels[10]` + `comparison_series[]` — fuel the
+    cross-shortlist line chart.
+  - `dimension_winners[]` — six rows with `series[]` for the bar
+    chart and `contributing_metrics[]` for the parameter reasoning.
+  - `switchability[]` — full (challenger × lever) matrix; unreachable
+    thresholds carry `threshold_pct: null`.
+  - `counterfactuals[]` (≤4) — headlines pulled from the
+    smallest-flip threshold per challenger.
+  - `fingerprint`, `final`, `transitions`, `source`, `assumptions` —
+    same as before.
+- Engine is deterministic (no Vertex). Sub-100ms per call even with
+  the per-country sensitivity sweeps. Safe to fire on every slider
+  tick.
 
 **Data source:**
 - Curated country metrics file
@@ -571,6 +656,25 @@ Layout, top to bottom:
   final card so the user can disclose freshness.
 - Each metric is 0–100 where higher = better for the relocator. Adding
   a country = appending to `COUNTRY_METRICS`.
+
+**How to verify the output manually:**
+- Open `/app/country` in dev. Confirm the header shows `Shortlist · N/3`.
+- Try adding a 4th country: the inline message under the chip row
+  must appear and the new chip must NOT be added.
+- Click the rank-1 country card. The drilldown should expand inline
+  and show: a radar (composition), 2+ line charts (sensitivity +
+  cross-shortlist), and a multi-bar contribution chart. None of them
+  should display the "No data for this view" placeholder.
+- Click any "Who wins on what" row. The drilldown should expand and
+  show one bar block per shortlisted country, plus per-metric bars
+  underneath (e.g. for Career: job_market, salary_power, sponsor
+  density).
+- Click "Show full matrix" inside Switchability. Each challenger
+  group should list 5 lever rows; rows whose threshold is unreachable
+  should render as the dashed "not reachable" pill, never as a
+  numeric guess.
+- Bump any weight slider and confirm the ranking + every chart
+  updates within ~100 ms.
 
 ### Job fit `/app/jobs`
 - ValueLead: "Direction we'd back · <inferred role>" + fastest pathway.
