@@ -451,36 +451,57 @@ export interface JobFitDetail {
   supporting_signals?: SupportingSignal[];
 }
 
+export type VisaDifficulty = "low" | "medium" | "high" | "very_high";
+export type VisaUserMeets = "yes" | "partial" | "no" | "unknown";
+export type VisaDependencyStatus = "have" | "need" | "in_progress" | "unknown";
+
+export interface VisaRouteRequirement {
+  label: string;
+  detail: string;
+  user_meets: VisaUserMeets;
+}
+
 export interface VisaPrimaryRoute {
   name: string;
-  code?: string;
-  difficulty: string;
+  code?: string | null;
+  difficulty: VisaDifficulty;
   typical_processing_weeks_min: number;
   typical_processing_weeks_max: number;
   sponsor_required: boolean;
   family_friendly: boolean;
-  requirements: { label: string; user_meets?: boolean | null }[];
+  requirements: VisaRouteRequirement[];
   rationale: string;
+}
+
+export interface VisaAlternativeRoute {
+  name: string;
+  difficulty: VisaDifficulty;
+  why_consider: string;
+}
+
+export interface VisaBlocker {
+  label: string;
+  severity: "low" | "medium" | "high";
+  detail: string;
+  fixable: boolean;
+  fixable_in_weeks?: number | null;
+}
+
+export interface VisaDependency {
+  requirement: string;
+  depends_on: string;
+  status: VisaDependencyStatus;
+  note?: string | null;
 }
 
 export interface VisaDirectionDetail {
   primary_route: VisaPrimaryRoute;
-  route_difficulty: string;
+  route_difficulty: VisaDifficulty;
   typical_processing_time_label: string;
-  alternative_routes: {
-    name: string;
-    code?: string;
-    difficulty?: string;
-    note: string;
-  }[];
-  blockers: {
-    label: string;
-    fixable: boolean;
-    window?: string;
-    detail?: string;
-  }[];
-  fixable_blockers?: unknown[];
-  dependencies: { label: string; status: string; detail?: string }[];
+  alternative_routes: VisaAlternativeRoute[];
+  blockers: VisaBlocker[];
+  fixable_blockers?: VisaBlocker[];
+  dependencies: VisaDependency[];
   legal_disclaimer: string;
 }
 
