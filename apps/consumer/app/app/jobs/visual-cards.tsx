@@ -1233,13 +1233,8 @@ export function JobInsightCard({
             <ConvictionBreakdown detail={detail} />
           </div>
 
-          {/* Summary text */}
-          <div className="border-l-0 md:border-l md:border-ink-100 md:pl-4">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-              Our read
-            </p>
-            <p className="mt-1.5 text-[14.5px] leading-[1.6] text-ink-800">{summary}</p>
-          </div>
+          {/* Summary + AI-driven key drivers + signal tags */}
+          <OurReadColumn summary={summary} detail={detail} />
         </div>
 
         {/* ============ Pulling for / Working against split ============ */}
@@ -1321,6 +1316,166 @@ function ConvictionBreakdown({ detail }: { detail: JobFitDetail }) {
       </ul>
     </div>
   );
+}
+
+/**
+ * Right column of the conviction-read hero strip.
+ *
+ * Three stacked, conditional sub-blocks — every one of them sourced
+ * from existing AI fields, never hardcoded:
+ *
+ *   1. Our read · the AI's `summary` (existing 1–2 sentence read).
+ *   2. Key drivers · 3–4 short bullets, one per pillar that the AI
+ *      actually wrote a `note` / `rationale` for. Pillar label +
+ *      truncated AI text — this is the AI explaining its own scoring.
+ *   3. Signal tags · up to 5 short chips drawn from the categories of
+ *      `supporting_signals` (sorted by confidence), with
+ *      `market_demand.demand_signals` as a fallback. Pure passthrough
+ *      of AI-supplied tag text, title-cased for display.
+ *
+ * Anything the AI didn't supply simply doesn't render — no
+ * placeholder copy.
+ */
+function OurReadColumn({
+  summary,
+  detail,
+}: {
+  summary: string;
+  detail: JobFitDetail;
+}) {
+  const drivers = buildKeyDrivers(detail);
+  const tags = buildSignalTags(detail);
+  return (
+    <div className="space-y-4 border-l-0 md:border-l md:border-ink-100 md:pl-4">
+      {summary ? (
+        <div data-our-read>
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Our read
+          </p>
+          <p className="mt-1.5 text-[14.5px] leading-[1.55] text-ink-800">{summary}</p>
+        </div>
+      ) : null}
+
+      {drivers.length > 0 ? (
+        <div data-key-drivers>
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Key drivers · the factors shaping this direction
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {drivers.map((d) => (
+              <li
+                key={d.pillar}
+                data-key-driver={d.pillar}
+                className="flex items-start gap-2 text-[12.5px] leading-[1.5] text-ink-700"
+              >
+                <span
+                  aria-hidden="true"
+                  className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-400"
+                />
+                <span>
+                  <span className="font-medium text-ink-900">{d.pillar}</span>
+                  <span className="text-ink-700"> · {d.text}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {tags.length > 0 ? (
+        <div data-signal-tags>
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Signal tags
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <span
+                key={t}
+                data-signal-tag={t}
+                className="rounded-full border border-lagoon-200 bg-lagoon-50 px-2.5 py-0.5 font-mono text-[10.5px] text-lagoon-800"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Build the "Key drivers" bullet list from per-pillar AI notes — each
+ * pillar contributes at most one bullet, and only when the AI actually
+ * wrote text for that pillar. The text is the AI's own `rationale` /
+ * `note`, truncated at ~130 chars on a word boundary so the column
+ * stays compact.
+ */
+function buildKeyDrivers(detail: JobFitDetail): { pillar: string; text: string }[] {
+  const out: { pillar: string; text: string }[] = [];
+  if (detail.role_match?.rationale) {
+    out.push({ pillar: "Role match", text: truncate(detail.role_match.rationale, 130) });
+  }
+  if (detail.market_demand?.note) {
+    out.push({ pillar: "Market demand", text: truncate(detail.market_demand.note, 130) });
+  }
+  if (detail.visa_employability?.note) {
+    out.push({ pillar: "Visa", text: truncate(detail.visa_employability.note, 130) });
+  }
+  if (detail.salary_realism?.note) {
+    out.push({ pillar: "Salary", text: truncate(detail.salary_realism.note, 130) });
+  }
+  return out.slice(0, 4);
+}
+
+/**
+ * Title-case a tag label coming from a free-form `category` string.
+ * Splits on whitespace, underscores, and hyphens so backend categories
+ * like `role_match` or `salary-feasibility` render as "Role Match" and
+ * "Salary Feasibility" without us inventing copy.
+ */
+function titleCaseTag(raw: string): string {
+  return raw
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/**
+ * Up to 5 short chip labels drawn from the AI's signal vocabulary:
+ *   1. Categories on `supporting_signals` (sorted by confidence) —
+ *      these come straight from the v3 schema and are already short
+ *      tag-style strings.
+ *   2. `market_demand.demand_signals` — used as a fallback when there
+ *      aren't enough distinct supporting-signal categories.
+ * De-duplicates case-insensitively and renders title-cased.
+ */
+function buildSignalTags(detail: JobFitDetail): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const tryAdd = (raw: string | undefined) => {
+    if (!raw) return;
+    const cased = titleCaseTag(raw.trim());
+    if (!cased) return;
+    const key = cased.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(cased);
+  };
+
+  const sigs = (detail.supporting_signals ?? [])
+    .slice()
+    .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+  for (const s of sigs) {
+    tryAdd(s.category);
+    if (out.length >= 5) return out;
+  }
+  for (const s of detail.market_demand?.demand_signals ?? []) {
+    tryAdd(s);
+    if (out.length >= 5) return out;
+  }
+  return out;
 }
 
 /**
