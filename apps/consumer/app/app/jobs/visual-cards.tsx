@@ -233,6 +233,266 @@ export function MarketDemandCard({ data }: { data: MarketDemandDetail }) {
   );
 }
 
+// ---- Compatibility-dashboard tiles (Role / Salary / Visa) ------------
+//
+// Each tile mirrors the structure of MarketDemandCard so the four grid
+// cells feel balanced. The chip list is built dynamically from:
+//   - card-specific structured fields the AI already returns
+//     (target role, gap, density, sponsor titles, market p50, etc.)
+//   - `supporting_signals` whose `category` matches the tile's domain
+// No hardcoded copy: if the AI returns nothing for a slot, the chip
+// simply doesn't appear.
+
+function toneFromScore(
+  score: number,
+): { border: string; bg: string; chip: string; bar: string; verdictText: string; verdict: string } {
+  if (score >= 70) {
+    return {
+      border: "border-success-300",
+      bg: "bg-success-50",
+      chip: "bg-success-100 text-success-800",
+      bar: "bg-success-500",
+      verdictText: "text-success-700",
+      verdict: "Strong",
+    };
+  }
+  if (score >= 50) {
+    return {
+      border: "border-gilt-300",
+      bg: "bg-gilt-50",
+      chip: "bg-gilt-100 text-gilt-800",
+      bar: "bg-gilt-500",
+      verdictText: "text-gilt-700",
+      verdict: "Workable",
+    };
+  }
+  return {
+    border: "border-danger-300",
+    bg: "bg-danger-50",
+    chip: "bg-danger-100 text-danger-800",
+    bar: "bg-danger-500",
+    verdictText: "text-danger-700",
+    verdict: "Stretched",
+  };
+}
+
+function pickSignalsByCategory(
+  signals: SupportingSignal[] | undefined,
+  patterns: readonly string[],
+  limit: number,
+): SupportingSignal[] {
+  if (!signals?.length) return [];
+  const norm = (s: string) => s.toLowerCase();
+  const matched = signals.filter((sig) => {
+    const cat = norm(sig.category ?? "");
+    return patterns.some((p) => cat.includes(p));
+  });
+  // Surface the strongest first so we don't hide the most credible signal.
+  matched.sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+  return matched.slice(0, limit);
+}
+
+function DashboardTile({
+  label,
+  score,
+  badge,
+  badgeTone = "subtle",
+  note,
+  chips,
+}: {
+  label: string;
+  score: number;
+  badge?: string;
+  /** "subtle" uses the score-tone chip palette, "neutral" stays grey. */
+  badgeTone?: "subtle" | "neutral";
+  note?: string | null;
+  /** Short signal phrases. Empty array → nothing rendered. */
+  chips: string[];
+}) {
+  const v = Math.max(0, Math.min(100, score));
+  const tone = toneFromScore(v);
+  const badgeClass =
+    badgeTone === "neutral"
+      ? "bg-white/70 text-ink-700"
+      : tone.chip;
+  return (
+    <div
+      data-fit-metric={label}
+      data-metric-tone={
+        v >= 70 ? "good" : v >= 50 ? "warn" : "bad"
+      }
+      className={`rounded-2xl border-2 ${tone.border} ${tone.bg} p-4 transition-shadow hover:shadow-sm`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+          {label}
+        </p>
+        {badge ? (
+          <span
+            className={`rounded-full px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] ${badgeClass}`}
+          >
+            {badge}
+          </span>
+        ) : null}
+      </div>
+      <p className={`mt-2 font-sans text-[24px] font-semibold tracking-tight ${tone.verdictText}`}>
+        {v}
+        <span className="ml-1 text-[12px] text-ink-500">/100</span>
+      </p>
+
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70">
+        <div className={`h-full ${tone.bar}`} style={{ width: `${v}%` }} />
+      </div>
+
+      <p className="mt-2 inline-block rounded-full bg-white/70 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-700">
+        {tone.verdict}
+      </p>
+
+      {note ? (
+        <p className="mt-2.5 text-[11.5px] leading-[1.45] text-ink-700">{note}</p>
+      ) : null}
+
+      {chips.length ? (
+        <div data-tile-signals className="mt-3 flex flex-wrap gap-1">
+          {chips.map((chip, i) => (
+            <span
+              key={`${chip}-${i}`}
+              className="rounded-full border border-white/80 bg-white/70 px-2 py-0.5 font-mono text-[10px] text-ink-700"
+            >
+              {chip}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Truncate a sentence to ~`max` chars without splitting a word, suffix
+ * with "…" if the original was longer. Keeps note/rationale chips
+ * compact without losing meaning.
+ */
+function truncate(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut) + "…";
+}
+
+const ROLE_CATEGORIES = ["role", "skill", "industry", "pathway"] as const;
+const SALARY_CATEGORIES = ["salary", "finance", "compensation", "demand"] as const;
+const VISA_CATEGORIES = ["visa", "sponsor"] as const;
+
+export function RoleMatchTile({
+  data,
+  alignedSkills,
+  signals,
+}: {
+  data: RoleMatchDetail;
+  /** Top-level aligned skills from the AI. Used to surface the most
+   *  credible "you already bring this" chip when present. */
+  alignedSkills?: { name: string }[];
+  signals?: SupportingSignal[];
+}) {
+  const conf = Math.round(data.confidence * 100);
+  const aiChips = pickSignalsByCategory(signals, ROLE_CATEGORIES, 3).map((s) =>
+    truncate(s.title, 48),
+  );
+  // Card-specific chips derived from structured AI fields. These are
+  // *not* hardcoded copy — they read from `data` and `alignedSkills`,
+  // both produced by the AI. We prefer these first so the tile always
+  // says something concrete when supporting_signals is sparse.
+  const structured: string[] = [];
+  if (data.target_role_inferred) {
+    structured.push(`Target: ${truncate(data.target_role_inferred, 40)}`);
+  }
+  const topAligned = alignedSkills?.[0]?.name;
+  if (topAligned) structured.push(`Aligned: ${truncate(topAligned, 32)}`);
+
+  // Final chip list: structured first, then AI signals, capped at 4.
+  const chips = [...structured, ...aiChips].slice(0, 4);
+
+  return (
+    <DashboardTile
+      label="Role match"
+      score={data.score}
+      badge={`conf ${conf}%`}
+      badgeTone="neutral"
+      note={data.rationale ? truncate(data.rationale, 130) : null}
+      chips={chips}
+    />
+  );
+}
+
+export function SalaryRealismTile({
+  data,
+  signals,
+}: {
+  data: SalaryRealismDetail;
+  signals?: SupportingSignal[];
+}) {
+  const gap = data.gap_pct;
+  const gapBadge = `gap ${gap > 0 ? "+" : ""}${gap}%`;
+  const aiChips = pickSignalsByCategory(signals, SALARY_CATEGORIES, 3).map((s) =>
+    truncate(s.title, 48),
+  );
+  // Structured chips derived from AI's salary fields.
+  const structured: string[] = [];
+  if (data.market_estimate?.p50) {
+    structured.push(
+      `Market p50: ${data.market_estimate.p50.toLocaleString()} ${data.market_estimate.currency}`,
+    );
+  }
+  // The "band" tag mirrors the chip palette of SalaryComparisonCard so
+  // the user's mental model stays consistent across the page.
+  if (Math.abs(gap) <= 10) structured.push("On-market band");
+  else if (Math.abs(gap) <= 25)
+    structured.push(gap > 0 ? "Slightly above market" : "Slightly below market");
+
+  const chips = [...structured, ...aiChips].slice(0, 4);
+
+  return (
+    <DashboardTile
+      label="Salary realism"
+      score={data.score}
+      badge={gapBadge}
+      note={data.note ? truncate(data.note, 130) : null}
+      chips={chips}
+    />
+  );
+}
+
+export function VisaEmployabilityTile({
+  data,
+  signals,
+}: {
+  data: VisaEmployabilityDetail;
+  signals?: SupportingSignal[];
+}) {
+  const density = densityFor(data.sponsor_friendly_employer_density);
+  const aiChips = pickSignalsByCategory(signals, VISA_CATEGORIES, 3).map((s) =>
+    truncate(s.title, 48),
+  );
+  const structured: string[] = [];
+  structured.push(`Sponsors: ${density.label}`);
+  const topTitle = data.typical_sponsor_titles?.[0];
+  if (topTitle) structured.push(`Hires: ${truncate(topTitle, 32)}`);
+
+  const chips = [...structured, ...aiChips].slice(0, 4);
+
+  return (
+    <DashboardTile
+      label="Visa employability"
+      score={data.score}
+      badge={data.sponsor_friendly_employer_density?.toString().toLowerCase()}
+      note={data.note ? truncate(data.note, 130) : null}
+      chips={chips}
+    />
+  );
+}
+
 // ---- Skill chip group (aligned / missing / transferable) -------------
 
 type SkillKind = "aligned" | "missing" | "transferable";

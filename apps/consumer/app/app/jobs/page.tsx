@@ -22,10 +22,13 @@ import {
   MarketDemandCard,
   padRisksToFour,
   RoleMatchCard,
+  RoleMatchTile,
   SalaryComparisonCard,
+  SalaryRealismTile,
   SectionLabel,
   SkillChipGroup,
   VisaEmployabilityCard,
+  VisaEmployabilityTile,
 } from "./visual-cards";
 import { JobPathwaysCard } from "./job-pathways-card";
 // Reuse generic finance card primitives (label-driven, not finance-specific).
@@ -105,23 +108,18 @@ export default async function JobFitPage() {
                   rationale={row.envelope.detail.role_match.rationale}
                 />
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                  <FitMetricCard
-                    label="Role match"
-                    value={row.envelope.detail.role_match.score}
-                    hint={row.envelope.detail.role_match.target_role_inferred}
-                    tone={row.envelope.detail.role_match.score >= 70 ? "good" : row.envelope.detail.role_match.score >= 50 ? "warn" : "bad"}
+                  <RoleMatchTile
+                    data={row.envelope.detail.role_match}
+                    alignedSkills={row.envelope.detail.aligned_skills}
+                    signals={row.envelope.detail.supporting_signals}
                   />
-                  <FitMetricCard
-                    label="Salary realism"
-                    value={row.envelope.detail.salary_realism.score}
-                    hint={`gap ${row.envelope.detail.salary_realism.gap_pct >= 0 ? "+" : ""}${row.envelope.detail.salary_realism.gap_pct}%`}
-                    tone={row.envelope.detail.salary_realism.score >= 70 ? "good" : row.envelope.detail.salary_realism.score >= 50 ? "warn" : "bad"}
+                  <SalaryRealismTile
+                    data={row.envelope.detail.salary_realism}
+                    signals={row.envelope.detail.supporting_signals}
                   />
-                  <FitMetricCard
-                    label="Visa employability"
-                    value={row.envelope.detail.visa_employability.score}
-                    hint={row.envelope.detail.visa_employability.sponsor_friendly_employer_density}
-                    tone={row.envelope.detail.visa_employability.score >= 70 ? "good" : row.envelope.detail.visa_employability.score >= 50 ? "warn" : "bad"}
+                  <VisaEmployabilityTile
+                    data={row.envelope.detail.visa_employability}
+                    signals={row.envelope.detail.supporting_signals}
                   />
                   {row.envelope.detail.market_demand ? (
                     <MarketDemandCard data={row.envelope.detail.market_demand} />
