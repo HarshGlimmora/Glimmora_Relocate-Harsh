@@ -16,9 +16,22 @@ export async function applyJobsPreferencesAction(input: {
   salary_max: number | null;
   salary_currency: string | null;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Server-side mirror of the UI's required-field validation. Even if a
+  // crafted client skips the disabled button, the AI prompt anchors
+  // every score on a target role — without it, market_demand /
+  // salary_realism / role_match all collapse to vague defaults. Refuse
+  // the call before patching the profile or burning a model invocation.
+  const targetRole = (input.target_role ?? "").trim();
+  if (targetRole.length === 0) {
+    return {
+      ok: false,
+      error: "Sharpen your career angle: a target role is required.",
+    };
+  }
   try {
     const { caseId } = await requirePrereqs();
     await patchProfile({
+      target_role: targetRole,
       industry: input.preferred_industry,
       work_preference: input.work_mode,
       needs_visa_sponsorship: input.needs_visa_sponsorship,
@@ -27,7 +40,7 @@ export async function applyJobsPreferencesAction(input: {
       priority_ranking: input.focus,
     });
     await jobfit.run(caseId, {
-      target_role: input.target_role ?? undefined,
+      target_role: targetRole,
       preferred_industry: input.preferred_industry ?? undefined,
       salary_range_min: input.salary_min ?? undefined,
       salary_range_max: input.salary_max ?? undefined,

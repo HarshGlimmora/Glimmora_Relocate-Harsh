@@ -20,6 +20,8 @@ export function ModulePanel({
   collapsible = false,
   defaultOpen = false,
   topSlot,
+  applyDisabled = false,
+  applyDisabledMessage,
 }: {
   title: string;
   hint?: string;
@@ -36,6 +38,13 @@ export function ModulePanel({
    *  the Job Fit page to inject AI-generated career-angle recommendations
    *  ahead of the form fields. */
   topSlot?: React.ReactNode;
+  /** When true, the Apply button is disabled. Use for client-side
+   *  validation (e.g. required fields empty). Pair with
+   *  `applyDisabledMessage` to explain why. */
+  applyDisabled?: boolean;
+  /** Inline copy shown next to the Apply button when it's disabled.
+   *  Visible to a11y as the button's `aria-describedby` target. */
+  applyDisabledMessage?: string;
 }) {
   const router = useRouter();
   const [pending, start] = React.useTransition();
@@ -44,6 +53,7 @@ export function ModulePanel({
   const [open, setOpen] = React.useState<boolean>(collapsible ? defaultOpen : true);
 
   function apply() {
+    if (applyDisabled || pending) return;
     setError(null);
     setApplied(false);
     start(async () => {
@@ -56,6 +66,10 @@ export function ModulePanel({
       router.refresh();
     });
   }
+
+  const disabledHintId = applyDisabledMessage
+    ? `panel-${testid ?? "module"}-disabled-hint`
+    : undefined;
 
   const isOpen = collapsible ? open : true;
 
@@ -151,16 +165,27 @@ export function ModulePanel({
           <div className={topSlot ? "mt-4 space-y-3" : "mt-3 space-y-3"}>
             {children}
           </div>
-          <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <button
               type="button"
               onClick={apply}
-              disabled={pending || !isOpen}
+              disabled={pending || !isOpen || applyDisabled}
               data-panel-apply
-              className="rounded-full bg-ink-900 px-4 py-2 text-[12.5px] font-medium text-parchment hover:bg-ink-800 disabled:opacity-50"
+              data-panel-apply-disabled={applyDisabled ? "true" : "false"}
+              aria-describedby={disabledHintId}
+              className="rounded-full bg-ink-900 px-4 py-2 text-[12.5px] font-medium text-parchment hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {pending ? busyLabel : applyLabel}
             </button>
+            {applyDisabled && applyDisabledMessage ? (
+              <p
+                id={disabledHintId}
+                data-panel-apply-hint
+                className="text-[12px] text-danger-700"
+              >
+                {applyDisabledMessage}
+              </p>
+            ) : null}
             {error ? (
               <p data-panel-error className="text-[12px] text-danger-700">
                 {error}
@@ -237,6 +262,8 @@ export function PanelInput({
   type = "text",
   min,
   max,
+  required = false,
+  error,
 }: {
   label: string;
   value: string;
@@ -245,10 +272,22 @@ export function PanelInput({
   type?: "text" | "number";
   min?: number;
   max?: number;
+  /** When true, the label gets a red asterisk and the input is marked
+   *  as required for a11y. Validation itself is owned by the caller. */
+  required?: boolean;
+  /** Inline validation message rendered under the input. The input gets
+   *  a danger border when this is truthy. */
+  error?: string | null;
 }) {
+  const hasError = Boolean(error);
   return (
     <label className="block">
-      <span className="block text-[11.5px] font-medium text-ink-700">{label}</span>
+      <span className="block text-[11.5px] font-medium text-ink-700">
+        {label}
+        {required ? (
+          <span aria-hidden="true" className="ml-0.5 text-danger-700">*</span>
+        ) : null}
+      </span>
       <input
         type={type}
         value={value}
@@ -256,8 +295,24 @@ export function PanelInput({
         placeholder={placeholder}
         min={min}
         max={max}
-        className="mt-1 w-full rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-[13px] focus:outline focus:outline-2 focus:outline-ink-900 focus:-outline-offset-2"
+        required={required}
+        aria-invalid={hasError ? true : undefined}
+        data-panel-input-error={hasError ? "true" : "false"}
+        className={
+          "mt-1 w-full rounded-lg border bg-white px-2.5 py-1.5 text-[13px] focus:outline focus:outline-2 focus:-outline-offset-2 " +
+          (hasError
+            ? "border-danger-400 focus:outline-danger-600"
+            : "border-ink-200 focus:outline-ink-900")
+        }
       />
+      {hasError ? (
+        <span
+          data-panel-input-message
+          className="mt-1 block text-[11.5px] text-danger-700"
+        >
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }

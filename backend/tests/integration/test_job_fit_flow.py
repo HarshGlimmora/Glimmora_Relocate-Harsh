@@ -67,13 +67,15 @@ async def test_successful_generation_for_each_persona(app_client, fixture) -> No
 
     d = env["detail"]
     assert 0 <= d["overall_job_fit_score"] <= 100
-    for k in ("role_match", "salary_realism", "visa_employability"):
+    for k in ("role_match", "salary_realism", "visa_employability", "market_demand"):
         assert k in d
-    sa = d["skill_alignment"]
-    for k in ("aligned", "missing", "transferable"):
-        assert k in sa
-    assert d["pathways"], "pathways must be non-empty"
+    for k in ("aligned_skills", "missing_skills", "transferable_skills"):
+        assert k in d, f"missing skill list: {k}"
+    assert d["job_pathways"], "job_pathways must be non-empty"
     assert d["estimated_time_to_offer_weeks"] >= 1
+    # Newer dashboard sections — the AI must populate both panels.
+    assert d.get("career_angle_recommendations"), "career_angle_recommendations required"
+    assert d.get("supporting_signals"), "supporting_signals required"
 
 
 # ---- 7. frontend-ready response shape --------------------------------------
@@ -126,12 +128,17 @@ async def test_frontend_response_shape_is_stable(app_client) -> None:
         "role_match",
         "salary_realism",
         "visa_employability",
-        "skill_alignment",
+        "market_demand",
+        "aligned_skills",
+        "missing_skills",
+        "transferable_skills",
         "inferred_target_roles",
-        "alternative_roles",
-        "pathways",
+        "alternate_roles",
+        "job_pathways",
         "estimated_time_to_offer_weeks",
         "key_gaps",
+        "career_angle_recommendations",
+        "supporting_signals",
     ):
         assert key in d, f"missing detail key: {key}"
 
@@ -350,7 +357,7 @@ async def test_alternative_roles_only_when_user_is_open(app_client) -> None:
     h1 = {"Authorization": f"Bearer {a1}"}
     await _seed_profile(client, h1, STRONG_MATCH)
     r_closed = await _run(client, h1, c1, STRONG_MATCH.run_body)
-    closed_alts = r_closed.json()["envelope"]["detail"]["alternative_roles"]
+    closed_alts = r_closed.json()["envelope"]["detail"]["alternate_roles"]
     assert closed_alts == []
 
     # open
@@ -358,7 +365,7 @@ async def test_alternative_roles_only_when_user_is_open(app_client) -> None:
     h2 = {"Authorization": f"Bearer {a2}"}
     await _seed_profile(client, h2, OPEN_TO_ROLE_CHANGE)
     r_open = await _run(client, h2, c2, OPEN_TO_ROLE_CHANGE.run_body)
-    open_alts = r_open.json()["envelope"]["detail"]["alternative_roles"]
+    open_alts = r_open.json()["envelope"]["detail"]["alternate_roles"]
     assert open_alts, "open_to_role_change=true should surface alternatives"
 
 

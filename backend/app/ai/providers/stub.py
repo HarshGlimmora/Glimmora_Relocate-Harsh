@@ -321,9 +321,9 @@ def _stub_job_fit_envelope(user_text: str) -> dict[str, Any]:
         },
     ]
 
-    alternative_roles = []
+    alternate_roles = []
     if open_to_role_change:
-        alternative_roles = [
+        alternate_roles = [
             {
                 "role": f"Senior {industry} Engineer",
                 "fit_score": 80,
@@ -339,6 +339,72 @@ def _stub_job_fit_envelope(user_text: str) -> dict[str, Any]:
     inferred_roles = [target_role]
     if current_role and current_role.lower() != target_role.lower():
         inferred_roles.append(current_role)
+
+    # Demand reading derived from seniority + visa friction; the level
+    # bucket follows the schema (low <40, medium 40–69, high ≥70).
+    demand_score = max(0, min(100, 50 + min(yrs, 10) * 3 - (15 if needs_visa else 0)))
+    demand_level = "high" if demand_score >= 70 else "medium" if demand_score >= 40 else "low"
+
+    career_angle = [
+        {
+            "title": f"Lead with {target_role} positioning",
+            "detail": (
+                f"Anchor your CV summary on {target_role} outcomes; recruiters in the "
+                "destination filter on title and industry first."
+            ),
+            "impact": "high",
+            "category": "positioning",
+        },
+        {
+            "title": "Close one named skills gap in 4 weeks",
+            "detail": (
+                "Pick the top missing skill, ship one public artifact (write-up, repo, "
+                "or talk) before applying — measurably lifts response rate."
+            ),
+            "impact": "medium",
+            "category": "skills",
+        },
+        {
+            "title": "Anchor salary asks to market p50",
+            "detail": (
+                f"Open negotiations at {market_p50} {currency} unless you have a competing "
+                "offer; offers below p50 still beat staying put."
+            ),
+            "impact": "medium" if abs(gap_pct) > 10 else "low",
+            "category": "salary",
+        },
+    ]
+
+    supporting = [
+        {
+            "title": f"{industry} hiring is steady",
+            "detail": (
+                f"Market demand for {target_role} sits at {demand_score}/100; vacancy "
+                "ratios in the destination support this seniority band."
+            ),
+            "confidence": 0.7,
+            "category": "demand",
+        },
+        {
+            "title": "Resume covers the core skill set",
+            "detail": (
+                f"{len(resume_skills) or 'Several'} listed skills map to common {target_role} "
+                "job descriptions; the gap is in evidence, not aptitude."
+            ),
+            "confidence": 0.6,
+            "category": "skills",
+        },
+        {
+            "title": "Visa pathway is navigable",
+            "detail": (
+                "Sponsor-friendly tier exists for this role; the pathway here is well-trodden."
+                if needs_visa
+                else "User does not require sponsorship — eliminates the largest hiring filter."
+            ),
+            "confidence": 0.65,
+            "category": "visa",
+        },
+    ]
 
     return {
         "status": "ready",
@@ -440,14 +506,25 @@ def _stub_job_fit_envelope(user_text: str) -> dict[str, Any]:
                     else "Sponsor-friendly tier exists; targeting the right employer matters."
                 ),
             },
-            "skill_alignment": {
-                "aligned": aligned,
-                "missing": missing,
-                "transferable": transferable,
+            "market_demand": {
+                "score": demand_score,
+                "level": demand_level,
+                "note": (
+                    f"Demand for {target_role} in the destination market reads {demand_level}; "
+                    f"score {demand_score}/100 reflects vacancy ratios at this seniority band."
+                ),
+                "demand_signals": [
+                    f"{industry} job postings steady",
+                    "sponsor-friendly tier active" if needs_visa else "broad employer pool",
+                    f"{yrs}+ yrs is the sweet spot",
+                ],
             },
+            "aligned_skills": aligned,
+            "missing_skills": missing,
+            "transferable_skills": transferable,
             "inferred_target_roles": inferred_roles[:5],
-            "alternative_roles": alternative_roles,
-            "pathways": pathways,
+            "alternate_roles": alternate_roles,
+            "job_pathways": pathways,
             "estimated_time_to_offer_weeks": pathways[0]["time_to_offer_weeks"],
             "key_gaps": [
                 {
@@ -457,6 +534,8 @@ def _stub_job_fit_envelope(user_text: str) -> dict[str, Any]:
                     "detail": "Most large employers run in English, but mid-size shops prefer local-language fluency.",
                 }
             ],
+            "career_angle_recommendations": career_angle,
+            "supporting_signals": supporting,
         },
     }
 

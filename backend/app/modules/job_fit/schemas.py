@@ -165,7 +165,17 @@ class SupportingSignal(BaseModel):
 
 
 class JobFitDetail(BaseModel):
-    """Strict job-fit artifact rendered by the frontend's Page 5."""
+    """Strict job-fit artifact rendered by the frontend's Page 5.
+
+    Field naming intentionally matches the consumer app's
+    `JobFitDetail` TS interface (`apps/consumer/lib/backend/types.ts`)
+    so the Next.js page can read fields directly without a transform
+    layer. Three lists were previously nested under
+    ``skill_alignment`` and have been flattened into top-level
+    ``aligned_skills`` / ``missing_skills`` / ``transferable_skills``;
+    ``alternative_roles`` and ``pathways`` were renamed to
+    ``alternate_roles`` and ``job_pathways`` for the same reason.
+    """
 
     overall_job_fit_score: int = Field(ge=0, le=100)
     role_match: RoleMatchDetail
@@ -173,15 +183,17 @@ class JobFitDetail(BaseModel):
     visa_employability: VisaEmployabilityDetail
     market_demand: MarketDemandDetail
 
-    skill_alignment: dict = Field(
-        description="{aligned: SkillItem[], missing: SkillItem[], transferable: TransferableSkill[]}"
+    aligned_skills: list[SkillItem] = Field(default_factory=list, max_length=10)
+    missing_skills: list[SkillItem] = Field(default_factory=list, max_length=10)
+    transferable_skills: list[TransferableSkill] = Field(
+        default_factory=list, max_length=10
     )
 
     inferred_target_roles: list[str] = Field(default_factory=list, max_length=5)
-    alternative_roles: list[AlternativeRole] = Field(
+    alternate_roles: list[AlternativeRole] = Field(
         default_factory=list, max_length=6
     )
-    pathways: list[JobPathway] = Field(min_length=1, max_length=4)
+    job_pathways: list[JobPathway] = Field(min_length=1, max_length=4)
 
     estimated_time_to_offer_weeks: int = Field(ge=1, le=104)
 

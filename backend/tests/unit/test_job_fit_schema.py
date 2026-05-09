@@ -7,13 +7,16 @@ from pydantic import ValidationError
 
 from app.modules.job_fit.schemas import (
     AlternativeRole,
+    CareerAngleRecommendation,
     JobFitDetail,
     JobPathway,
     KeyGap,
+    MarketDemandDetail,
     RoleMatchDetail,
     SalaryRange,
     SalaryRealismDetail,
     SkillItem,
+    SupportingSignal,
     TransferableSkill,
     VisaEmployabilityDetail,
 )
@@ -41,20 +44,24 @@ def _detail(**overrides) -> JobFitDetail:
             typical_sponsor_titles=["Senior Data Engineer"],
             note="OK.",
         ),
-        skill_alignment={
-            "aligned": [SkillItem(name="Python", why="On resume.").model_dump()],
-            "missing": [SkillItem(name="German A2", why="Often expected.").model_dump()],
-            "transferable": [
-                TransferableSkill(
-                    name="Airflow", transfers_to="Workflow orchestration", note="Maps."
-                ).model_dump()
-            ],
-        },
+        market_demand=MarketDemandDetail(
+            score=68,
+            level="medium",
+            note="Steady demand for senior data engineers in DE/NL hubs.",
+            demand_signals=["high vacancy ratio", "rising postings"],
+        ),
+        aligned_skills=[SkillItem(name="Python", why="On resume.")],
+        missing_skills=[SkillItem(name="German A2", why="Often expected.")],
+        transferable_skills=[
+            TransferableSkill(
+                name="Airflow", transfers_to="Workflow orchestration", note="Maps.",
+            )
+        ],
         inferred_target_roles=["Senior Data Engineer"],
-        alternative_roles=[
+        alternate_roles=[
             AlternativeRole(role="Analytics Engineer", fit_score=70, why="Adjacent.")
         ],
-        pathways=[
+        job_pathways=[
             JobPathway(
                 name="Direct sponsor pipeline",
                 steps=["List sponsors", "Apply 10/wk"],
@@ -71,6 +78,22 @@ def _detail(**overrides) -> JobFitDetail:
                 detail="Soft blocker.",
             )
         ],
+        career_angle_recommendations=[
+            CareerAngleRecommendation(
+                title="Lead with platform-engineering positioning",
+                detail="Anchor your CV summary on platform outcomes.",
+                impact="high",
+                category="positioning",
+            )
+        ],
+        supporting_signals=[
+            SupportingSignal(
+                title="Resume-skill coverage",
+                detail="Listed skills cover the core target requirements.",
+                confidence=0.7,
+                category="skills",
+            )
+        ],
     )
     base.update(overrides)
     return JobFitDetail.model_validate(base)
@@ -80,12 +103,12 @@ def test_valid_detail_constructs() -> None:
     d = _detail()
     assert d.overall_job_fit_score == 80
     assert d.role_match.target_role_inferred == "Senior Data Engineer"
-    assert d.pathways[0].time_to_offer_weeks == 12
+    assert d.job_pathways[0].time_to_offer_weeks == 12
 
 
 def test_pathways_must_be_non_empty() -> None:
     with pytest.raises(ValidationError):
-        _detail(pathways=[])
+        _detail(job_pathways=[])
 
 
 def test_score_ranges_enforced() -> None:

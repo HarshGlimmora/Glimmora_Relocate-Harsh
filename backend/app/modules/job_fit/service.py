@@ -68,11 +68,13 @@ class _ModelEnvelope(BaseModel):
 
 class JobFitService:
     PROMPT_NAME = "job_fit"
-    # v2 = stricter schema (market_demand, career_angle_recommendations,
-    # supporting_signals required) + Country/Finance/Visa handoff guidance.
-    # Bumping this also busts cached envelopes because PROMPT_VERSION is
-    # part of the natural input hash below.
-    PROMPT_VERSION = "v2"
+    # v3 = detail field names flattened/renamed to match the consumer-app
+    # frontend types (aligned_skills/missing_skills/transferable_skills,
+    # alternate_roles, job_pathways). The prior v2 nested skills under
+    # skill_alignment which the page never read — leaving the skill
+    # panel blank in the UI. Bumping this also busts cached envelopes
+    # because PROMPT_VERSION is part of the natural input hash below.
+    PROMPT_VERSION = "v3"
 
     def __init__(
         self,

@@ -85,8 +85,18 @@ export function JobsPreferencesPanel({
   const [salaryMin, setSalaryMin] = React.useState(initialSalaryMin);
   const [salaryMax, setSalaryMax] = React.useState(initialSalaryMax);
   const [currency, setCurrency] = React.useState(initialCurrency || "EUR");
+  const [showRoleError, setShowRoleError] = React.useState(false);
 
   const recCount = recommendations?.length ?? 0;
+  const trimmedTargetRole = targetRole.trim();
+  // Career-angle gate: the AI needs a target role to anchor every score
+  // (role match, salary realism, market demand). An empty value would
+  // either fail the prompt or produce a generic, unanchored read — so
+  // we block both UI-side (this flag) and request-side (in the action).
+  const targetRoleMissing = trimmedTargetRole.length === 0;
+  const targetRoleError = showRoleError && targetRoleMissing
+    ? "Sharpen your career angle: enter a target role to run the analysis."
+    : null;
 
   return (
     <ModulePanel
@@ -104,9 +114,22 @@ export function JobsPreferencesPanel({
           <CareerAngleBlock recommendations={recommendations!} />
         ) : null
       }
+      applyDisabled={targetRoleMissing}
+      applyDisabledMessage={
+        targetRoleMissing
+          ? "Enter a target role above to enable the analysis."
+          : undefined
+      }
       onApply={async () => {
+        if (targetRoleMissing) {
+          setShowRoleError(true);
+          return {
+            ok: false,
+            error: "Target role is required before running the analysis.",
+          };
+        }
         return applyJobsPreferencesAction({
-          target_role: targetRole.trim() || null,
+          target_role: trimmedTargetRole,
           preferred_industry: industry.trim() || null,
           work_mode: workMode,
           needs_visa_sponsorship: needsSponsorship,
@@ -124,8 +147,13 @@ export function JobsPreferencesPanel({
       <PanelInput
         label="Target role"
         value={targetRole}
-        onChange={setTargetRole}
+        onChange={(v) => {
+          setTargetRole(v);
+          if (v.trim().length > 0) setShowRoleError(false);
+        }}
         placeholder="Senior backend engineer"
+        required
+        error={targetRoleError}
       />
       <PanelInput
         label="Preferred industry"
