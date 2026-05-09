@@ -80,13 +80,19 @@ export default async function VisaPage() {
           <FailedValueLead envelope={row.envelope} />
         )}
 
-        <VisaPreferencesPanel
-          initialNationality={profile.nationality ?? ""}
-          initialCurrentVisaStatus={profile.current_visa_status ?? ""}
-          initialSponsorRequired={profile.needs_visa_sponsorship ?? true}
-          initialFamilyRelocation={false}
-          initialEmployment={"employed"}
-        />
+        {/* Floating "primary input step" — the panel sits above the
+            analysis output with a soft elevation and a subtle negative
+            margin so it overlaps whatever renders next. The user
+            should perceive this as the gate for the AI analysis. */}
+        <div className="relative z-10 -mb-3 md:-mb-5">
+          <VisaPreferencesPanel
+            initialNationality={profile.nationality ?? ""}
+            initialCurrentVisaStatus={profile.current_visa_status ?? ""}
+            initialSponsorRequired={profile.needs_visa_sponsorship ?? true}
+            initialFamilyRelocation={false}
+            initialEmployment={"employed"}
+          />
+        </div>
 
         {!isReadyEnvelope(row.envelope) ? (
           <FailedEnvelopeView envelope={row.envelope} />

@@ -24,6 +24,8 @@ const EMPLOYMENT_OPTIONS: { id: Employment; label: string }[] = [
   { id: "unemployed", label: "Between jobs" },
 ];
 
+const ISO2_RE = /^[A-Z]{2}$/;
+
 export function VisaPreferencesPanel({
   initialNationality,
   initialCurrentVisaStatus,
@@ -42,19 +44,46 @@ export function VisaPreferencesPanel({
   const [sponsorRequired, setSponsorRequired] = React.useState(initialSponsorRequired);
   const [familyRelocation, setFamilyRelocation] = React.useState(initialFamilyRelocation);
   const [employment, setEmployment] = React.useState<Employment>(initialEmployment);
+  const [showValidation, setShowValidation] = React.useState(false);
+
+  // Required-input gate: nationality drives the route the AI picks.
+  // Without a valid ISO-2 code the visa analysis can't anchor (it would
+  // fall back to the profile silently and produce a misleading route).
+  // Mirror this server-side in actions.ts so a crafted client can't
+  // bypass it.
+  const trimmedNationality = nationality.trim().toUpperCase().slice(0, 2);
+  const nationalityValid = ISO2_RE.test(trimmedNationality);
+  const nationalityError =
+    showValidation && !nationalityValid
+      ? trimmedNationality.length === 0
+        ? "Please confirm your nationality before continuing with the analysis."
+        : "Nationality must be a 2-letter ISO code (e.g. IN, DE, US)."
+      : null;
 
   return (
     <ModulePanel
       testid="visa"
       title="Confirm what you have on paper"
       hint="The route changes a lot based on passport, employment, and whether family is coming. Adjust and we'll re-run the visa direction."
+      elevated
+      applyLabel="Confirm & analyze"
+      applyDisabled={!nationalityValid}
+      applyDisabledMessage={
+        !nationalityValid
+          ? "Confirm your nationality (ISO-2) before running the analysis."
+          : undefined
+      }
       onApply={async () => {
-        const upper = nationality.toUpperCase().slice(0, 2);
-        if (!/^[A-Z]{2}$/.test(upper)) {
-          return { ok: false, error: "Nationality must be a 2-letter ISO code (e.g. IN)." };
+        if (!nationalityValid) {
+          setShowValidation(true);
+          return {
+            ok: false,
+            error:
+              "Please confirm your details before continuing with the analysis.",
+          };
         }
         return applyVisaPreferencesAction({
-          nationality: upper,
+          nationality: trimmedNationality,
           current_visa_status: status.trim() || null,
           sponsor_required: sponsorRequired,
           family_relocation: familyRelocation,
@@ -65,8 +94,15 @@ export function VisaPreferencesPanel({
       <PanelInput
         label="Nationality (ISO-2)"
         value={nationality}
-        onChange={setNationality}
+        onChange={(v) => {
+          setNationality(v);
+          if (ISO2_RE.test(v.trim().toUpperCase().slice(0, 2))) {
+            setShowValidation(false);
+          }
+        }}
         placeholder="IN"
+        required
+        error={nationalityError}
       />
       <PanelInput
         label="Current visa / residence status"

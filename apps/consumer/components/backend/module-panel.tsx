@@ -22,6 +22,7 @@ export function ModulePanel({
   topSlot,
   applyDisabled = false,
   applyDisabledMessage,
+  elevated = false,
 }: {
   title: string;
   hint?: string;
@@ -45,6 +46,11 @@ export function ModulePanel({
   /** Inline copy shown next to the Apply button when it's disabled.
    *  Visible to a11y as the button's `aria-describedby` target. */
   applyDisabledMessage?: string;
+  /** When true, the panel renders as a "primary input step" with a
+   *  thicker border + soft elevation shadow. Pair with a wrapper
+   *  `<div className="relative z-10 -mb-…">` in the page if you also
+   *  want it to overlap the next section. */
+  elevated?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = React.useTransition();
@@ -78,7 +84,13 @@ export function ModulePanel({
       data-module-panel={testid}
       data-module-panel-collapsible={collapsible ? "true" : "false"}
       data-module-panel-open={isOpen ? "true" : "false"}
-      className="rounded-2xl border border-ink-200 bg-white p-5 transition-shadow"
+      data-module-panel-elevated={elevated ? "true" : "false"}
+      className={
+        "rounded-2xl bg-white p-5 transition-shadow " +
+        (elevated
+          ? "border-2 border-ink-300 shadow-[0_18px_40px_-20px_rgba(15,23,42,0.25)] hover:shadow-[0_22px_48px_-22px_rgba(15,23,42,0.30)]"
+          : "border border-ink-200")
+      }
     >
       {/* Header — clickable when collapsible */}
       {collapsible ? (
