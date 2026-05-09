@@ -8,9 +8,11 @@ import {
 } from "@/components/backend/envelope-shell";
 import { framingFor } from "@/lib/intent";
 import { CountryDecisionBoard } from "./decision-board";
-import type {
-  ShortlistResponse,
-  ShortlistWeights,
+import {
+  isSupportedShortlistCode,
+  SHORTLIST_MAX,
+  type ShortlistResponse,
+  type ShortlistWeights,
 } from "@/lib/backend/types";
 
 export const metadata: Metadata = { title: "Country comparison" };
@@ -23,22 +25,25 @@ export default async function CountryPage() {
 
   // Build the initial shortlist: target_country first, then alternatives
   // from the profile, then fallback destinations to fill to at least 3.
+  // Skip codes the backend's curated dataset doesn't support — sending
+  // them would 400 the shortlist call and produce an empty board.
   const seen = new Set<string>();
   const initialShortlist: string[] = [];
   const push = (c: string | null | undefined) => {
     if (!c) return;
     const upper = c.toUpperCase();
     if (seen.has(upper)) return;
+    if (!isSupportedShortlistCode(upper)) return;
     seen.add(upper);
     initialShortlist.push(upper);
   };
   push(profile.target_country);
   for (const alt of profile.alternatives ?? []) {
-    if (initialShortlist.length >= 3) break;
+    if (initialShortlist.length >= SHORTLIST_MAX) break;
     push(alt);
   }
   for (const fb of FALLBACK_DESTINATIONS) {
-    if (initialShortlist.length >= 3) break;
+    if (initialShortlist.length >= SHORTLIST_MAX) break;
     push(fb);
   }
 

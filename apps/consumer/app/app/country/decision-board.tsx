@@ -18,6 +18,8 @@ import {
 import { COUNTRIES, countryName } from "@/lib/countries";
 import {
   SHORTLIST_MAX,
+  SHORTLIST_MIN,
+  SUPPORTED_SHORTLIST_CODES,
   type ShortlistComparisonSeries,
   type ShortlistDimensionWinner,
   type ShortlistRankedCountry,
@@ -33,9 +35,7 @@ import {
 type Lever = "career" | "cost" | "family" | "lifestyle" | "speed";
 
 const ADD_OPTIONS = COUNTRIES.filter((c) =>
-  ["DE", "NL", "IE", "GB", "FR", "ES", "PT", "IT", "SE", "CH", "EE",
-   "CA", "US", "AU", "NZ", "AE", "QA", "SA", "IL", "SG", "JP", "KR",
-   "HK", "MY"].includes(c.code),
+  SUPPORTED_SHORTLIST_CODES.includes(c.code),
 );
 
 export function CountryDecisionBoard({
@@ -65,13 +65,35 @@ export function CountryDecisionBoard({
   );
   const [expandedCode, setExpandedCode] = React.useState<string | null>(null);
 
+  // Track the latest fired request so out-of-order responses don't
+  // overwrite a fresher result with a stale one (e.g. user toggles
+  // weights faster than the action returns).
+  const requestSeq = React.useRef(0);
+
   React.useEffect(() => {
-    if (shortlist.length < 2) return;
+    if (shortlist.length < SHORTLIST_MIN) {
+      // Drop any prior board so the empty state shows cleanly.
+      setResponse(null);
+      setError(null);
+      return;
+    }
     setError(null);
+    const mySeq = ++requestSeq.current;
+    const snapshot = [...shortlist];
     start(async () => {
-      const r = await runShortlistAction({ countries: shortlist, weights });
+      const r = await runShortlistAction({ countries: snapshot, weights });
+      if (mySeq !== requestSeq.current) return;
       if (!r.ok) {
         setError(r.error);
+        return;
+      }
+      // Defence in depth: the backend now refuses to silently drop
+      // unknown codes, but if a future regression slips through, surface
+      // it instead of rendering an incomplete board.
+      if (r.data.countries.length !== snapshot.length) {
+        setError(
+          `Backend returned ${r.data.countries.length} ranked countries for ${snapshot.length} selected — please retry.`,
+        );
         return;
       }
       setResponse(r.data);
@@ -84,7 +106,6 @@ export function CountryDecisionBoard({
   }
 
   function removeCountry(code: string) {
-    if (shortlist.length <= 2) return;
     setShortlist((c) => c.filter((x) => x !== code));
     setShortlistMessage(null);
     if (expandedCode === code) setExpandedCode(null);
@@ -101,6 +122,15 @@ export function CountryDecisionBoard({
     setShortlist((c) => [...c, code]);
     setShortlistMessage(null);
     setAdding(false);
+  }
+
+  function clearAll() {
+    setShortlist([]);
+    setResponse(null);
+    setError(null);
+    setShortlistMessage(null);
+    setExpandedCode(null);
+    setAdding(true); // open the picker so the user can rebuild immediately
   }
 
   async function pinShortlist() {
@@ -122,6 +152,8 @@ export function CountryDecisionBoard({
     setExpandedCode((cur) => (cur === code ? null : code));
   }
 
+  const belowMin = shortlist.length < SHORTLIST_MIN;
+
   return (
     <div className="space-y-5" data-country-decision-board>
       <ShortlistRow
@@ -137,6 +169,7 @@ export function CountryDecisionBoard({
           setShortlistMessage(null);
           setAdding((v) => !v);
         }}
+        onClear={clearAll}
         addOpen={adding}
         message={shortlistMessage}
       />
@@ -148,51 +181,133 @@ export function CountryDecisionBoard({
         />
       ) : null}
 
-      <WeightsRow weights={weights} onSet={setLever} pending={pending} />
+      {!belowMin ? (
+        <WeightsRow weights={weights} onSet={setLever} pending={pending} />
+      ) : null}
 
       {error ? (
-        <div className="rounded-xl bg-danger-50 p-3 text-[12.5px] text-danger-800">
+        <div
+          data-shortlist-error
+          className="rounded-xl bg-danger-50 p-3 text-[12.5px] text-danger-800"
+        >
           {error}
         </div>
       ) : null}
 
-      {response ? (
-        <>
+      {belowMin ? (
+        <ShortlistEmptyState
+          count={shortlist.length}
+          onPick={() => setAdding(true)}
+        />
+      ) : pending && !response ? (
+        <ShortlistSkeleton count={shortlist.length} />
+      ) : response ? (
+        <div data-shortlist-pending={pending ? "true" : "false"}>
           <FingerprintBadge
             style={response.fingerprint.style}
             label={response.fingerprint.label}
             oneLine={response.fingerprint.one_line}
             weights={response.fingerprint.weight_distribution}
           />
-          <RankingBoard
-            ranked={response.countries}
-            expandedCode={expandedCode}
-            onToggle={toggleExpanded}
-          />
-          <ComparisonChart
-            dimensionLabels={response.dimension_labels}
-            series={response.comparison_series}
-          />
-          <DimensionWinnersPanel winners={response.dimension_winners} />
-          <SwitchabilityPanel
-            counterfactuals={response.counterfactuals}
-            switchability={response.switchability}
-          />
+          <div className="mt-5">
+            <RankingBoard
+              ranked={response.countries}
+              expandedCode={expandedCode}
+              onToggle={toggleExpanded}
+            />
+          </div>
+          <div className="mt-5">
+            <ComparisonChart
+              dimensionLabels={response.dimension_labels}
+              series={response.comparison_series}
+            />
+          </div>
+          <div className="mt-5">
+            <DimensionWinnersPanel winners={response.dimension_winners} />
+          </div>
+          <div className="mt-5">
+            <SwitchabilityPanel
+              counterfactuals={response.counterfactuals}
+              switchability={response.switchability}
+            />
+          </div>
           {response.transitions.length ? (
-            <TransitionBoard transitions={response.transitions} />
+            <div className="mt-5">
+              <TransitionBoard transitions={response.transitions} />
+            </div>
           ) : null}
-          <FinalCard
-            final={response.final}
-            sourceMeta={response.source}
-            assumptions={response.assumptions}
-            onPin={pinShortlist}
-            pending={pending}
-          />
-        </>
-      ) : pending ? (
-        <p className="text-[13px] text-ink-500">Scoring shortlist…</p>
+          <div className="mt-5">
+            <FinalCard
+              final={response.final}
+              sourceMeta={response.source}
+              assumptions={response.assumptions}
+              onPin={pinShortlist}
+              pending={pending}
+            />
+          </div>
+        </div>
       ) : null}
     </div>
+  );
+}
+
+function ShortlistEmptyState({
+  count,
+  onPick,
+}: {
+  count: number;
+  onPick: () => void;
+}) {
+  return (
+    <section
+      data-shortlist-empty
+      data-shortlist-count={count}
+      className="rounded-2xl border border-dashed border-ink-300 bg-white p-6 text-center"
+    >
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
+        Pick at least {SHORTLIST_MIN} countries
+      </p>
+      <p className="mt-2 text-[14px] text-ink-700">
+        {count === 0
+          ? "Your shortlist is empty. Add countries to start the comparison."
+          : `Add ${SHORTLIST_MIN - count} more country to compare.`}
+      </p>
+      <button
+        type="button"
+        onClick={onPick}
+        data-shortlist-empty-cta
+        className="mt-3 rounded-full bg-ink-900 px-4 py-1.5 text-[12px] text-parchment hover:bg-ink-800"
+      >
+        + Add country
+      </button>
+    </section>
+  );
+}
+
+function ShortlistSkeleton({ count }: { count: number }) {
+  return (
+    <section
+      data-shortlist-skeleton
+      aria-busy="true"
+      aria-live="polite"
+      className="space-y-3"
+    >
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
+        Scoring {count} {count === 1 ? "country" : "countries"}…
+      </p>
+      <div className="h-12 animate-pulse rounded-2xl bg-ink-100/70" />
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="space-y-2 rounded-2xl border border-ink-200 bg-white p-4"
+        >
+          <div className="h-4 w-1/3 animate-pulse rounded bg-ink-100" />
+          <div className="h-3 w-1/2 animate-pulse rounded bg-ink-100/80" />
+          <div className="h-2.5 w-full animate-pulse rounded bg-ink-100/60" />
+        </div>
+      ))}
+      <div className="h-32 animate-pulse rounded-2xl bg-ink-100/40" />
+    </section>
   );
 }
 
@@ -202,12 +317,14 @@ function ShortlistRow({
   codes,
   onRemove,
   onAddRequested,
+  onClear,
   addOpen,
   message,
 }: {
   codes: string[];
   onRemove: (code: string) => void;
   onAddRequested: () => void;
+  onClear: () => void;
   addOpen: boolean;
   message: string | null;
 }) {
@@ -217,36 +334,49 @@ function ShortlistRow({
       data-country-shortlist
       data-shortlist-cap={SHORTLIST_MAX}
       data-shortlist-at-cap={atCap ? "true" : "false"}
+      data-shortlist-count={codes.length}
       className="rounded-2xl border border-ink-200 bg-white p-3"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
           Shortlist · {codes.length}/{SHORTLIST_MAX}
         </p>
-        <button
-          type="button"
-          onClick={onAddRequested}
-          data-add-country
-          aria-disabled={atCap && !addOpen}
-          className={
-            "rounded-full border px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.18em] " +
-            (atCap && !addOpen
-              ? "cursor-not-allowed border-ink-200 text-ink-400"
-              : "border-ink-200 text-ink-700 hover:border-ink-400")
-          }
-        >
-          {addOpen ? "Cancel" : "+ Add country"}
-        </button>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {codes.map((code) => (
-          <span
-            key={code}
-            data-shortlist-code={code}
-            className="inline-flex items-center gap-2 rounded-full border border-ink-300 bg-parchment/40 px-3 py-1 text-[12.5px] text-ink-900"
+        <div className="flex items-center gap-1.5">
+          {codes.length > 0 ? (
+            <button
+              type="button"
+              onClick={onClear}
+              data-shortlist-clear
+              className="rounded-full border border-ink-200 px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-700 hover:border-danger-400 hover:text-danger-700"
+            >
+              Clear all
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onAddRequested}
+            data-add-country
+            aria-disabled={atCap && !addOpen}
+            className={
+              "rounded-full border px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.18em] " +
+              (atCap && !addOpen
+                ? "cursor-not-allowed border-ink-200 text-ink-400"
+                : "border-ink-200 text-ink-700 hover:border-ink-400")
+            }
           >
-            <span>{countryName(code)}</span>
-            {codes.length > 2 ? (
+            {addOpen ? "Cancel" : "+ Add country"}
+          </button>
+        </div>
+      </div>
+      {codes.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {codes.map((code) => (
+            <span
+              key={code}
+              data-shortlist-code={code}
+              className="inline-flex items-center gap-2 rounded-full border border-ink-300 bg-parchment/40 px-3 py-1 text-[12.5px] text-ink-900"
+            >
+              <span>{countryName(code)}</span>
               <button
                 type="button"
                 onClick={() => onRemove(code)}
@@ -256,10 +386,17 @@ function ShortlistRow({
               >
                 ×
               </button>
-            ) : null}
-          </span>
-        ))}
-      </div>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p
+          data-shortlist-empty-row
+          className="mt-2 font-mono text-[10.5px] text-ink-500"
+        >
+          No countries selected.
+        </p>
+      )}
       {message ? (
         <p
           data-shortlist-message

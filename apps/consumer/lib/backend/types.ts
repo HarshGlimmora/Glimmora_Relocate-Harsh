@@ -144,6 +144,27 @@ export interface ShortlistRequest {
  *  the backend's `shortlist_schemas.py`. */
 export const SHORTLIST_MAX = 3;
 
+/** Minimum number of countries the backend requires to score a board. */
+export const SHORTLIST_MIN = 2;
+
+/**
+ * ISO-2 codes the backend's curated shortlist dataset can score. Mirrors
+ * the keys of `COUNTRY_METRICS` in
+ * `backend/app/modules/country_comparison/shortlist_data.py`. The backend
+ * now returns 400 when an unsupported code is sent — keep this list in
+ * sync so the picker can't submit codes the engine will reject.
+ */
+export const SUPPORTED_SHORTLIST_CODES: readonly string[] = [
+  "DE", "NL", "IE", "GB", "FR", "ES", "PT", "IT", "SE", "CH", "EE",
+  "CA", "US", "AU", "NZ", "AE", "QA", "SA", "IL", "SG", "JP", "KR",
+  "HK", "MY", "IN", "PK", "BR", "ZA", "NG", "TR", "EG", "PH",
+];
+
+export function isSupportedShortlistCode(code: string | null | undefined): boolean {
+  if (!code) return false;
+  return SUPPORTED_SHORTLIST_CODES.includes(code.toUpperCase());
+}
+
 export interface ShortlistScoreBreakdown {
   job_market: number;
   salary_power: number;
