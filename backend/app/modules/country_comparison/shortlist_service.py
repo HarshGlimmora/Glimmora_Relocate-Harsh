@@ -25,6 +25,7 @@ from __future__ import annotations
 import logging
 from typing import Iterable
 
+from app.middleware.error_handler import BadRequest
 from app.modules.country_comparison.shortlist_data import (
     COUNTRY_METRICS,
     LAST_UPDATED,
@@ -826,17 +827,33 @@ def compute_shortlist(
     *,
     origin_country_code: str | None = None,
 ) -> ShortlistResponse:
-    """Score, rank, and explain a 2–3 country shortlist with full drilldowns."""
+    """Score, rank, and explain a 2–3 country shortlist with full drilldowns.
+
+    Invariant: the returned `countries` list contains exactly one ranked
+    entry per code in `request.countries` — no silent drops. If any code
+    is not in the curated dataset, raise BadRequest with the offending
+    codes so the frontend can prompt the user instead of rendering an
+    incomplete board.
+    """
     metrics = _resolve_metrics(request.countries)
+    if len(metrics) != len(request.countries):
+        # _resolve_metrics already raised on unknown codes — this guards
+        # against future de-dup logic landing here without surfacing.
+        resolved = {m.code for m in metrics}
+        missing = [c for c in request.countries if c.upper() not in resolved]
+        raise BadRequest(
+            "Some countries in the shortlist are not supported.",
+            details={"unsupported_codes": missing},
+        )
     if len(metrics) < 2:
-        raise ValueError(
-            "Need at least 2 known countries in the shortlist; got "
-            f"{len(metrics)} after resolving."
+        raise BadRequest(
+            "Pick at least 2 countries to compare.",
+            details={"countries": request.countries},
         )
     if len(metrics) > SHORTLIST_MAX:
-        raise ValueError(
-            f"Shortlist exceeds the {SHORTLIST_MAX}-country cap; "
-            "remove a country first."
+        raise BadRequest(
+            f"Shortlist exceeds the {SHORTLIST_MAX}-country cap; remove a country first.",
+            details={"max": SHORTLIST_MAX, "got": len(metrics)},
         )
 
     weights = _normalize_weights(request.weights)
@@ -910,11 +927,30 @@ def compute_shortlist(
 
 
 def _resolve_metrics(codes: Iterable[str]) -> list[CountryMetrics]:
+    """Resolve every code or fail loudly.
+
+    Previous behaviour silently dropped unknown codes, which produced
+    response.countries of length 2 when the user submitted 3 — the
+    "selected 3, only 2 analysed" symptom on the frontend. Surfacing
+    the unknown codes lets the API contract stay strict (1 input → 1
+    ranked output) and gives the UI something concrete to render.
+    """
     out: list[CountryMetrics] = []
+    missing: list[str] = []
     for c in codes:
-        m = COUNTRY_METRICS.get(c.upper())
+        up = c.upper()
+        m = COUNTRY_METRICS.get(up)
         if m is None:
-            logger.info("shortlist: skipping unknown country code %r", c)
+            missing.append(up)
             continue
         out.append(m)
+    if missing:
+        logger.info("shortlist: rejecting unknown country codes %r", missing)
+        raise BadRequest(
+            "Some countries in the shortlist are not supported.",
+            details={
+                "unsupported_codes": missing,
+                "supported_codes": sorted(COUNTRY_METRICS.keys()),
+            },
+        )
     return out

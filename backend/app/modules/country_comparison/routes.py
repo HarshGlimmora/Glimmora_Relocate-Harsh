@@ -16,7 +16,9 @@ from app.deps import CurrentUser, SessionDep
 from app.middleware.error_handler import NotFound
 from app.modules.country_comparison.schemas import CountryComparisonInputs
 from app.modules.country_comparison.service import CountryComparisonService
+from app.modules.country_comparison.shortlist_data import COUNTRY_METRICS
 from app.modules.country_comparison.shortlist_schemas import (
+    SHORTLIST_MAX,
     ShortlistRequest,
     ShortlistResponse,
 )
@@ -62,6 +64,25 @@ async def history(
         user_id=user.id, case_id=case_id
     )
     return {"items": items, "count": len(items)}
+
+
+@router.get("/supported-countries")
+async def supported_countries(case_id: str, user: CurrentUser) -> dict:
+    """List the countries the shortlist engine can score.
+
+    The frontend uses this to keep its picker in sync with the backend's
+    curated dataset — picking a code outside this list otherwise hits the
+    400 from `compute_shortlist`. Path holds `case_id` for permission
+    parity with the rest of the surface; auth has already validated it.
+    """
+    _ = case_id
+    _ = user
+    items = sorted(
+        ({"code": m.code, "name": m.name, "region": m.region}
+         for m in COUNTRY_METRICS.values()),
+        key=lambda x: x["name"],
+    )
+    return {"items": items, "count": len(items), "max_shortlist": SHORTLIST_MAX}
 
 
 @router.post("/shortlist", response_model=ShortlistResponse)
