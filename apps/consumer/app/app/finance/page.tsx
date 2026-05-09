@@ -3,21 +3,29 @@ import Link from "next/link";
 import { finance } from "@/lib/backend/client";
 import { requirePrereqs } from "@/lib/backend/page-helpers";
 import {
-  AssumptionsList,
   EnvelopeMeta,
   FailedEnvelopeView,
   isReadyEnvelope,
-  NextActionsList,
   PageHeader,
-  RisksList,
-  ScoreCard,
-  SummaryReasoning,
   ValueLead,
   FailedValueLead,
   readyOrNull,
 } from "@/components/backend/envelope-shell";
 import { framingFor } from "@/lib/intent";
 import { FinanceSensitivityPanel } from "./finance-panel";
+import { AssumptionsCard } from "./assumptions-card";
+import { NextActionsCard } from "./next-actions-card";
+import {
+  AffordabilityScoreCard,
+  CostBreakdownCard,
+  FXNoteCard,
+  KeyMetricCard,
+  MoneyFlowCard,
+  ReasoningCard,
+  RiskFlagCard,
+  RisksCard,
+  SectionLabel,
+} from "./visual-cards";
 
 export const metadata: Metadata = { title: "Financial feasibility" };
 export const dynamic = "force-dynamic";
@@ -78,97 +86,87 @@ export default async function FinancePage() {
           <FailedEnvelopeView envelope={row.envelope} />
         ) : (
           <>
-            <SummaryReasoning envelope={row.envelope} />
-
-            <section className="grid gap-4 md:grid-cols-4">
-              <ScoreCard label="Affordability" value={row.envelope.detail.affordability_score} />
-              <Stat label="Surplus / month" value={`${row.envelope.detail.surplus_or_deficit_monthly.toLocaleString()} ${row.envelope.detail.monthly_net.currency}`} />
-              <Stat label="Salary / expense" value={row.envelope.detail.salary_to_expense_ratio.toFixed(2) + "×"} />
-              <Stat label="Savings runway" value={`${row.envelope.detail.savings_runway_months} mo`} />
+            {/* Headline metrics — visual score plus the three numerical anchors */}
+            <section>
+              <SectionLabel>The four numbers that matter</SectionLabel>
+              <div className="grid gap-3 md:grid-cols-4">
+                <AffordabilityScoreCard value={row.envelope.detail.affordability_score} />
+                <KeyMetricCard
+                  label="Surplus / month"
+                  value={`${row.envelope.detail.surplus_or_deficit_monthly >= 0 ? "+" : ""}${row.envelope.detail.surplus_or_deficit_monthly.toLocaleString()}`}
+                  unit={row.envelope.detail.monthly_net.currency}
+                  tone={row.envelope.detail.surplus_or_deficit_monthly < 0 ? "bad" : row.envelope.detail.surplus_or_deficit_monthly < 200 ? "warn" : "good"}
+                  hint={row.envelope.detail.surplus_or_deficit_monthly < 0 ? "Cash burn — costs exceed take-home" : "Buffer left over after monthly costs"}
+                />
+                <KeyMetricCard
+                  label="Salary / expense"
+                  value={row.envelope.detail.salary_to_expense_ratio.toFixed(2)}
+                  unit="×"
+                  tone={row.envelope.detail.salary_to_expense_ratio >= 1.5 ? "good" : row.envelope.detail.salary_to_expense_ratio >= 1.1 ? "warn" : "bad"}
+                  hint="Pay covers costs this many times over"
+                />
+                <KeyMetricCard
+                  label="Savings runway"
+                  value={row.envelope.detail.savings_runway_months.toString()}
+                  unit="mo"
+                  tone={row.envelope.detail.savings_runway_months >= 6 ? "good" : row.envelope.detail.savings_runway_months >= 3 ? "warn" : "bad"}
+                  hint="Months you could float with zero income"
+                />
+              </div>
             </section>
 
+            <ReasoningCard
+              summary={row.envelope.summary}
+              reasoning={row.envelope.reasoning}
+              confidence={row.envelope.confidence}
+              detail={row.envelope.detail}
+            />
+
+            {/* Visual money-flow + cost breakdown */}
             <section className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-ink-200 bg-white p-5">
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">Monthly net</p>
-                <ul className="mt-3 space-y-1 text-[13px]">
-                  <Row label="Gross" value={`${row.envelope.detail.monthly_net.gross_monthly.toLocaleString()} ${row.envelope.detail.monthly_net.currency}`} />
-                  <Row label="Estimated tax" value={`${row.envelope.detail.monthly_net.estimated_tax_monthly.toLocaleString()} ${row.envelope.detail.monthly_net.currency}`} />
-                  <Row label="Effective tax rate" value={`${row.envelope.detail.monthly_net.effective_tax_rate_pct}%`} />
-                  <Row label="Take-home" value={`${row.envelope.detail.monthly_net.take_home_monthly.toLocaleString()} ${row.envelope.detail.monthly_net.currency}`} bold />
-                </ul>
-              </div>
-              <div className="rounded-2xl border border-ink-200 bg-white p-5">
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">Monthly cost</p>
-                <ul className="mt-3 space-y-1 text-[13px]">
-                  {Object.entries(row.envelope.detail.monthly_cost)
-                    .filter(([k, v]) => typeof v === "object" && v != null && "amount" in (v as object))
-                    .map(([k, v]) => {
-                      const c = v as { amount: number; currency: string; note?: string };
-                      return <Row key={k} label={k} value={`${c.amount.toLocaleString()} ${c.currency}`} />;
-                    })}
-                  <Row
-                    label="Total"
-                    value={`${row.envelope.detail.monthly_cost.total_monthly.toLocaleString()} ${row.envelope.detail.monthly_cost.currency}`}
-                    bold
-                  />
-                </ul>
-              </div>
+              <MoneyFlowCard net={row.envelope.detail.monthly_net} />
+              <CostBreakdownCard cost={row.envelope.detail.monthly_cost} />
             </section>
 
             {row.envelope.detail.fx_notes?.length ? (
               <section>
-                <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">FX notes</h2>
-                <ul className="space-y-1.5">
+                <SectionLabel>FX notes · how currencies move on this route</SectionLabel>
+                <div className="grid gap-2 md:grid-cols-2">
                   {row.envelope.detail.fx_notes.map((f, i) => (
-                    <li key={i} className="rounded-xl border border-ink-200 bg-white p-3 text-[13px]">
-                      <span className="font-semibold">{f.from} → {f.to}</span>{" "}
-                      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">{f.direction}</span>
-                      <p className="mt-0.5 text-[12.5px] text-ink-600">{f.note}</p>
-                    </li>
+                    <FXNoteCard
+                      key={i}
+                      from={f.from}
+                      to={f.to}
+                      direction={f.direction}
+                      note={f.note}
+                    />
                   ))}
-                </ul>
+                </div>
               </section>
             ) : null}
 
             {row.envelope.detail.risk_flags?.length ? (
               <section>
-                <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">Risk flags</h2>
-                <ul className="space-y-1.5">
+                <SectionLabel>Risk flags · what could undo the math</SectionLabel>
+                <ul className="grid gap-2 md:grid-cols-2">
                   {row.envelope.detail.risk_flags.map((r, i) => (
-                    <li key={i} className="rounded-xl border border-ink-200 bg-white p-3 text-[13px]">
-                      <span className={"rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] " + (r.severity === "high" ? "bg-danger-50 text-danger-700" : "bg-gilt-50 text-gilt-700")}>{r.severity}</span>{" "}
-                      <span className="font-semibold ml-1">{r.label}</span>
-                      <p className="mt-0.5 text-[12.5px] text-ink-600">{r.detail}</p>
-                    </li>
+                    <RiskFlagCard
+                      key={i}
+                      severity={r.severity}
+                      label={r.label}
+                      detail={r.detail}
+                    />
                   ))}
                 </ul>
               </section>
             ) : null}
 
-            <RisksList risks={row.envelope.risks} />
-            <NextActionsList actions={row.envelope.next_actions} />
-            <AssumptionsList items={row.envelope.assumptions} />
+            <RisksCard risks={row.envelope.risks} />
+            <NextActionsCard actions={row.envelope.next_actions} />
+            <AssumptionsCard items={row.envelope.assumptions} />
           </>
         )}
       </div>
     </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-ink-200 bg-white p-5">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">{label}</p>
-      <p className="mt-2 font-sans text-[22px] font-semibold tracking-tight text-ink-900">{value}</p>
-    </div>
-  );
-}
-
-function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
-  return (
-    <li className="flex items-center justify-between border-b border-ink-100 pb-1 last:border-0">
-      <span className="text-ink-500 capitalize">{label.replace(/_/g, " ")}</span>
-      <span className={bold ? "font-semibold text-ink-900" : "text-ink-800"}>{value}</span>
-    </li>
   );
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { initials } from "@/lib/utils";
 import { ProfileForm } from "./profile-form";
 import { TwinForm } from "./twin-form";
+import { ProfileSnapshot } from "./profile-snapshot";
 
 export const metadata: Metadata = { title: "Profile & Twin" };
 
@@ -33,6 +34,22 @@ export default async function ProfilePage() {
           The more Glimmora knows about you, the sharper its recommendations. Everything here is private and only used to personalise your journey.
         </p>
       </header>
+
+      <ProfileSnapshot
+        profession={user.twin?.profession ?? null}
+        seniority={user.twin?.seniorityLevel ?? null}
+        yearsExperience={user.twin?.yearsExperience ?? null}
+        familySize={user.twin?.familySize ?? null}
+        hasChildren={user.twin?.hasChildren ?? false}
+        childrenCount={user.twin?.childrenCount ?? 0}
+        timelineMonths={user.twin?.timelineMonths ?? null}
+        budgetUSD={user.twin?.budgetUSD ?? null}
+        readiness={readiness}
+        currentCountry={user.profile?.currentCountry ?? null}
+        currentCity={user.profile?.currentCity ?? null}
+        nationality={user.profile?.nationality ?? null}
+        targetCountries={targetCountries}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         {/* Identity card — dark */}

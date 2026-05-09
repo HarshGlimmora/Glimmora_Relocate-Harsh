@@ -388,11 +388,33 @@ export interface VisaEmployabilityDetail {
   note: string;
 }
 
+export interface MarketDemandDetail {
+  score: number;
+  level: "low" | "medium" | "high";
+  note: string;
+  demand_signals: string[];
+}
+
+export interface CareerAngleRecommendation {
+  title: string;
+  detail: string;
+  impact: "low" | "medium" | "high";
+  category: string;
+}
+
+export interface SupportingSignal {
+  title: string;
+  detail: string;
+  confidence: number;
+  category: string;
+}
+
 export interface JobFitDetail {
   overall_job_fit_score: number;
   role_match: RoleMatchDetail;
   salary_realism: SalaryRealismDetail;
   visa_employability: VisaEmployabilityDetail;
+  market_demand?: MarketDemandDetail;
   aligned_skills: { name: string; why: string }[];
   missing_skills: { name: string; why: string }[];
   transferable_skills: { name: string; transfers_to: string; note: string }[];
@@ -404,6 +426,8 @@ export interface JobFitDetail {
     confidence: number;
   }[];
   key_gaps: { label: string; severity: string }[];
+  career_angle_recommendations?: CareerAngleRecommendation[];
+  supporting_signals?: SupportingSignal[];
 }
 
 export interface VisaPrimaryRoute {

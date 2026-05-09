@@ -17,6 +17,9 @@ export function ModulePanel({
   applyLabel = "Re-run with these answers",
   busyLabel = "Updating analysis…",
   testid,
+  collapsible = false,
+  defaultOpen = false,
+  topSlot,
 }: {
   title: string;
   hint?: string;
@@ -25,11 +28,20 @@ export function ModulePanel({
   applyLabel?: string;
   busyLabel?: string;
   testid?: string;
+  /** When true, the panel becomes a collapsible accordion. */
+  collapsible?: boolean;
+  /** Open state when `collapsible`. Defaults to closed. */
+  defaultOpen?: boolean;
+  /** Optional element rendered above the form when expanded — used by
+   *  the Job Fit page to inject AI-generated career-angle recommendations
+   *  ahead of the form fields. */
+  topSlot?: React.ReactNode;
 }) {
   const router = useRouter();
   const [pending, start] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [applied, setApplied] = React.useState(false);
+  const [open, setOpen] = React.useState<boolean>(collapsible ? defaultOpen : true);
 
   function apply() {
     setError(null);
@@ -45,44 +57,117 @@ export function ModulePanel({
     });
   }
 
+  const isOpen = collapsible ? open : true;
+
   return (
     <section
       data-module-panel={testid}
-      className="rounded-2xl border border-ink-200 bg-white p-5"
+      data-module-panel-collapsible={collapsible ? "true" : "false"}
+      data-module-panel-open={isOpen ? "true" : "false"}
+      className="rounded-2xl border border-ink-200 bg-white p-5 transition-shadow"
     >
-      <div className="flex items-center justify-between">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
-          {title}
-        </p>
-        {pending ? (
-          <span data-panel-status="pending" className="font-mono text-[10px] text-gilt-700">
-            {busyLabel}
-          </span>
-        ) : applied ? (
-          <span data-panel-status="applied" className="font-mono text-[10px] text-success-700">
-            Applied · refreshing
-          </span>
-        ) : null}
-      </div>
-      {hint ? (
-        <p className="mt-1 text-[12px] leading-[1.5] text-ink-500">{hint}</p>
-      ) : null}
-      <div className="mt-3 space-y-3">{children}</div>
-      <div className="mt-4 flex items-center justify-between gap-3">
+      {/* Header — clickable when collapsible */}
+      {collapsible ? (
         <button
           type="button"
-          onClick={apply}
-          disabled={pending}
-          data-panel-apply
-          className="rounded-full bg-ink-900 px-4 py-2 text-[12.5px] font-medium text-parchment hover:bg-ink-800 disabled:opacity-50"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={isOpen}
+          data-panel-toggle
+          className="-m-1 flex w-full items-start gap-3 rounded-xl p-1 text-left transition-colors hover:bg-ink-50/40"
         >
-          {pending ? busyLabel : applyLabel}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
+                {title}
+              </p>
+              {pending ? (
+                <span data-panel-status="pending" className="font-mono text-[10px] text-gilt-700">
+                  {busyLabel}
+                </span>
+              ) : applied ? (
+                <span data-panel-status="applied" className="font-mono text-[10px] text-success-700">
+                  Applied · refreshing
+                </span>
+              ) : null}
+            </div>
+            {hint ? (
+              <p className="mt-1 text-[12px] leading-[1.5] text-ink-500">{hint}</p>
+            ) : null}
+          </div>
+          <span
+            aria-hidden="true"
+            className={
+              "mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink-50 text-ink-700 transition-transform " +
+              (isOpen ? "rotate-180" : "")
+            }
+          >
+            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
+              <path
+                d="M3.5 5.5l4.5 5 4.5-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
         </button>
-        {error ? (
-          <p data-panel-error className="text-[12px] text-danger-700">
-            {error}
-          </p>
-        ) : null}
+      ) : (
+        <>
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
+              {title}
+            </p>
+            {pending ? (
+              <span data-panel-status="pending" className="font-mono text-[10px] text-gilt-700">
+                {busyLabel}
+              </span>
+            ) : applied ? (
+              <span data-panel-status="applied" className="font-mono text-[10px] text-success-700">
+                Applied · refreshing
+              </span>
+            ) : null}
+          </div>
+          {hint ? (
+            <p className="mt-1 text-[12px] leading-[1.5] text-ink-500">{hint}</p>
+          ) : null}
+        </>
+      )}
+
+      {/* Smooth expand/collapse using the grid-rows trick — no JS height
+          measurement required. When closed, the inner area animates to
+          0 rows and is hidden from a11y. */}
+      <div
+        data-panel-body
+        className={
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out " +
+          (isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")
+        }
+        aria-hidden={!isOpen}
+      >
+        <div className="min-h-0 overflow-hidden">
+          {topSlot ? <div className="mt-4">{topSlot}</div> : null}
+          <div className={topSlot ? "mt-4 space-y-3" : "mt-3 space-y-3"}>
+            {children}
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={apply}
+              disabled={pending || !isOpen}
+              data-panel-apply
+              className="rounded-full bg-ink-900 px-4 py-2 text-[12.5px] font-medium text-parchment hover:bg-ink-800 disabled:opacity-50"
+            >
+              {pending ? busyLabel : applyLabel}
+            </button>
+            {error ? (
+              <p data-panel-error className="text-[12px] text-danger-700">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        </div>
       </div>
     </section>
   );

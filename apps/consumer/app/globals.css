@@ -3,27 +3,31 @@
 @tailwind utilities;
 
 @layer base {
+  /* Clean creamy-white design system. Saturation kept low so the
+     palette reads "soft, modern, professional" rather than goldish.
+     Brown accents (text, primary, ring) stay warm; surfaces are
+     near-neutral cream. */
   :root {
-    --paper: 45 50% 99%;
-    --background: 45 50% 99%;
-    --foreground: 230 28% 9%;
+    --paper: 38 33% 96%;             /* clean cream white — bg-parchment */
+    --background: 38 33% 96%;
+    --foreground: 28 40% 10%;         /* very dark warm brown — text */
     --card: 0 0% 100%;
-    --card-foreground: 230 28% 9%;
+    --card-foreground: 28 40% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 230 28% 9%;
-    --border: 228 17% 86%;
-    --input: 228 17% 86%;
-    --ring: 227 45% 44%;
-    --muted: 228 17% 94%;
-    --muted-foreground: 229 11% 39%;
-    --primary: 227 45% 44%;
-    --primary-foreground: 45 50% 99%;
-    --secondary: 228 17% 94%;
-    --secondary-foreground: 230 28% 9%;
-    --accent: 228 17% 94%;
-    --accent-foreground: 230 28% 9%;
+    --popover-foreground: 28 40% 10%;
+    --border: 32 18% 84%;             /* soft neutral cream border */
+    --input: 32 18% 84%;
+    --ring: 28 50% 28%;               /* warm brown focus ring */
+    --muted: 32 22% 92%;
+    --muted-foreground: 28 22% 32%;
+    --primary: 28 55% 24%;            /* deep saddle brown — primary actions */
+    --primary-foreground: 38 33% 96%;
+    --secondary: 32 22% 92%;
+    --secondary-foreground: 28 40% 12%;
+    --accent: 32 22% 90%;
+    --accent-foreground: 28 40% 12%;
     --destructive: 353 73% 51%;
-    --destructive-foreground: 45 50% 99%;
+    --destructive-foreground: 38 33% 96%;
     --radius: 0.625rem;
   }
 
@@ -36,6 +40,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Body keeps the flat creamy-white surface (bg-background). The
+     decorative travel arc is drawn by <TravelAccentLayer /> in the
+     app shell — kept off the body so the palette reads clean cream
+     rather than goldish. */
   body {
     @apply font-sans text-base;
     line-height: 1.55;
@@ -50,7 +58,7 @@
   }
 
   ::selection {
-    background-color: hsl(var(--primary) / 0.18);
+    background-color: hsl(var(--primary) / 0.22);
     color: hsl(var(--foreground));
   }
 
@@ -74,10 +82,13 @@
     font-weight: 500;
   }
 
+  /* Soft, warm-shadowed card — used by .btn-primary callers and any
+     page that wants the consistent surface treatment. */
   .soft-card {
-    background: #FFFFFF;
-    border: 1px solid rgba(15, 20, 40, 0.06);
-    box-shadow: 0 1px 3px rgba(15, 20, 40, 0.04);
+    background: #d8d9d3;
+    border: 1px solid rgba(40, 25, 12, 0.07);
+    box-shadow: 0 1px 3px rgba(40, 25, 12, 0.05);
+    border-radius: 16px;
   }
 
   .orb {
@@ -88,25 +99,32 @@
     opacity: 0.5;
   }
 
+  /* Primary brand button — deep saddle-brown pill on cream. */
   .btn-primary {
-    background: #0F1428;
-    color: #FDFCF9;
+    background: #5E3613;             /* caramel-700 */
+    color: #FBF3E1;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .btn-primary:hover {
-    background: #171F41;
+    background: #7B4719;             /* caramel-600 */
     transform: translateY(-1px);
+    box-shadow: 0 6px 16px -6px rgba(94, 54, 19, 0.45);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px -2px rgba(94, 54, 19, 0.35);
   }
 
+  /* Secondary outlined / ghost button — warm cream, brown text. */
   .btn-ghost {
-    background: transparent;
-    color: #11131E;
-    border: 1px solid rgba(15, 20, 40, 0.12);
+    background: rgba(251, 243, 225, 0.6);
+    color: #3A2812;
+    border: 1px solid rgba(94, 54, 19, 0.18);
     transition: all 0.2s ease;
   }
   .btn-ghost:hover {
-    background: rgba(15, 20, 40, 0.04);
-    border-color: rgba(15, 20, 40, 0.2);
+    background: rgba(240, 246, 236, 0.5);
+    border-color: rgba(94, 54, 19, 0.32);
   }
 
   .reveal {

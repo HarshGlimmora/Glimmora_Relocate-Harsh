@@ -68,7 +68,11 @@ class _ModelEnvelope(BaseModel):
 
 class JobFitService:
     PROMPT_NAME = "job_fit"
-    PROMPT_VERSION = "v1"
+    # v2 = stricter schema (market_demand, career_angle_recommendations,
+    # supporting_signals required) + Country/Finance/Visa handoff guidance.
+    # Bumping this also busts cached envelopes because PROMPT_VERSION is
+    # part of the natural input hash below.
+    PROMPT_VERSION = "v2"
 
     def __init__(
         self,
@@ -130,6 +134,10 @@ class JobFitService:
             "resume_extraction": resume_extracted or {},
             "case_inputs": merged_inputs,
             "prior_analyses": prior,
+            # Including the prompt version in the hash means bumping
+            # PROMPT_VERSION naturally busts the cache for every case
+            # without us having to manage a parallel migration.
+            "_prompt_version": self.PROMPT_VERSION,
         }
         natural_hash = stable_input_hash(input_payload)
 
@@ -364,6 +372,18 @@ def _first_present(*values: Any) -> Any:
 
 
 async def _prior_analyses_summary(session: AsyncSession, case_id: str) -> list[dict]:
+    """Build the `prior_analyses` array fed to the AI.
+
+    Pulls every prior analysis for the case (except job-fit itself) and
+    surfaces the *fields the AI actually needs* — destination from
+    country, monthly figures from finance, visa primary route — instead
+    of a stripped-down headline. Without the rich detail, the AI can't
+    anchor downstream readings (salary, market_demand, pathways) to the
+    user's chosen destination, and the dashboard ends up generic.
+
+    Each summary is intentionally compact — we don't dump the whole
+    detail blob, just the fields the prompt explicitly references.
+    """
     repo = AnalysesRepository(session)
     rows = await repo.list_all_for_case(case_id)
     out: list[dict] = []
@@ -371,15 +391,78 @@ async def _prior_analyses_summary(session: AsyncSession, case_id: str) -> list[d
         if r.kind == KIND or not r.envelope:
             continue
         env = r.envelope
-        out.append(
-            {
-                "kind": r.kind,
-                "score": env.get("score"),
-                "summary": (env.get("summary") or "")[:240],
-                "confidence": env.get("confidence"),
+        if env.get("status") != "ready":
+            # Skip failed envelopes — they have no usable detail.
+            continue
+        detail = env.get("detail") or {}
+        entry: dict[str, Any] = {
+            "kind": r.kind,
+            "score": env.get("score"),
+            "summary": (env.get("summary") or "")[:300],
+            "confidence": env.get("confidence"),
+        }
+
+        if r.kind == "country_comparison":
+            # The chosen destination + suitability anchors every job-fit reading.
+            entry["detail"] = {
+                "target_country": detail.get("target_country")
+                or (detail.get("destination") or {}).get("country"),
+                "target_city": detail.get("target_city")
+                or (detail.get("destination") or {}).get("city"),
+                "destination_suitability_score": detail.get(
+                    "destination_suitability_score"
+                ),
+                "overall_comparison_score": detail.get("overall_comparison_score"),
+                "strengths": _trim_list(detail.get("strengths"), 5),
+                "blockers": _trim_list(detail.get("blockers"), 5),
+                "alternatives_considered": _trim_list(
+                    detail.get("alternatives_considered"), 4
+                ),
             }
-        )
+        elif r.kind == "finance":
+            # Monthly figures let the AI reconcile its salary_realism note
+            # with what finance already worked out.
+            entry["detail"] = {
+                "monthly_net": detail.get("monthly_net"),
+                "monthly_cost_total": (detail.get("monthly_cost") or {}).get(
+                    "total_monthly"
+                ),
+                "currency": (detail.get("monthly_net") or {}).get("currency"),
+                "surplus_or_deficit_monthly": detail.get(
+                    "surplus_or_deficit_monthly"
+                ),
+                "affordability_score": detail.get("affordability_score"),
+                "salary_to_expense_ratio": detail.get("salary_to_expense_ratio"),
+                "savings_runway_months": detail.get("savings_runway_months"),
+            }
+        elif r.kind == "visa":
+            # Primary route name is reused in pathways[] so the user sees
+            # the same label across pages.
+            primary = detail.get("primary_route") or {}
+            entry["detail"] = {
+                "primary_route_name": primary.get("name"),
+                "primary_route_code": primary.get("code"),
+                "difficulty": primary.get("difficulty"),
+                "typical_processing_weeks_min": primary.get(
+                    "typical_processing_weeks_min"
+                ),
+                "typical_processing_weeks_max": primary.get(
+                    "typical_processing_weeks_max"
+                ),
+            }
+        # Other kinds (documents, family, culture, workflow, timeline,
+        # synthesis): just the headline summary is enough. The detail
+        # would balloon the prompt without paying for itself.
+
+        out.append(entry)
     return out
+
+
+def _trim_list(value: Any, limit: int) -> list:
+    """Bound list size so prior_analyses doesn't blow up the prompt."""
+    if not isinstance(value, list):
+        return []
+    return value[:limit]
 
 
 def _render_user_message(payload: dict) -> str:

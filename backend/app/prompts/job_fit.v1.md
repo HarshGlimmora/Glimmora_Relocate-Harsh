@@ -26,7 +26,12 @@ A single JSON object with the envelope fields plus a `detail` payload:
 - `score`: same integer as `detail.overall_job_fit_score`.
 - `summary`: 1–2 sentences. Lead with the verdict.
 - `reasoning`: 3–6 sentences. Cite the inputs that drove the conclusion.
-- `risks`: each `{severity: low|medium|high, label, detail}`.
+- `risks`: 4–8 items, each `{severity: low|medium|high, label, detail}`. Aim
+  for diverse categories so the dashboard's Risks grid fills out — cover
+  multiple of: visa/sponsorship policy, skills gap, salary realism,
+  language proficiency, market competition, cost-of-living pressure,
+  industry-specific hiring trends, dependents/family pressure. Avoid
+  duplicates; each risk must add a distinct concern.
 - `next_actions`: 2–5 items, each `{label, urgency, why}`.
 - `confidence`: 0.0–1.0. Anchored:
   - 0.3 = sparse data
@@ -57,6 +62,16 @@ A single JSON object with the envelope fields plus a `detail` payload:
   - `sponsor_friendly_employer_density` — `low|medium|high`
   - `typical_sponsor_titles` — up to 10 strings
   - `note`
+- `market_demand`:
+  - `score` (0–100) — how strongly the destination's job market demands
+    the inferred target role at the user's seniority right now
+  - `level` — `low|medium|high`, derived from `score` (low <40, medium 40–69,
+    high ≥70)
+  - `note` — one or two sentences explaining why; cite the destination
+    market, vacancy density, hiring trend, or sector signals you used
+  - `demand_signals` — up to 6 short tag-style strings, each a concrete
+    signal (e.g. `"high vacancy ratio"`, `"new fintech hubs in Berlin"`,
+    `"AI-engineer postings up 40% YoY"`). No vague filler.
 - `skill_alignment` object with three lists:
   - `aligned[]` — `{name, why}` skills the user already has that match the
     target role
@@ -73,6 +88,19 @@ A single JSON object with the envelope fields plus a `detail` payload:
   "Move via internal transfer", "Contract-to-perm")
 - `estimated_time_to_offer_weeks` — your single best estimate
 - `key_gaps[]` — up to 8 `{label, severity, fixable_in_weeks, detail}`
+- `career_angle_recommendations[]` — 3–6 strategic positioning tips for
+  the user, each `{title, detail, impact: low|medium|high, category}`.
+  Categories should vary (e.g. `positioning`, `skills`, `salary`, `visa`,
+  `narrative`, `pathway`). These are AI-generated suggestions about how
+  the user can sharpen their career angle for the destination market.
+  Be specific — name roles, certifications, frameworks, employer types.
+- `supporting_signals[]` — 3–6 positive signals that pull *for* this
+  relocation, each `{title, detail, confidence: 0.0–1.0, category}`.
+  Categories should vary (e.g. `demand`, `skills`, `visa`, `industry`,
+  `pathway`). Each signal must be a concrete reason the move is workable
+  — high market demand, transferable-skill leverage, sponsor density,
+  a fast pathway, sector tailwinds. Tie each signal to a specific input
+  fact when possible.
 
 ## Tone
 

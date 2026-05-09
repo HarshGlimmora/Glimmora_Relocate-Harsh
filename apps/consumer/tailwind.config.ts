@@ -59,19 +59,34 @@ const config: Config = {
           900: "#071E1A",
           950: "#030E0C",
         },
-        // ---------- NEUTRAL · Ink ----------
+        // ---------- NEUTRAL · Ink (warm brown re-skin, matches relocation theme) ----------
+        // Lightness ramp matches the prior blue-grey scale so contrast holds
+        // across every existing `ink-*` reference site-wide. Hue 30°.
         ink: {
-          50:  "#F7F7FA",
-          100: "#ECEDF2",
-          200: "#D5D7E0",
-          300: "#B0B3C1",
-          400: "#7D8193",
-          500: "#585C6E",
-          600: "#43465A",
-          700: "#2F3244",
-          800: "#1E2030",
-          900: "#11131E",
-          950: "#080910",
+          50:  "#FBF5E8",
+          100: "#F2E5C9",
+          200: "#DEC79A",
+          300: "#C2A36F",
+          400: "#967948",
+          500: "#6F5530",
+          600: "#523B1F",
+          700: "#3A2812",
+          800: "#26190A",
+          900: "#180F05",
+          950: "#0A0602",
+        },
+        // ---------- BRAND · Caramel (the deep saddle-brown primary accent) ----------
+        caramel: {
+          50:  "#FBEFDB",
+          100: "#F5DBB1",
+          200: "#E8B97B",
+          300: "#D69552",
+          400: "#B97432",
+          500: "#995C20",
+          600: "#7B4719",
+          700: "#5E3613",
+          800: "#42260D",
+          900: "#281706",
         },
         // ---------- SEMANTIC · Emerald ----------
         success: {
@@ -114,9 +129,10 @@ const config: Config = {
         },
         // ---------- BASE ----------
         pure:      "#FFFFFF",
-        parchment: "#FDFCF9",
+        parchment: "#FAF7F2",   // clean creamy white — page background
+        sand:      "#F1ECE4",   // subtly darker cream — sidebar background
         obsidian:  "#000000",
-        soot:      "#080910",
+        soot:      "#0A0602",
 
         // ---------- SEMANTIC TOKENS (for components via CSS vars) ----------
         paper: "hsl(var(--paper))",
@@ -173,23 +189,27 @@ const config: Config = {
       },
       boxShadow: {
         "glow-gilt":     "0 0 40px -8px rgba(228, 181, 56, 0.45)",
-        "glow-midnight": "0 0 60px -12px rgba(15, 20, 40, 0.5)",
+        "glow-midnight": "0 0 60px -12px rgba(40, 25, 12, 0.5)",
         "glow-lagoon":   "0 0 40px -10px rgba(57, 168, 150, 0.4)",
-        "elev-sm": "0 1px 2px rgba(15, 20, 40, 0.04), 0 1px 3px rgba(15, 20, 40, 0.06)",
-        "elev-md": "0 4px 8px -2px rgba(15, 20, 40, 0.06), 0 2px 4px -2px rgba(15, 20, 40, 0.04)",
-        "elev-lg": "0 12px 24px -8px rgba(15, 20, 40, 0.10), 0 4px 10px -4px rgba(15, 20, 40, 0.06)",
-        "elev-xl": "0 24px 48px -12px rgba(15, 20, 40, 0.18), 0 8px 16px -6px rgba(15, 20, 40, 0.08)",
-        "inset-line": "inset 0 0 0 1px rgba(15, 20, 40, 0.08)",
+        "glow-caramel":  "0 0 40px -8px rgba(123, 71, 25, 0.4)",
+        // Warm-brown-tinted elevations so every soft-card shadow on the
+        // platform reads as part of the same warm palette.
+        "elev-sm": "0 1px 2px rgba(40, 25, 12, 0.05), 0 1px 3px rgba(40, 25, 12, 0.07)",
+        "elev-md": "0 4px 8px -2px rgba(40, 25, 12, 0.07), 0 2px 4px -2px rgba(40, 25, 12, 0.05)",
+        "elev-lg": "0 12px 24px -8px rgba(40, 25, 12, 0.12), 0 4px 10px -4px rgba(40, 25, 12, 0.07)",
+        "elev-xl": "0 24px 48px -12px rgba(40, 25, 12, 0.18), 0 8px 16px -6px rgba(40, 25, 12, 0.08)",
+        "inset-line": "inset 0 0 0 1px rgba(40, 25, 12, 0.10)",
       },
       backgroundImage: {
-        "grad-aurora":  "linear-gradient(135deg, #0F1428 0%, #242F62 45%, #248C7C 100%)",
+        "grad-aurora":  "linear-gradient(135deg, #180F05 0%, #5E3613 45%, #B97432 100%)",
         "grad-glimmer": "linear-gradient(135deg, #5C420D 0%, #CF9B1E 40%, #F5DF9B 100%)",
-        "grad-horizon": "linear-gradient(180deg, #0F1428 0%, #242F62 40%, #CF9B1E 100%)",
-        "grad-dawn":    "linear-gradient(135deg, #171F41 0%, #3D54A3 40%, #E4B538 100%)",
+        "grad-horizon": "linear-gradient(180deg, #180F05 0%, #5E3613 40%, #CF9B1E 100%)",
+        "grad-dawn":    "linear-gradient(135deg, #26190A 0%, #7B4719 40%, #E4B538 100%)",
         "grad-tide":    "linear-gradient(135deg, #0E3A33 0%, #248C7C 50%, #9BD7CE 100%)",
-        "grad-paper":   "linear-gradient(180deg, #FDFCF9 0%, #F7F7FA 100%)",
-        "grad-veil":    "linear-gradient(180deg, rgba(15,20,40,0) 0%, rgba(15,20,40,0.6) 100%)",
-        "mesh":         "radial-gradient(1200px 600px at 10% 0%, rgba(228,181,56,0.10), transparent 60%), radial-gradient(900px 500px at 90% 10%, rgba(57,168,150,0.12), transparent 60%), radial-gradient(800px 600px at 50% 100%, rgba(61,84,163,0.14), transparent 60%)",
+        "grad-paper":   "linear-gradient(180deg, #FBF3E1 0%, #F2E2C2 100%)",
+        "grad-veil":    "linear-gradient(180deg, rgba(24,15,5,0) 0%, rgba(24,15,5,0.6) 100%)",
+        // Warm-mesh: subtle caramel + gilt orbs, matches the relocation theme.
+        "mesh":         "radial-gradient(1200px 600px at 10% 0%, rgba(228,181,56,0.18), transparent 60%), radial-gradient(900px 500px at 90% 10%, rgba(185,116,50,0.14), transparent 60%), radial-gradient(800px 600px at 50% 100%, rgba(123,71,25,0.10), transparent 60%)",
       },
       keyframes: {
         "fade-in": {

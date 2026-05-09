@@ -112,6 +112,58 @@ class KeyGap(BaseModel):
     detail: str = Field(min_length=1, max_length=400)
 
 
+class MarketDemandDetail(BaseModel):
+    """Dynamic market demand signal for the inferred target role at the
+    destination — fourth tile of the Compatibility Dashboard."""
+
+    score: int = Field(ge=0, le=100, description="0–100 demand strength")
+    level: str = Field(
+        pattern="^(low|medium|high)$",
+        description="thresholded level for the chip on the card",
+    )
+    note: str = Field(
+        min_length=1,
+        max_length=400,
+        description="one or two sentences explaining why the score lands here",
+    )
+    demand_signals: list[str] = Field(
+        default_factory=list,
+        max_length=6,
+        description="short tag-style signals e.g. 'high vacancy ratio', 'rising LinkedIn postings'",
+    )
+
+
+class CareerAngleRecommendation(BaseModel):
+    """Strategic positioning advice for the user — populates the
+    'Sharpen your career angle' AI block."""
+
+    title: str = Field(min_length=1, max_length=120)
+    detail: str = Field(min_length=1, max_length=400)
+    impact: str = Field(
+        pattern="^(low|medium|high)$",
+        description="how much shifting on this would move the needle",
+    )
+    category: str = Field(
+        min_length=1,
+        max_length=40,
+        description="e.g. 'positioning', 'skills', 'salary', 'visa', 'narrative'",
+    )
+
+
+class SupportingSignal(BaseModel):
+    """A positive AI-detected signal for the 'Pulling for it' panel —
+    explicit, model-authored evidence rather than derived numbers."""
+
+    title: str = Field(min_length=1, max_length=120)
+    detail: str = Field(min_length=1, max_length=400)
+    confidence: float = Field(ge=0.0, le=1.0)
+    category: str = Field(
+        min_length=1,
+        max_length=40,
+        description="e.g. 'demand', 'skills', 'visa', 'industry', 'pathway'",
+    )
+
+
 class JobFitDetail(BaseModel):
     """Strict job-fit artifact rendered by the frontend's Page 5."""
 
@@ -119,6 +171,7 @@ class JobFitDetail(BaseModel):
     role_match: RoleMatchDetail
     salary_realism: SalaryRealismDetail
     visa_employability: VisaEmployabilityDetail
+    market_demand: MarketDemandDetail
 
     skill_alignment: dict = Field(
         description="{aligned: SkillItem[], missing: SkillItem[], transferable: TransferableSkill[]}"
@@ -133,3 +186,15 @@ class JobFitDetail(BaseModel):
     estimated_time_to_offer_weeks: int = Field(ge=1, le=104)
 
     key_gaps: list[KeyGap] = Field(default_factory=list, max_length=8)
+
+    # Newer dashboard sections — populated dynamically by the AI.
+    career_angle_recommendations: list[CareerAngleRecommendation] = Field(
+        default_factory=list,
+        max_length=6,
+        description="strategic positioning advice for the 'Sharpen your career angle' panel",
+    )
+    supporting_signals: list[SupportingSignal] = Field(
+        default_factory=list,
+        max_length=6,
+        description="positive AI-detected evidence for the 'Pulling for it' panel",
+    )
