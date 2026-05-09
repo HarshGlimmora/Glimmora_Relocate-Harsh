@@ -7,6 +7,7 @@
 
 import * as React from "react";
 import type {
+  Assumption,
   JobFitDetail,
   MarketDemandDetail,
   Risk,
@@ -885,88 +886,132 @@ interface Driver {
 }
 
 /**
- * Build the cons list (working-against-it). The pros side now comes
- * directly from the AI's `supporting_signals`; this helper only feeds
- * the negative panel from sub-scores.
- *
- * Kept as a server-side derivation because it's all UI text — the
- * underlying numbers are 100% AI-supplied.
+ * Map AI risk severity to a 0–100 strength score so the cons panel can
+ * draw a comparable progress bar against the pros panel. Lower score =
+ * higher severity = stronger headwind.
  */
-function buildCons(detail: JobFitDetail): Driver[] {
-  const cons: Driver[] = [];
+function severityToScore(severity: string | null | undefined): number {
+  switch ((severity ?? "").toLowerCase()) {
+    case "high":
+      return 30;
+    case "medium":
+      return 55;
+    case "low":
+      return 75;
+    default:
+      return 60;
+  }
+}
 
-  // Role match
-  const roleScore = detail.role_match.score;
+/**
+ * Convert an AI Risk into a Driver row. The pillar uses a short label
+ * derived from the risk's own `label`, the one-liner is the risk's own
+ * `detail` — both straight from the AI, no hardcoded copy.
+ */
+function risksToDrivers(risks: Risk[] | undefined, limit: number): Driver[] {
+  if (!risks?.length) return [];
+  return risks.slice(0, limit).map((r) => ({
+    pillar: r.label,
+    score: severityToScore(r.severity),
+    one_line: r.detail,
+  }));
+}
+
+/**
+ * Build the cons list (working-against-it). Three layered sources, in
+ * priority order:
+ *   1. `envelope.risks` — the AI's first-class risk list (always
+ *      present; v3 prompt mandates 4–8 entries).
+ *   2. `detail.key_gaps` — high/medium gaps the AI flagged.
+ *   3. score-derived signals (salary gap, weak role match, low market
+ *      demand, long ramp, etc.) — fallback when the above are sparse.
+ *
+ * Every entry is grounded in AI output; nothing is hardcoded.
+ */
+function buildCons(detail: JobFitDetail, risks?: Risk[]): Driver[] {
+  const out: Driver[] = [];
+  const seen = new Set<string>();
+  const push = (d: Driver) => {
+    const k = d.pillar.toLowerCase();
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(d);
+  };
+
+  // 1. AI risks first — they're the load-bearing signal.
+  for (const d of risksToDrivers(risks, 5)) push(d);
+
+  // 2. AI-flagged key gaps with severity (medium+).
+  for (const g of detail.key_gaps ?? []) {
+    const sev = (g.severity ?? "").toLowerCase();
+    if (sev !== "high" && sev !== "medium") continue;
+    push({
+      pillar: g.label,
+      score: severityToScore(g.severity),
+      one_line: `${sev.charAt(0).toUpperCase()}${sev.slice(1)}-severity gap flagged by the AI.`,
+    });
+  }
+
+  // 3. Score-derived signals (catch-all so weak sub-scores still surface
+  //    even if risks/key_gaps came back lean).
+  const roleScore = detail.role_match?.score ?? 100;
   if (roleScore < 50) {
-    cons.push({
+    push({
       pillar: "Role match",
       score: roleScore,
       one_line: `${detail.role_match.target_role_inferred} · score ${roleScore}/100`,
     });
   }
 
-  // Salary realism
-  const salScore = detail.salary_realism.score;
-  const gap = detail.salary_realism.gap_pct;
-  if (salScore < 50 || gap > 25) {
+  const salScore = detail.salary_realism?.score ?? 100;
+  const gap = detail.salary_realism?.gap_pct ?? 0;
+  if (salScore < 50 || Math.abs(gap) > 25) {
     const salLine =
       gap > 25
         ? `Asking ${gap}% above market · negotiation friction`
+        : gap < -25
+        ? `Asking ${Math.abs(gap)}% below market · risk of under-pricing`
         : `Salary realism score ${salScore}/100`;
-    cons.push({ pillar: "Salary realism", score: salScore, one_line: salLine });
+    push({ pillar: "Salary realism", score: salScore, one_line: salLine });
   }
 
-  // Visa employability
-  const visaScore = detail.visa_employability.score;
+  const visaScore = detail.visa_employability?.score ?? 100;
   if (visaScore < 50) {
-    cons.push({
+    push({
       pillar: "Visa employability",
       score: visaScore,
       one_line: `Sponsor density · ${detail.visa_employability.sponsor_friendly_employer_density}`,
     });
   }
 
-  // Market demand (low)
   if (detail.market_demand && detail.market_demand.level === "low") {
-    cons.push({
+    push({
       pillar: "Market demand",
       score: detail.market_demand.score,
       one_line: detail.market_demand.note ?? "Market signal is thin for this role",
     });
   }
 
-  // Skill gaps
   const missing = detail.missing_skills?.length ?? 0;
   if (missing >= 3) {
-    cons.push({
+    push({
       pillar: "Skill gaps",
       score: Math.max(0, 100 - missing * 15),
       one_line: `${missing} skill${missing > 1 ? "s" : ""} the market expects you don't have yet`,
     });
   }
 
-  // High-severity key gaps
-  const highGaps = (detail.key_gaps ?? []).filter((g) => g.severity?.toLowerCase() === "high");
-  if (highGaps.length > 0) {
-    cons.push({
-      pillar: "Critical gaps",
-      score: Math.max(0, 60 - highGaps.length * 15),
-      one_line: highGaps.slice(0, 2).map((g) => g.label).join(" · "),
-    });
-  }
-
-  // Long pathway ramp
   const path0 = detail.job_pathways?.[0];
   if (path0 && path0.time_to_offer_weeks > 24) {
-    cons.push({
+    push({
       pillar: "Long ramp",
       score: Math.max(0, 70 - path0.time_to_offer_weeks),
       one_line: `Fastest path is ${path0.time_to_offer_weeks}w to offer`,
     });
   }
 
-  cons.sort((a, b) => a.score - b.score);
-  return cons.slice(0, 5);
+  out.sort((a, b) => a.score - b.score); // worst (lowest score) first
+  return out.slice(0, 5);
 }
 
 /**
@@ -1110,11 +1155,21 @@ export function JobInsightCard({
   reasoning,
   confidence,
   detail,
+  risks,
+  assumptions,
 }: {
   summary: string;
   reasoning: string;
   confidence: number;
   detail: JobFitDetail;
+  /** AI-generated risks from `envelope.risks` — feeds the cons panel
+   *  so the section never collapses to a static "nothing to see here"
+   *  empty state when sub-scores are healthy. */
+  risks?: Risk[];
+  /** AI-generated assumptions used for the bottom of "Show full
+   *  reasoning". Surfaces the model's framing context so the user can
+   *  audit the conviction. */
+  assumptions?: Assumption[];
 }) {
   const pct = Math.round(confidence * 100);
   const verdict =
@@ -1136,7 +1191,7 @@ export function JobInsightCard({
       ? aiDriversFromSignals(detail.supporting_signals)
       : [];
   const aiDriven = pros.length > 0;
-  const cons = buildCons(detail);
+  const cons = buildCons(detail, risks);
 
   return (
     <section data-job-insight>
@@ -1144,36 +1199,38 @@ export function JobInsightCard({
 
       <div className="overflow-hidden rounded-2xl border border-ink-200 bg-white">
         {/* ============ Hero strip — summary + conviction ring ============ */}
-        <div className="grid gap-4 border-b border-ink-100 p-5 md:grid-cols-[180px_1fr]">
-          {/* Conviction ring */}
-          <div data-conviction-ring className="flex items-center gap-3 md:flex-col md:items-start md:gap-2">
-            <svg viewBox="0 0 80 80" className="h-20 w-20 -rotate-90 md:h-24 md:w-24" aria-hidden="true">
-              <circle cx="40" cy="40" r={radius} className="fill-none stroke-ink-100" strokeWidth="7" />
-              <circle
-                cx="40"
-                cy="40"
-                r={radius}
-                className={`fill-none ${verdict.ring}`}
-                strokeWidth="7"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-              />
-              {/* Center dot */}
-              <circle cx="40" cy="40" r="2.5" className="fill-ink-300" />
-            </svg>
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-                Conviction
-              </p>
-              <p className={`mt-0.5 font-sans text-[26px] font-semibold leading-none ${verdict.text}`}>
-                {pct}
-                <span className="text-[12px] text-ink-400">%</span>
-              </p>
-              <p className={`mt-1.5 inline-block rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] ${verdict.chip}`}>
-                {verdict.label}
-              </p>
+        <div className="grid gap-4 border-b border-ink-100 p-5 md:grid-cols-[200px_1fr]">
+          {/* Conviction ring + breakdown */}
+          <div data-conviction-ring className="flex flex-col gap-3">
+            <div className="flex items-center gap-3 md:flex-col md:items-start md:gap-2">
+              <svg viewBox="0 0 80 80" className="h-20 w-20 -rotate-90 md:h-24 md:w-24" aria-hidden="true">
+                <circle cx="40" cy="40" r={radius} className="fill-none stroke-ink-100" strokeWidth="7" />
+                <circle
+                  cx="40"
+                  cy="40"
+                  r={radius}
+                  className={`fill-none ${verdict.ring}`}
+                  strokeWidth="7"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offset}
+                  strokeLinecap="round"
+                />
+                <circle cx="40" cy="40" r="2.5" className="fill-ink-300" />
+              </svg>
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+                  Conviction
+                </p>
+                <p className={`mt-0.5 font-sans text-[26px] font-semibold leading-none ${verdict.text}`}>
+                  {pct}
+                  <span className="text-[12px] text-ink-400">%</span>
+                </p>
+                <p className={`mt-1.5 inline-block rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] ${verdict.chip}`}>
+                  {verdict.label}
+                </p>
+              </div>
             </div>
+            <ConvictionBreakdown detail={detail} />
           </div>
 
           {/* Summary text */}
@@ -1188,19 +1245,28 @@ export function JobInsightCard({
         {/* ============ Pulling for / Working against split ============ */}
         <div className="grid gap-px bg-ink-100 md:grid-cols-2">
           <DriversPanel kind="pros" drivers={pros} aiDriven={aiDriven} />
-          <DriversPanel kind="cons" drivers={cons} />
+          <DriversPanel
+            kind="cons"
+            drivers={cons}
+            aiDriven={(risks?.length ?? 0) > 0}
+            fallback={
+              cons.length === 0 ? <ConsEmptyFromAI assumptions={assumptions} /> : null
+            }
+          />
         </div>
 
         {/* ============ Collapsible long-form reasoning ============ */}
-        {reasoning ? (
+        {reasoning || hasFullReasoningExtras(detail) ? (
           <details className="group border-t border-ink-100 px-5 py-3">
             <summary className="cursor-pointer list-none font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-600 hover:text-ink-900">
               <span className="group-open:hidden">Show full reasoning ↓</span>
               <span className="hidden group-open:inline">Hide reasoning ↑</span>
             </summary>
-            <p className="mt-2 whitespace-pre-line border-t border-ink-100 pt-3 text-[13px] leading-[1.6] text-ink-700">
-              {reasoning}
-            </p>
+            <FullReasoningPanel
+              reasoning={reasoning}
+              detail={detail}
+              assumptions={assumptions}
+            />
           </details>
         ) : null}
       </div>
@@ -1208,16 +1274,244 @@ export function JobInsightCard({
   );
 }
 
+/**
+ * Bullet list under the conviction ring showing the AI's contributing
+ * sub-scores. Each bullet is just a label + the AI's own number — no
+ * derived prose, no hardcoded thresholds in the copy. Lets the user
+ * audit *why* the conviction landed where it did at a glance.
+ */
+function ConvictionBreakdown({ detail }: { detail: JobFitDetail }) {
+  const pillars: { label: string; score: number }[] = [];
+  if (detail.role_match) pillars.push({ label: "Role alignment", score: detail.role_match.score });
+  if (detail.market_demand)
+    pillars.push({ label: "Market demand", score: detail.market_demand.score });
+  if (detail.visa_employability)
+    pillars.push({ label: "Visa accessibility", score: detail.visa_employability.score });
+  if (detail.salary_realism)
+    pillars.push({ label: "Salary feasibility", score: detail.salary_realism.score });
+
+  if (pillars.length === 0) return null;
+  return (
+    <div data-conviction-breakdown className="rounded-xl bg-ink-50/60 p-2.5">
+      <p className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-500">
+        Conviction is built on
+      </p>
+      <ul className="mt-1.5 space-y-1">
+        {pillars.map((p) => {
+          const tone =
+            p.score >= 70
+              ? "bg-success-500"
+              : p.score >= 50
+              ? "bg-gilt-500"
+              : "bg-danger-500";
+          return (
+            <li
+              key={p.label}
+              data-conviction-pillar={p.label}
+              className="flex items-center gap-2"
+            >
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${tone}`} aria-hidden="true" />
+              <span className="flex-1 text-[11.5px] text-ink-700">{p.label}</span>
+              <span className="font-mono text-[10.5px] tabular-nums text-ink-600">
+                {p.score}/100
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Empty-state filler for the "Working against it" panel, used only when
+ * the AI returned no risks AND no derivable cons. Pulls the first AI
+ * assumption (which the v3 prompt always populates) so the copy stays
+ * grounded in real model output rather than a static "nothing here"
+ * line.
+ */
+function ConsEmptyFromAI({ assumptions }: { assumptions?: Assumption[] }) {
+  const first = assumptions?.[0];
+  if (!first) return null;
+  return (
+    <div
+      data-cons-empty-ai
+      className="mt-3 rounded-xl border border-dashed border-ink-200 bg-white/60 p-3"
+    >
+      <p className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-500">
+        AI framing
+      </p>
+      <p className="mt-1 text-[12px] leading-[1.45] text-ink-700">
+        {first.label}
+        {first.detail ? ` — ${first.detail}` : ""}
+      </p>
+    </div>
+  );
+}
+
+function hasFullReasoningExtras(detail: JobFitDetail): boolean {
+  return Boolean(
+    (detail.career_angle_recommendations?.length ?? 0) > 0 ||
+      (detail.job_pathways?.length ?? 0) > 0 ||
+      (detail.key_gaps?.length ?? 0) > 0 ||
+      (detail.alternate_roles?.length ?? 0) > 0,
+  );
+}
+
+/**
+ * The expanded body of "Show full reasoning". Renders the AI's
+ * `reasoning` text (paragraph) followed by structured AI artifacts —
+ * career-angle highlights, the fastest pathway, top skill gaps, and one
+ * adjacent role — each section conditional on the AI actually
+ * supplying it. No hardcoded fallback copy.
+ */
+function FullReasoningPanel({
+  reasoning,
+  detail,
+  assumptions,
+}: {
+  reasoning: string;
+  detail: JobFitDetail;
+  assumptions?: Assumption[];
+}) {
+  const recs = (detail.career_angle_recommendations ?? []).slice(0, 3);
+  const path0 = detail.job_pathways?.[0];
+  const gaps = (detail.key_gaps ?? []).slice(0, 2);
+  const alt0 = detail.alternate_roles?.[0];
+  const assumptionList = (assumptions ?? []).slice(0, 3);
+
+  return (
+    <div
+      data-full-reasoning
+      className="mt-2 space-y-4 border-t border-ink-100 pt-3"
+    >
+      {reasoning ? (
+        <p className="whitespace-pre-line text-[13px] leading-[1.6] text-ink-700">
+          {reasoning}
+        </p>
+      ) : null}
+
+      {recs.length > 0 ? (
+        <div data-reasoning-block="career-angle">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Career-angle highlights · AI positioning tips
+          </p>
+          <ul className="mt-1.5 space-y-1.5">
+            {recs.map((r, i) => (
+              <li
+                key={i}
+                data-reasoning-rec={i}
+                data-impact={r.impact}
+                className="flex items-start gap-2 text-[12.5px] leading-[1.5] text-ink-700"
+              >
+                <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lagoon-500" />
+                <span className="flex-1">
+                  <span className="font-medium text-ink-900">{r.title}</span>
+                  {r.detail ? <span className="text-ink-700"> — {r.detail}</span> : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {path0 ? (
+        <div data-reasoning-block="pathway">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Fastest path forward · ~{path0.time_to_offer_weeks}w to offer
+          </p>
+          <p className="mt-1.5 text-[12.5px] font-medium text-ink-900">{path0.name}</p>
+          {path0.steps?.length ? (
+            <ol className="mt-1.5 list-inside list-decimal space-y-0.5 text-[12px] text-ink-700">
+              {path0.steps.slice(0, 4).map((s, i) => (
+                <li key={i}>{s}</li>
+              ))}
+            </ol>
+          ) : null}
+        </div>
+      ) : null}
+
+      {gaps.length > 0 ? (
+        <div data-reasoning-block="gaps">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Skills to close · AI-flagged gaps
+          </p>
+          <ul className="mt-1.5 flex flex-wrap gap-1.5">
+            {gaps.map((g, i) => {
+              const sev = (g.severity ?? "").toLowerCase();
+              const tone =
+                sev === "high"
+                  ? "bg-danger-100 text-danger-800"
+                  : sev === "medium"
+                  ? "bg-gilt-100 text-gilt-800"
+                  : "bg-ink-100 text-ink-700";
+              return (
+                <li
+                  key={i}
+                  data-reasoning-gap={g.label}
+                  className={`rounded-full px-2.5 py-0.5 font-mono text-[10.5px] ${tone}`}
+                >
+                  {g.label}
+                  <span className="ml-1 opacity-70">· {sev}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+
+      {alt0 ? (
+        <div data-reasoning-block="alternate">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Adjacent direction worth a look
+          </p>
+          <p className="mt-1.5 text-[12.5px] text-ink-700">
+            <span className="font-medium text-ink-900">{alt0.role}</span>
+            <span className="ml-2 rounded-full bg-ink-50 px-2 py-0.5 font-mono text-[10px] tabular-nums text-ink-700">
+              fit {alt0.fit_score}
+            </span>
+            {alt0.why ? <span className="block mt-0.5">{alt0.why}</span> : null}
+          </p>
+        </div>
+      ) : null}
+
+      {assumptionList.length > 0 ? (
+        <div data-reasoning-block="assumptions">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Framing assumptions
+          </p>
+          <ul className="mt-1.5 space-y-1 text-[12px] text-ink-700">
+            {assumptionList.map((a, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span aria-hidden="true" className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-ink-400" />
+                <span>
+                  {a.label}
+                  {a.detail ? <span className="text-ink-500"> · {a.detail}</span> : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function DriversPanel({
   kind,
   drivers,
   aiDriven,
+  fallback,
 }: {
   kind: "pros" | "cons";
   drivers: Driver[];
   /** When true, the panel header shows an AI badge — used by the pros
    *  panel because its content comes from the AI's supporting_signals. */
   aiDriven?: boolean;
+  /** Element rendered in place of the static empty-state copy when
+   *  `drivers` is empty. Lets callers surface AI-derived context (e.g.
+   *  the first assumption) instead of hardcoded "nothing here" text. */
+  fallback?: React.ReactNode;
 }) {
   const tone =
     kind === "pros"
@@ -1265,9 +1559,11 @@ function DriversPanel({
       </div>
 
       {drivers.length === 0 ? (
-        <p className="mt-3 rounded-xl border border-dashed border-ink-200 bg-white/60 p-3 text-[12px] text-ink-500">
-          {tone.empty}
-        </p>
+        fallback ?? (
+          <p className="mt-3 rounded-xl border border-dashed border-ink-200 bg-white/60 p-3 text-[12px] text-ink-500">
+            {tone.empty}
+          </p>
+        )
       ) : (
         <ul className="mt-3 space-y-2">
           {drivers.map((d, i) => {

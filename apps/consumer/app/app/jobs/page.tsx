@@ -141,6 +141,8 @@ export default async function JobFitPage() {
               reasoning={row.envelope.reasoning}
               confidence={row.envelope.confidence}
               detail={row.envelope.detail}
+              risks={row.envelope.risks}
+              assumptions={row.envelope.assumptions}
             />
 
             {/* ============ Salary realism + Visa employability ============ */}
