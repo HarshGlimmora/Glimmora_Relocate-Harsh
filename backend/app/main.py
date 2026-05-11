@@ -18,6 +18,7 @@ from app.modules.culture.routes import router as culture_router
 from app.modules.documents.routes import router as documents_router
 from app.modules.family.routes import router as family_router
 from app.modules.finance.routes import router as finance_router
+from app.modules.finance_category.routes import router as finance_category_router
 from app.modules.job_fit.routes import router as job_fit_router
 from app.modules.profile.routes import router as profile_router
 from app.modules.resume.routes import router as resume_router
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(visa_router)
     app.include_router(family_router)
     app.include_router(finance_router)
+    app.include_router(finance_category_router)
     app.include_router(documents_router)
     app.include_router(workflow_router)
     app.include_router(culture_router)

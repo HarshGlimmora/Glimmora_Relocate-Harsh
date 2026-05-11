@@ -97,6 +97,29 @@ class AnalysesRepository:
         model: str,
         prompt_version: str,
     ) -> Analysis:
+        # If a row already exists with this exact (case_id, kind, input_hash)
+        # tuple we'd violate `uq_analyses_case_kind_hash`. Each module's
+        # service runs the `find_cached → status='ready'` fast path BEFORE
+        # calling us, so by the time we get here any pre-existing row is
+        # non-ready (failed / stale / stuck-generating from a crashed run).
+        # We deterministically salt the new attempt's hash with the analysis
+        # version so it can coexist with the prior row as a fresh audit
+        # entry. The new attempt always wins for "latest" queries because
+        # `analysis_version` is strictly increasing.
+        existing = await self.session.execute(
+            select(Analysis.id)
+            .where(
+                Analysis.case_id == case_id,
+                Analysis.kind == kind,
+                Analysis.input_hash == input_hash,
+            )
+            .limit(1)
+        )
+        if existing.scalar_one_or_none() is not None:
+            input_hash = hashlib.sha256(
+                f"{input_hash}:v{analysis_version}".encode("utf-8")
+            ).hexdigest()
+
         row = Analysis(
             case_id=case_id,
             kind=kind,
@@ -111,7 +134,13 @@ class AnalysesRepository:
             recompute_required=False,
         )
         self.session.add(row)
-        await self.session.flush()
+        # Commit the placeholder row immediately so the database-wide write
+        # lock (SQLite) is released BEFORE the long Gemini call begins. The
+        # row is the persistent record of the attempt — if the LLM call later
+        # fails, `mark_failed` flips its status, and `mark_ready` flips it on
+        # success. Without this commit, every concurrent writer blocks until
+        # the LLM round-trip (up to ~3 min on Gemini Pro) completes.
+        await self.session.commit()
         return row
 
     async def mark_ready(

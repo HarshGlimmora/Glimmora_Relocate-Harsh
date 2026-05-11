@@ -8,17 +8,76 @@ the same card chrome from these fields regardless of analysis kind.
 Freshness fields (analysis_version, stale, recompute_required, stale_reason,
 input_hash) make partial reruns observable. The mandatory `assumptions[]`
 block is enforced by the AI gateway; an empty list is a contract violation.
+
+String-length policy
+--------------------
+LLMs do not reliably honour exact character limits even when instructed; a
+prompt that says "summary <= 400 chars" can yield 463 chars on a flaky
+generation. Letting Pydantic reject the response would turn a soft overrun
+into a hard 500 for the user. Instead, every user-visible string field uses
+the `_truncated(...)` factory: limits are bumped to a generous ceiling AND a
+`BeforeValidator` truncates with an ellipsis if the model still overshoots.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Any, Generic, TypeVar
+from typing import Annotated, Any, Generic, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator
 
 DetailT = TypeVar("DetailT", bound=BaseModel)
+
+
+def _truncate_string(max_len: int):
+    """Pydantic BeforeValidator: cap a string at `max_len` with a trailing ellipsis.
+
+    Run BEFORE the standard string validation, so the value Pydantic
+    eventually sees is already in-bounds and length constraints can never
+    raise. Empty / non-string inputs are passed through untouched.
+    """
+    def _impl(value: Any) -> Any:
+        if not isinstance(value, str):
+            return value
+        if len(value) <= max_len:
+            return value
+        # Trim to (max_len - 1) and append a single ellipsis so the visible
+        # length is exactly max_len. We strip first to avoid awkward "
+        # …" results from trailing whitespace.
+        trimmed = value[: max_len - 1].rstrip()
+        return f"{trimmed}…"
+    return _impl
+
+
+def _TruncatedStr(max_length: int, *, min_length: int = 0):
+    """Annotated string type with auto-truncation BEFORE length validation.
+
+    The schema still ADVERTISES `max_length` in OpenAPI so the prompt-side
+    instructions remain accurate; the truncator just absorbs the slack.
+    """
+    return Annotated[
+        str,
+        BeforeValidator(_truncate_string(max_length)),
+        Field(min_length=min_length, max_length=max_length),
+    ]
+
+
+def _OptionalTruncatedStr(max_length: int):
+    """Optional version of `_TruncatedStr` — safe with `None` values.
+
+    Pydantic 2.13's `max_length_validator` raises `TypeError` if it ever
+    encounters `None`, even when the field type is `str | None`. So instead
+    of stacking a `Field(max_length=...)` constraint on an Optional[str], we
+    rely on the `BeforeValidator` alone to enforce the cap (it short-circuits
+    on non-string inputs). The cap is therefore enforced via truncation
+    only — there is no validation step that can reject `None`.
+    """
+    return Annotated[
+        str | None,
+        BeforeValidator(_truncate_string(max_length)),
+        Field(default=None),
+    ]
 
 
 class AnalysisStatus(StrEnum):
@@ -50,14 +109,14 @@ class RiskSeverity(StrEnum):
 
 class Risk(BaseModel):
     severity: RiskSeverity
-    label: str = Field(min_length=1, max_length=120)
-    detail: str = Field(min_length=1, max_length=600)
+    label: _TruncatedStr(160, min_length=1) = Field(...)
+    detail: _TruncatedStr(800, min_length=1) = Field(...)
 
 
 class NextAction(BaseModel):
-    label: str = Field(min_length=1, max_length=120)
-    urgency: str = Field(min_length=1, max_length=40)
-    why: str = Field(min_length=1, max_length=400)
+    label: _TruncatedStr(160, min_length=1) = Field(...)
+    urgency: _TruncatedStr(60, min_length=1) = Field(...)
+    why: _TruncatedStr(600, min_length=1) = Field(...)
 
 
 class AssumptionSource(StrEnum):
@@ -70,8 +129,8 @@ class AssumptionSource(StrEnum):
 
 
 class Assumption(BaseModel):
-    label: str = Field(min_length=1, max_length=160)
-    detail: str | None = Field(default=None, max_length=400)
+    label: _TruncatedStr(200, min_length=1) = Field(...)
+    detail: _OptionalTruncatedStr(600)
     source: AssumptionSource
     confidence: float = Field(ge=0.0, le=1.0)
 
@@ -93,8 +152,8 @@ class AnalysisEnvelope(BaseModel, Generic[DetailT]):
     # --- core ---
     status: AnalysisStatus
     score: int | None = Field(default=None, ge=0, le=100)
-    summary: str = Field(min_length=1, max_length=400)
-    reasoning: str = Field(min_length=1, max_length=4000)
+    summary: _TruncatedStr(600, min_length=1) = Field(...)
+    reasoning: _TruncatedStr(6000, min_length=1) = Field(...)
     risks: list[Risk] = Field(default_factory=list)
     next_actions: list[NextAction] = Field(default_factory=list)
     confidence: float = Field(ge=0.0, le=1.0)
@@ -105,7 +164,7 @@ class AnalysisEnvelope(BaseModel, Generic[DetailT]):
     analysis_version: int = Field(ge=1)
     stale: bool = False
     recompute_required: bool = False
-    stale_reason: str | None = Field(default=None, max_length=240)
+    stale_reason: _OptionalTruncatedStr(320)
     input_hash: str = Field(min_length=8, max_length=128)
 
     # --- transparency ---

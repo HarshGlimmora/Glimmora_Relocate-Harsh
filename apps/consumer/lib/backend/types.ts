@@ -577,6 +577,78 @@ export interface ChecklistItem {
   notes?: string | null;
 }
 
+// ---- Finance category deep-dive (one of housing|utilities|food|transport|healthcare) ----
+
+export type FinanceCategoryKey =
+  | "housing"
+  | "utilities"
+  | "food"
+  | "transport"
+  | "healthcare";
+
+export const FINANCE_CATEGORY_KEYS: readonly FinanceCategoryKey[] = [
+  "housing",
+  "utilities",
+  "food",
+  "transport",
+  "healthcare",
+];
+
+export interface FinanceCategoryCostItem {
+  label: string;
+  amount: number;
+  share_pct: number;
+  note?: string | null;
+}
+
+export interface FinanceCategoryMarketComparison {
+  currency: string;
+  user_cost: number;
+  market_low: number;
+  market_avg: number;
+  market_high: number;
+  percentile: number;
+  note: string;
+}
+
+export interface FinanceCategoryOptimizationTip {
+  label: string;
+  detail: string;
+  monthly_savings_estimate?: number | null;
+  effort: "low" | "medium" | "high";
+}
+
+export interface FinanceCategoryRiskIndicator {
+  level: "low" | "medium" | "high";
+  label: string;
+  detail: string;
+}
+
+export interface FinanceCategoryLifestyleImpact {
+  share_of_take_home_pct: number;
+  annual_total: number;
+  runway_months_if_eliminated: number;
+  narrative: string;
+}
+
+export interface FinanceCategoryProjectionPoint {
+  label: string;
+  baseline: number;
+  optimized: number;
+}
+
+export interface FinanceCategoryDetail {
+  category: FinanceCategoryKey;
+  currency: string;
+  monthly_total: number;
+  cost_breakdown: FinanceCategoryCostItem[];
+  market_comparison: FinanceCategoryMarketComparison;
+  optimization_tips: FinanceCategoryOptimizationTip[];
+  risk_indicator: FinanceCategoryRiskIndicator;
+  lifestyle_impact: FinanceCategoryLifestyleImpact;
+  projection: FinanceCategoryProjectionPoint[];
+}
+
 export interface DocumentChecklistDetail {
   items: ChecklistItem[];
   readiness_percentage: number;

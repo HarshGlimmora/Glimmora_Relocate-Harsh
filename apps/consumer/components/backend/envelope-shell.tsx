@@ -116,7 +116,12 @@ export function StalePill({ stale, reason }: { stale: boolean; reason: string | 
 }
 
 export function EnvelopeMeta<T>({ row }: { row: ModuleResponse<T> }) {
-  const md = "metadata" in row.envelope ? row.envelope.metadata : {};
+  // `row.envelope` is typed as non-null, but the backend can hand us a null
+  // envelope when a row is mid-generation or was just failed with no body.
+  // Treat that as "no metadata available" instead of crashing the page.
+  const env = row.envelope as ModuleResponse<T>["envelope"] | null;
+  const md =
+    env && typeof env === "object" && "metadata" in env ? env.metadata : {};
   const model = (md as { model?: string }).model ?? row.model ?? "—";
   const lat = (md as { latency_ms?: number }).latency_ms ?? row.latency_ms ?? null;
   const ti = (md as { tokens_in?: number }).tokens_in ?? row.tokens_in ?? null;
@@ -262,27 +267,36 @@ export function AssumptionsList({ items }: { items: Assumption[] }) {
   );
 }
 
-export function FailedEnvelopeView({ envelope }: { envelope: FailedEnvelope }) {
+export function FailedEnvelopeView({
+  envelope,
+}: {
+  envelope: FailedEnvelope | null | undefined;
+}) {
+  // Defensive fallback when the backend hands us a null/empty envelope
+  // (typical for fresh failures with no body persisted yet).
+  const msg = envelope?.user_message || "We couldn't compute this analysis yet.";
+  const code = envelope?.error_code ?? "unknown_error";
   return (
     <div className="rounded-2xl border border-danger-200 bg-danger-50 p-5">
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-danger-700">Module failed</p>
-      <p className="mt-2 text-[14px] font-semibold text-danger-900">{envelope.user_message}</p>
-      <p className="mt-1 font-mono text-[11px] text-danger-700/80">code: {envelope.error_code}</p>
+      <p className="mt-2 text-[14px] font-semibold text-danger-900">{msg}</p>
+      <p className="mt-1 font-mono text-[11px] text-danger-700/80">code: {code}</p>
     </div>
   );
 }
 
 export function isReadyEnvelope<T>(
-  env: AnalysisEnvelope<T> | FailedEnvelope,
+  env: AnalysisEnvelope<T> | FailedEnvelope | null | undefined,
 ): env is AnalysisEnvelope<T> {
-  return env.status !== "failed";
+  // Defensive null/undefined check: when a /run endpoint 500s, the page
+  // sometimes receives `null` (no envelope) and previously crashed here
+  // with "Cannot read properties of null (reading 'status')".
+  return env != null && env.status !== "failed";
 }
 
-/** Returns the ready envelope, or null if it's failed.
- *  Use this when you need to read fields conditionally — it lets the
- *  TypeScript narrowing flow through into a callable expression. */
+/** Returns the ready envelope, or null if it's failed or missing. */
 export function readyOrNull<T>(
-  env: AnalysisEnvelope<T> | FailedEnvelope,
+  env: AnalysisEnvelope<T> | FailedEnvelope | null | undefined,
 ): AnalysisEnvelope<T> | null {
   return isReadyEnvelope(env) ? env : null;
 }
@@ -300,16 +314,21 @@ export function FailedValueLead<T>({
   retryHref = "/app/onboarding/profile",
   retryLabel = "Re-check your profile",
 }: {
-  envelope: AnalysisEnvelope<T> | FailedEnvelope;
+  envelope: AnalysisEnvelope<T> | FailedEnvelope | null | undefined;
   retryHref?: string;
   retryLabel?: string;
 }) {
   if (isReadyEnvelope(envelope)) return null;
+  // Null-safe: envelope may be `null` when the backend returned a 500 or
+  // hasn't materialised the failure record yet. Show generic copy.
+  const headline =
+    envelope?.user_message || "We couldn't compute this analysis yet.";
+  const code = envelope?.error_code ?? "unknown_error";
   return (
     <ValueLead
       label="This module needs another pass"
-      headline={envelope.user_message || "We couldn't compute this analysis yet."}
-      detail={`Code: ${envelope.error_code}. The other modules below may still be useful.`}
+      headline={headline}
+      detail={`Code: ${code}. The other modules below may still be useful.`}
       emphasis="warn"
       cta={{ href: retryHref, text: retryLabel }}
     />

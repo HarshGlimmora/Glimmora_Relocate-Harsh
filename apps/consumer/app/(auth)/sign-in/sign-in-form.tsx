@@ -3,14 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signInAction } from "@/app/(public)/actions";
 
 export function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("from") || "/app";
+  const redirectTo = searchParams.get("from") || "/payment";
+  const justRegistered = searchParams.get("registered") === "1";
 
   const [isPending, startTransition] = React.useTransition();
   const [showPassword, setShowPassword] = React.useState(false);
@@ -37,6 +38,15 @@ export function SignInForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
+      {justRegistered && !error ? (
+        <div className="flex items-start gap-2.5 rounded-xl border border-success-200 bg-success-50 px-4 py-3 text-[13px] text-success-700">
+          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-success-500 text-white">
+            <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
+          </span>
+          <span>Account created. Sign in to continue to your plan.</span>
+        </div>
+      ) : null}
+
       {error ? (
         <div className="rounded-xl border border-danger-200 bg-danger-50 px-4 py-3 text-[13px] text-danger-700">
           {error}

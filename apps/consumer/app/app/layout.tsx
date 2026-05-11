@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect("/sign-in");
   }
 
-  // Fetch minimal user record for topbar + shell + intent
+  // Fetch minimal user record for topbar + shell + intent + payment gate
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -21,11 +21,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       email: true,
       image: true,
       intent: true,
+      subscription: { select: { tier: true } },
     },
   });
 
   if (!user) {
     redirect("/sign-in");
+  }
+
+  // Payment gate: unpaid users must complete checkout (or use the dev bypass
+  // on /payment) before they can access the dashboard or any module.
+  if (!user.subscription || user.subscription.tier === "FREE") {
+    redirect("/payment");
   }
 
   const intent = user.intent && isIntent(user.intent) ? INTENTS[user.intent] : null;

@@ -21,6 +21,8 @@ import type {
   CultureDetail,
   DocumentChecklistDetail,
   FamilyImpactDetail,
+  FinanceCategoryDetail,
+  FinanceCategoryKey,
   FinanceDetail,
   JobFitDetail,
   ModuleResponse,
@@ -152,15 +154,22 @@ async function _doBackend<T>(
     const code = err?.error?.code ?? `http_${res.status}`;
     const message = err?.error?.message ?? `Backend ${method} ${path} failed`;
     const apiError = new BackendApiError(res.status, code, message, payload);
-    logBackendError({
-      source: "backend-client",
-      method,
-      url,
-      status: res.status,
-      durationMs: ms,
-      error: apiError,
-      extra: { responseBody: payload },
-    });
+    // 404 on GET is a normal "no data yet" signal (e.g. dashboard polling
+    // `/synthesis` before the user has run synthesis). Callers like
+    // `moduleLatest` already coerce it to `null` — don't pollute the
+    // terminal with red error blocks for an expected control-flow signal.
+    const isBenignNotFound = res.status === 404 && method === "GET";
+    if (!isBenignNotFound) {
+      logBackendError({
+        source: "backend-client",
+        method,
+        url,
+        status: res.status,
+        durationMs: ms,
+        error: apiError,
+        extra: { responseBody: payload },
+      });
+    }
     throw apiError;
   }
 
@@ -462,6 +471,93 @@ export const synthesis = {
   ensure: (caseId: string) => ensureLatestOrRun<SynthesisDetail>(caseId, "synthesis"),
   run: (caseId: string, body?: Record<string, unknown>) =>
     moduleRun<SynthesisDetail>(caseId, "synthesis", body),
+};
+
+// ---- Finance category deep-dive (housing | utilities | food | transport | healthcare) ----
+// One service handles all five categories; the route includes {category}.
+// We don't use the generic `moduleLatest` helper because each category is its
+// own kind (`finance_cat_<category>`) and uses a different URL prefix.
+
+export type FinanceCategoryResponse = ModuleResponse<FinanceCategoryDetail> & {
+  category: FinanceCategoryKey;
+};
+
+async function financeCategoryLatest(
+  caseId: string,
+  category: FinanceCategoryKey,
+): Promise<FinanceCategoryResponse | null> {
+  try {
+    return await backend<FinanceCategoryResponse>(
+      `/api/v1/case/${caseId}/finance/category/${category}`,
+    );
+  } catch (e) {
+    if (e instanceof BackendApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+async function financeCategoryRun(
+  caseId: string,
+  category: FinanceCategoryKey,
+  body: Record<string, unknown> = {},
+): Promise<FinanceCategoryResponse> {
+  return backend<FinanceCategoryResponse>(
+    `/api/v1/case/${caseId}/finance/category/${category}/run`,
+    { method: "POST", body },
+  );
+}
+
+/**
+ * Get-or-create wrapper that mirrors `ensureLatestOrRun` semantics:
+ * returns the cached row if it exists and is fresh, otherwise calls /run.
+ * On any failure, returns a synthetic failed envelope so server components
+ * can render the failure state without crashing.
+ */
+async function financeCategoryEnsure(
+  caseId: string,
+  category: FinanceCategoryKey,
+): Promise<FinanceCategoryResponse> {
+  const latest = await financeCategoryLatest(caseId, category);
+  if (latest && latest.status === "ready" && !latest.recompute_required) {
+    return latest;
+  }
+  try {
+    return await financeCategoryRun(caseId, category);
+  } catch (e) {
+    if (e instanceof BackendApiError) {
+      return {
+        id: latest?.id ?? "synthetic",
+        case_id: caseId,
+        kind: `finance_cat_${category}` as unknown as ModuleResponse<FinanceCategoryDetail>["kind"],
+        status: "failed",
+        envelope: {
+          status: "failed",
+          kind: `finance_cat_${category}` as unknown as FailedEnvelopeKindShim,
+          error_code: e.code,
+          user_message: e.message,
+          metadata: { detail: e.detail },
+        } as unknown as FinanceCategoryResponse["envelope"],
+        analysis_version: latest?.analysis_version ?? 1,
+        stale: latest?.stale ?? false,
+        recompute_required: latest?.recompute_required ?? false,
+        stale_reason: latest?.stale_reason ?? null,
+        category,
+      } satisfies FinanceCategoryResponse;
+    }
+    throw e;
+  }
+}
+
+// FailedEnvelope.kind is typed as AnalysisKind on the page renderer, but the
+// finance-category sub-feature uses its own kind strings. The shim type lets
+// the synthetic failure object satisfy the structural shape without polluting
+// the canonical AnalysisKind union.
+type FailedEnvelopeKindShim = string;
+
+export const financeCategory = {
+  latest: financeCategoryLatest,
+  run: financeCategoryRun,
+  ensure: financeCategoryEnsure,
 };
 
 export const SLUG_BY_KIND = SLUGS;

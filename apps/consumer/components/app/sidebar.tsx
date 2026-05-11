@@ -35,12 +35,9 @@ export function AppSidebar({
           href="/app"
           aria-label="Glimmora home"
           onClick={onNavigate}
-          className="flex items-center gap-2.5"
+          className="flex items-center"
         >
-          <GlimmoraMark size={24} withWordmark={false} className="text-ink-900" />
-          <span className="font-sans text-[15px] font-semibold tracking-tight text-ink-900">
-            Glimmora
-          </span>
+          <GlimmoraMark height={36} className="text-ink-900" />
         </Link>
       </div>
 

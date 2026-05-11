@@ -100,18 +100,18 @@ export async function signUpAction(formData: FormData): Promise<ActionResult> {
     },
   });
 
-  // Auto sign-in after signup
+  // Workflow: signup → sign-in page → payment → dashboard.
+  // We deliberately do NOT auto-sign-in here; the user lands on /sign-in next
+  // and authenticates manually so the payment gate fires on a clean session.
+  // Clear any stale session cookie left over from a previous account so the
+  // /sign-in middleware doesn't bounce the new user past the login form.
   try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    await signOut({ redirect: false });
   } catch {
-    // if auto-login fails, user can still sign in manually
+    // No active session to clear — fine.
   }
 
-  return { ok: true, message: "Welcome to Glimmora." };
+  return { ok: true, message: "Account created. Sign in to continue." };
 }
 
 export async function signOutAction() {

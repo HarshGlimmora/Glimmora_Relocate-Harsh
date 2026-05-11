@@ -6,9 +6,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     <div className="relative min-h-screen bg-parchment text-ink-900">
       <header className="sticky top-0 z-50 border-b border-ink-200/60 bg-parchment/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-6 px-6 md:px-10">
-          <Link href="/" aria-label="Glimmora home" className="flex items-center gap-2.5 shrink-0">
-            <GlimmoraMark size={24} withWordmark={false} className="text-ink-900" />
-            <span className="font-sans text-[15px] font-semibold tracking-tight">Glimmora</span>
+          <Link href="/" aria-label="Glimmora home" className="flex items-center shrink-0">
+            <GlimmoraMark height={32} className="text-ink-900" />
           </Link>
 
           <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">
@@ -40,9 +39,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <div className="mx-auto max-w-[1280px] px-6 md:px-10">
           <div className="grid gap-10 md:grid-cols-[1.5fr_2fr]">
             <div className="max-w-sm">
-              <div className="flex items-center gap-2.5">
-                <GlimmoraMark size={24} withWordmark={false} className="text-ink-900" />
-                <span className="font-sans text-[15px] font-semibold tracking-tight">Glimmora</span>
+              <div className="flex items-center">
+                <GlimmoraMark height={32} className="text-ink-900" />
               </div>
               <p className="mt-4 text-[13.5px] leading-relaxed text-ink-600">
                 The AI companion for moving your life across borders. Job, visa, housing, family, finance, culture — one plan, one platform.

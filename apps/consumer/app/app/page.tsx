@@ -32,6 +32,7 @@ import {
   firstIncompleteStep,
   type WorkflowStepId,
 } from "@/lib/workflow";
+import { WorkflowJourney } from "./_workflow-journey";
 
 export const dynamic = "force-dynamic";
 
@@ -43,25 +44,30 @@ interface ModuleRow {
 }
 
 export default async function DashboardPage() {
-  const sess = await ensureBackendSession();
-  const profile = await getProfile().catch(() => null);
-  const caseId = sess.caseId;
+  // Backend session can fail (FastAPI down, network blocked, etc.). Treat that
+  // as "no modules run yet" so the dashboard still renders post-login — the
+  // payment gate has already passed at this point.
+  const sess = await ensureBackendSession().catch(() => null);
+  const profile = sess ? await getProfile().catch(() => null) : null;
+  const caseId = sess?.caseId ?? "";
 
   // Fan out to every module's latest. Missing → null. Failures swallowed.
   async function safe<T>(p: Promise<ModuleResponse<T> | null>): Promise<ModuleResponse<T> | null> {
     return p.catch(() => null);
   }
 
-  const [c, j, v, f, fin, d, cu, syn] = await Promise.all([
-    safe(country.latest(caseId)),
-    safe(jobfit.latest(caseId)),
-    safe(visa.latest(caseId)),
-    safe(family.latest(caseId)),
-    safe(finance.latest(caseId)),
-    safe(documents.latest(caseId)),
-    safe(culture.latest(caseId)),
-    safe(synthesis.latest(caseId)),
-  ]);
+  const [c, j, v, f, fin, d, cu, syn] = sess
+    ? await Promise.all([
+        safe(country.latest(caseId)),
+        safe(jobfit.latest(caseId)),
+        safe(visa.latest(caseId)),
+        safe(family.latest(caseId)),
+        safe(finance.latest(caseId)),
+        safe(documents.latest(caseId)),
+        safe(culture.latest(caseId)),
+        safe(synthesis.latest(caseId)),
+      ])
+    : [null, null, null, null, null, null, null, null];
 
   // Workflow ordering: Country → Job fit → Visa → Finance → Documents → Family → Culture.
   const modules: ModuleRow[] = [
@@ -97,7 +103,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
-      <header className="mb-8">
+      <header className="mb-6">
         <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-500">Dashboard</p>
         <h1 className="mt-3 font-sans text-[clamp(1.75rem,3.5vw,2.5rem)] font-semibold tracking-[-0.02em] text-ink-900">
           {syn?.status === "ready"
@@ -107,9 +113,14 @@ export default async function DashboardPage() {
             : "Let's get started."}
         </h1>
         <p className="mt-3 max-w-xl text-[14px] leading-[1.6] text-ink-600">
-          The journey runs in order: <strong>Resume → Profile → Country → Job fit → Visa → Finance → Documents → Family → Culture.</strong>
+          Work the journey in order — each step unlocks the next.
         </p>
       </header>
+
+      {/* Visual workflow journey — replaces the plain-text "order" line. */}
+      <div className="mb-8">
+        <WorkflowJourney completion={completion} activeId={nextStep.id} />
+      </div>
 
       {/* Auto-skip CTA: jumps straight to the first incomplete step. */}
       {!allComplete ? (
@@ -198,14 +209,17 @@ export default async function DashboardPage() {
                     <p className="mt-0.5 truncate font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-500">
                       v{m.row.analysis_version} ·
                       {m.row.stale ? " stale" : " current"}
-                      {m.row.envelope.status !== "ready" ? " · failed" : ""}
+                      {/* Use the row-level status (always populated) instead of
+                          digging into envelope.status — envelope can be null
+                          for rows that crashed mid-generation. */}
+                      {m.row.status !== "ready" ? " · failed" : ""}
                     </p>
                   ) : (
                     <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-400">not run yet</p>
                   )}
                 </div>
                 <div className="ml-3 text-right">
-                  {m.row && m.row.envelope.status === "ready" && "score" in m.row.envelope ? (
+                  {m.row && m.row.status === "ready" && m.row.envelope && "score" in m.row.envelope ? (
                     <p className="font-sans text-[20px] font-semibold leading-none text-ink-900">
                       {m.row.envelope.score ?? "—"}
                     </p>

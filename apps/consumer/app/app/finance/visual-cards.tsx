@@ -8,12 +8,25 @@
  */
 
 import * as React from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import type {
+  FinanceCategoryKey,
   FinanceDetail,
   MonthlyCost,
   MonthlyNet,
   Risk,
 } from "@/lib/backend/types";
+
+// Categories that have an AI deep-dive detail page wired up. Click-through
+// is enabled only for these keys; childcare/discretionary stay informational.
+const DEEP_DIVE_CATEGORIES = new Set<string>([
+  "housing",
+  "utilities",
+  "food",
+  "transport",
+  "healthcare",
+]);
 
 // ---- Section label (eyebrow above each grouped section) ----------------
 
@@ -265,24 +278,61 @@ export function CostBreakdownCard({ cost }: { cost: MonthlyCost }) {
         ))}
       </div>
 
-      {/* Per-category rows */}
-      <ul className="mt-4 space-y-2">
-        {lines.map((l) => (
-          <li key={l.key} data-cost-row={l.key} className="flex items-center gap-2 text-[12.5px]">
-            <span className={`h-2.5 w-2.5 rounded-full ${l.tone}`} />
-            <span className="w-24 truncate text-ink-700">{l.label}</span>
-            <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
-              <div className={`absolute inset-y-0 left-0 ${l.tone}`} style={{ width: `${l.pct}%` }} />
-            </div>
-            <span className="w-14 text-right font-mono text-[11px] tabular-nums text-ink-700">
-              {l.amount.toLocaleString()}
-            </span>
-            <span className="w-10 text-right font-mono text-[10px] tabular-nums text-ink-500">
-              {l.pct.toFixed(0)}%
-            </span>
-          </li>
-        ))}
+      {/* Per-category rows — clickable for categories with an AI deep-dive page */}
+      <ul className="mt-4 space-y-1">
+        {lines.map((l) => {
+          const clickable = DEEP_DIVE_CATEGORIES.has(l.key);
+          const rowInner = (
+            <>
+              <span className={`h-2.5 w-2.5 rounded-full ${l.tone}`} />
+              <span className="w-24 truncate text-ink-700 group-hover:text-ink-900">
+                {l.label}
+              </span>
+              <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
+                <div
+                  className={`absolute inset-y-0 left-0 ${l.tone}`}
+                  style={{ width: `${l.pct}%` }}
+                />
+              </div>
+              <span className="w-14 text-right font-mono text-[11px] tabular-nums text-ink-700">
+                {l.amount.toLocaleString()}
+              </span>
+              <span className="w-10 text-right font-mono text-[10px] tabular-nums text-ink-500">
+                {l.pct.toFixed(0)}%
+              </span>
+              {clickable ? (
+                <ChevronRight
+                  className="h-3.5 w-3.5 shrink-0 text-ink-300 transition-all group-hover:translate-x-0.5 group-hover:text-ink-700"
+                  aria-hidden
+                />
+              ) : (
+                <span className="w-3.5" aria-hidden />
+              )}
+            </>
+          );
+          return (
+            <li key={l.key} data-cost-row={l.key}>
+              {clickable ? (
+                <Link
+                  href={`/app/finance/category/${l.key as FinanceCategoryKey}`}
+                  className="group flex items-center gap-2 rounded-lg px-1.5 py-1 text-[12.5px] transition-colors hover:bg-ink-50"
+                  aria-label={`Open ${l.label} cost deep-dive`}
+                >
+                  {rowInner}
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2 px-1.5 py-1 text-[12.5px]">
+                  {rowInner}
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
+
+      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">
+        Click any category for an AI deep-dive →
+      </p>
     </div>
   );
 }
