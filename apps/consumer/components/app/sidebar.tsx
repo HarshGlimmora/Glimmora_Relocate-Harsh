@@ -28,7 +28,7 @@ export function AppSidebar({
     href === "/app" ? pathname === "/app" : pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <div className="flex h-full flex-col bg-parchment">
+    <div className="flex h-full flex-col bg-transparent">
       {/* Brand */}
       <div className="flex h-20 shrink-0 items-center px-6">
         <Link
@@ -44,7 +44,7 @@ export function AppSidebar({
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-2">
         {intentLabel ? (
-          <div className="mb-4 rounded-xl border border-ink-200 bg-white px-3 py-2">
+          <div className="mb-4 rounded-xl border border-ink-200/70 bg-white/65 px-3 py-2 shadow-[0_1px_2px_rgba(40,25,12,0.04)] backdrop-blur-sm">
             <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-ink-500">
               Your goal
             </p>
@@ -73,14 +73,14 @@ export function AppSidebar({
                       className={cn(
                         "group flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] transition-colors",
                         active
-                          ? "bg-ink-900 text-parchment font-medium"
-                          : "text-ink-700 hover:bg-ink-900/5"
+                          ? "bg-white text-ink-900 font-medium ring-1 ring-caramel-700/10 shadow-[0_1px_2px_rgba(40,25,12,0.06),inset_0_1px_0_0_rgba(255,255,255,0.8)]"
+                          : "text-ink-700 hover:bg-white/55 hover:text-ink-900"
                       )}
                     >
                       <Icon
                         className={cn(
                           "h-[15px] w-[15px] shrink-0",
-                          active ? "text-parchment" : "text-ink-500"
+                          active ? "text-caramel-700" : "text-ink-500"
                         )}
                         strokeWidth={1.75}
                       />
@@ -109,7 +109,7 @@ export function AppSidebar({
       </nav>
 
       {/* Account */}
-      <div className="border-t border-ink-200/60 px-3 py-3">
+      <div className="border-t border-ink-200/70 px-3 py-3">
         <ul className="space-y-0.5">
           {accountNav.map((item) => {
             const Icon = item.icon;

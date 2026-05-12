@@ -30,7 +30,7 @@ export function AppShell({
           content. Fixed, decorative, purely visual. */}
       <TravelAccentLayer />
 
-      <aside className="relative z-10 sticky top-0 hidden h-screen w-[244px] shrink-0 border-r border-ink-200/50 bg-sand lg:block">
+      <aside className="relative z-10 sticky top-0 hidden h-screen w-[244px] shrink-0 border-r border-ink-200/60 bg-[linear-gradient(180deg,#F6F1E4_0%,#EEE6D2_100%)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.7),inset_-24px_0_48px_-24px_rgba(123,71,25,0.04)] lg:block">
         <AppSidebar
           intentEmphasis={intentEmphasis}
           intentLabel={intentLabel}
