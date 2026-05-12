@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { AppSidebar } from "@/components/app/sidebar";
 import { AppTopbar } from "@/components/app/topbar";
 import { MobileSidebar } from "@/components/app/mobile-sidebar";
+import { RelocationAssistantLazy } from "@/components/chatbot/lazy";
 import type { WorkflowCompletion } from "@/lib/workflow";
 
 export function AppShell({
@@ -56,6 +57,10 @@ export function AppShell({
           style: { fontFamily: "var(--font-sans)" },
         }}
       />
+
+      {/* Floating AI relocation assistant — visible across every gated
+          dashboard page. Lazy-loaded to keep first-paint lean. */}
+      <RelocationAssistantLazy />
     </div>
   );
 }

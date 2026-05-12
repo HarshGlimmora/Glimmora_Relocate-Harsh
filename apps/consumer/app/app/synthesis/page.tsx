@@ -111,10 +111,26 @@ export default async function SynthesisPage() {
           </>
         ) : (
           <>
-            {/* ───────────────────────── 1. The Verdict ───────────────────────── */}
+            {/* ───────────────────── 1. Should You Move? ───────────────────── */}
             <section>
               <SynthesisSectionHeading
                 number="01"
+                title="Should you move?"
+                description="A single yes / no call based on the overall feasibility score."
+                icon={<Star className="h-4 w-4" />}
+              />
+              <ShouldYouMoveCard
+                verdict={row.envelope.detail.verdict}
+                feasibilityScore={row.envelope.detail.feasibility_score}
+                oneLineReasoning={row.envelope.detail.one_line_reasoning}
+                modelConfidence={row.envelope.confidence}
+              />
+            </section>
+
+            {/* ───────────────────────── 2. The Verdict ───────────────────────── */}
+            <section>
+              <SynthesisSectionHeading
+                number="02"
                 title="The verdict"
                 description="The AI's headline call, with recommended destination + role path."
                 icon={<Flag className="h-4 w-4" />}
@@ -192,10 +208,10 @@ export default async function SynthesisPage() {
               </div>
             </section>
 
-            {/* ───────────────── 2. Confirm what matters most ───────────────── */}
+            {/* ───────────────── 3. Confirm what matters most ───────────────── */}
             <section>
               <SynthesisSectionHeading
-                number="02"
+                number="03"
                 title="Confirm what matters most"
                 description="Tighten the synthesis around the outcome you care about and the concern that worries you most."
                 icon={<Compass className="h-4 w-4" />}
@@ -213,10 +229,10 @@ export default async function SynthesisPage() {
               />
             </section>
 
-            {/* ─────────────────────── 3. Module Scoreboard ─────────────────── */}
+            {/* ─────────────────────── 4. Module Scoreboard ─────────────────── */}
             <section>
               <SynthesisSectionHeading
-                number="03"
+                number="04"
                 title="Module scoreboard"
                 description="Every upstream analysis, scored out of 100. Red ≤ 40, amber 41–70, green 71+."
                 icon={<Layers className="h-4 w-4" />}
@@ -224,11 +240,11 @@ export default async function SynthesisPage() {
               <ModuleScoreGrid scores={row.envelope.detail.module_scores} />
             </section>
 
-            {/* ───────────────────────── 4. Top Blockers ───────────────────── */}
+            {/* ───────────────────────── 5. Top Blockers ───────────────────── */}
             {row.envelope.detail.top_blockers.length ? (
               <section>
                 <SynthesisSectionHeading
-                  number="04"
+                  number="05"
                   title="Top blockers"
                   description="What's most likely to stop the move — flagged across modules and surfaced here."
                   icon={<AlertTriangle className="h-4 w-4" />}
@@ -237,31 +253,15 @@ export default async function SynthesisPage() {
               </section>
             ) : null}
 
-            {/* ─────────────────────────── 5. Risks ────────────────────────── */}
+            {/* ─────────────────────────── 6. Risks ────────────────────────── */}
             <section>
               <SynthesisSectionHeading
-                number="05"
+                number="06"
                 title="Risks"
                 description="Uncertainty that could change the verdict if it materialises."
                 icon={<ShieldAlert className="h-4 w-4" />}
               />
               <RisksOrbit risks={row.envelope.risks} />
-            </section>
-
-            {/* ───────────────────── 6. Should You Move? ───────────────────── */}
-            <section>
-              <SynthesisSectionHeading
-                number="06"
-                title="Should you move?"
-                description="A single yes / no call based on the overall feasibility score."
-                icon={<Star className="h-4 w-4" />}
-              />
-              <ShouldYouMoveCard
-                verdict={row.envelope.detail.verdict}
-                feasibilityScore={row.envelope.detail.feasibility_score}
-                oneLineReasoning={row.envelope.detail.one_line_reasoning}
-                modelConfidence={row.envelope.confidence}
-              />
             </section>
 
             {/* ─────────────────── 7. Next Best Actions ────────────────────── */}
