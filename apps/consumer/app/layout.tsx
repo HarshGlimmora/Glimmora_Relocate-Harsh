@@ -1,19 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Public_Sans } from "next/font/google";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
+// Project typography (finalised: option 11 — Public Sans single-family).
+// Headings and body share the same family; visual hierarchy comes from
+// weight + size, not contrasting typefaces. `--font-display` and
+// `--font-mono` are CSS-aliased to `--font-sans` in globals.css so every
+// callsite (font-sans, font-display, font-mono) resolves to Public Sans.
+const publicSans = Public_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
   weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-mono",
-  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -44,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${jakarta.variable} ${jetbrains.variable}`}
+      className={publicSans.variable}
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-parchment text-ink-900 antialiased">{children}</body>

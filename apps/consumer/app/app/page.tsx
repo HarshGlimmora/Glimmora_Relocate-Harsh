@@ -104,15 +104,15 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-12">
       <header className="mb-6">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-500">Dashboard</p>
-        <h1 className="mt-3 font-sans text-[clamp(1.75rem,3.5vw,2.5rem)] font-semibold tracking-[-0.02em] text-ink-900">
+        <p className="font-sans text-[10.5px] font-medium uppercase tracking-[0.22em] text-ink-500">Dashboard</p>
+        <h1 className="mt-3 font-display text-[clamp(1.75rem,3.5vw,2.5rem)] font-bold tracking-[-0.02em] text-ink-900">
           {syn?.status === "ready"
             ? "Your verdict is ready."
             : profileReady
             ? "Run your analyses."
             : "Let's get started."}
         </h1>
-        <p className="mt-3 max-w-xl text-[14px] leading-[1.6] text-ink-600">
+        <p className="mt-3 max-w-xl font-sans text-[14px] font-normal leading-[1.6] text-ink-600">
           Work the journey in order — each step unlocks the next.
         </p>
       </header>
@@ -125,26 +125,26 @@ export default async function DashboardPage() {
       {/* Auto-skip CTA: jumps straight to the first incomplete step. */}
       {!allComplete ? (
         <div className="mb-8 rounded-2xl border border-ink-200 bg-white p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-500">
+          <p className="font-sans text-[10px] font-medium uppercase tracking-[0.22em] text-ink-500">
             Continue your journey
           </p>
-          <p className="mt-1 text-[14px] font-semibold text-ink-900">
+          <p className="mt-1 font-display text-[14px] font-semibold text-ink-900">
             Pick up at <span className="text-ink-900">{nextStep.label}</span>
           </p>
-          <p className="mt-1 text-[12.5px] text-ink-600">
+          <p className="mt-1 font-sans text-[12.5px] font-normal text-ink-600">
             We'll skip the steps you've already completed and take you straight there.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
             <Link
               href={nextStep.href}
-              className="rounded-full bg-ink-900 px-4 py-2 text-[13px] font-medium text-parchment hover:bg-ink-800"
+              className="rounded-full bg-ink-900 px-4 py-2 font-sans text-[13px] font-semibold text-parchment hover:bg-ink-800"
             >
               Continue → {nextStep.label}
             </Link>
             {!profileReady ? (
               <Link
                 href="/app/onboarding/profile"
-                className="rounded-full border border-ink-300 bg-white px-4 py-2 text-[13px] font-medium text-ink-800 hover:bg-ink-50"
+                className="rounded-full border border-ink-300 bg-white px-4 py-2 font-sans text-[13px] font-semibold text-ink-800 hover:bg-ink-50"
               >
                 Skip — fill profile manually
               </Link>
@@ -155,33 +155,33 @@ export default async function DashboardPage() {
 
       {syn?.status === "ready" && syn.envelope.status === "ready" ? (
         <div className="mb-8 rounded-2xl border border-ink-200 bg-ink-900 p-6 text-parchment">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-gilt-300">Verdict</p>
+          <p className="font-display text-[10px] font-semibold uppercase tracking-[0.22em] text-gilt-300">Verdict</p>
           <div className="mt-3 flex items-baseline gap-3">
-            <span className="font-sans text-[42px] font-semibold leading-none tracking-[-0.02em]">
+            <span className="font-display text-[42px] font-bold leading-none tracking-[-0.02em]">
               {(() => {
                 const det = syn.envelope.detail as { verdict: string; feasibility_score: number; one_line_reasoning: string };
                 return det.verdict.replace(/_/g, " ");
               })()}
             </span>
-            <span className="font-mono text-[12px] text-white/60">
+            <span className="font-sans text-[12px] font-medium text-white/60">
               · feasibility {(syn.envelope.detail as { feasibility_score: number }).feasibility_score}/100
             </span>
           </div>
-          <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.6] text-white/80">
+          <p className="mt-2 max-w-3xl font-sans text-[13.5px] font-normal leading-[1.6] text-white/80">
             {(syn.envelope.detail as { one_line_reasoning: string }).one_line_reasoning}
           </p>
-          <Link href="/app/synthesis" className="mt-4 inline-flex items-center gap-2 rounded-full bg-gilt-500 px-4 py-2 text-[13px] font-semibold text-ink-900 hover:bg-gilt-400">
+          <Link href="/app/synthesis" className="mt-4 inline-flex items-center gap-2 rounded-full bg-gilt-500 px-4 py-2 font-sans text-[13px] font-semibold text-ink-900 hover:bg-gilt-400">
             Open synthesis →
           </Link>
         </div>
       ) : null}
 
       <section className="mb-3 flex items-center justify-between">
-        <h2 className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-700">
+        <h2 className="font-display text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-700">
           Modules · {ranCount}/{totalCount} run
         </h2>
         {profileReady && !allComplete ? (
-          <Link href={nextStep.href} className="text-[13px] text-ink-600 underline-offset-4 hover:underline">
+          <Link href={nextStep.href} className="font-display text-[13px] font-medium text-ink-600 underline-offset-4 hover:underline">
             Run next →
           </Link>
         ) : null}
@@ -197,16 +197,16 @@ export default async function DashboardPage() {
                 className="flex items-center justify-between rounded-2xl border border-ink-200 bg-white p-4 hover:bg-ink-50/60"
               >
                 <div className="min-w-0">
-                  <p className="text-[13.5px] font-semibold text-ink-900">
+                  <p className="font-display text-[13.5px] font-medium text-ink-900">
                     {m.label}
                     {done ? (
-                      <span className="ml-2 rounded-full bg-success-100 px-2 py-0.5 align-middle font-mono text-[9.5px] uppercase tracking-[0.18em] text-success-700">
+                      <span className="ml-2 rounded-full bg-success-100 px-2 py-0.5 align-middle font-sans text-[9.5px] font-semibold uppercase tracking-[0.18em] text-success-700">
                         done
                       </span>
                     ) : null}
                   </p>
                   {m.row ? (
-                    <p className="mt-0.5 truncate font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-500">
+                    <p className="mt-0.5 truncate font-sans text-[10.5px] font-medium uppercase tracking-[0.18em] text-ink-500">
                       v{m.row.analysis_version} ·
                       {m.row.stale ? " stale" : " current"}
                       {/* Use the row-level status (always populated) instead of
@@ -215,7 +215,7 @@ export default async function DashboardPage() {
                       {m.row.status !== "ready" ? " · failed" : ""}
                     </p>
                   ) : (
-                    <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-400">not run yet</p>
+                    <p className="mt-0.5 font-sans text-[10.5px] font-medium uppercase tracking-[0.18em] text-ink-400">not run yet</p>
                   )}
                 </div>
                 <div className="ml-3 text-right">
@@ -224,7 +224,7 @@ export default async function DashboardPage() {
                       {m.row.envelope.score ?? "—"}
                     </p>
                   ) : (
-                    <p className="text-[12px] text-ink-400">→</p>
+                    <p className="font-sans text-[12px] text-ink-400">→</p>
                   )}
                 </div>
               </Link>
@@ -236,13 +236,13 @@ export default async function DashboardPage() {
       <div className="mt-8 flex gap-3">
         <Link
           href="/app/synthesis"
-          className="rounded-full bg-ink-900 px-5 py-2.5 text-[13.5px] font-medium text-parchment hover:bg-ink-800"
+          className="rounded-full bg-ink-900 px-5 py-2.5 font-sans text-[13.5px] font-semibold text-parchment hover:bg-ink-800"
         >
           {syn ? "View synthesis" : "Generate synthesis →"}
         </Link>
         <Link
           href="/app/onboarding/profile"
-          className="rounded-full border border-ink-300 bg-white px-5 py-2.5 text-[13.5px] font-medium text-ink-800 hover:bg-ink-50"
+          className="rounded-full border border-ink-300 bg-white px-5 py-2.5 font-sans text-[13.5px] font-semibold text-ink-800 hover:bg-ink-50"
         >
           Edit profile
         </Link>

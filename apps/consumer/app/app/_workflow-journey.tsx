@@ -84,15 +84,15 @@ export function WorkflowJourney({
       {/* Header band */}
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-500">
+          <p className="font-sans text-[10px] font-medium uppercase tracking-[0.22em] text-ink-500">
             Your journey
           </p>
-          <h2 className="mt-1 font-sans text-[18px] font-semibold tracking-[-0.015em] text-ink-900">
+          <h2 className="mt-1 font-display text-[18px] font-semibold tracking-[-0.015em] text-ink-900">
             Resume → Profile → Country → Job fit → Visa → Finance → Documents → Family → Culture
           </h2>
         </div>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px] tabular-nums text-ink-700">
+          <span className="font-sans text-[11px] font-medium tabular-nums text-ink-700">
             {doneCount}/{totalSteps} done
           </span>
           <div className="h-1.5 w-32 overflow-hidden rounded-full bg-ink-100">
@@ -143,7 +143,7 @@ export function WorkflowJourney({
         })}
       </ol>
 
-      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">
+      <p className="mt-3 font-sans text-[10px] font-normal uppercase tracking-[0.18em] text-ink-400">
         Tap any step to open it. Steps unlock as you complete the ones before them.
       </p>
     </section>
@@ -228,7 +228,7 @@ function StepCard({
       ) : null}
 
       {/* Step number eyebrow */}
-      <p className="relative z-10 mb-2 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-500">
+      <p className="relative z-10 mb-2 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-ink-500">
         Step {index + 1}
       </p>
 
@@ -261,7 +261,7 @@ function StepCard({
       {/* Label */}
       <p
         className={cn(
-          "relative z-10 mt-2 text-center text-[13px] font-semibold leading-tight",
+          "relative z-10 mt-2 text-center font-display text-[13px] font-medium leading-tight",
           s.label,
         )}
       >
@@ -271,7 +271,7 @@ function StepCard({
       {/* State chip */}
       <span
         className={cn(
-          "relative z-10 mt-2 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em]",
+          "relative z-10 mt-2 rounded-full px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.18em]",
           s.badge,
         )}
       >

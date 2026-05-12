@@ -171,9 +171,13 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-sans)", "system-ui", "sans-serif"],
+        // Final typography system: Public Sans, single family.
+        // All three CSS variables resolve to Public Sans (see globals.css
+        // alias rules), so font-sans, font-display, and font-mono callsites
+        // all render with the same family — hierarchy comes from weights.
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        mono: ["var(--font-mono)", "system-ui", "sans-serif"],
       },
       fontSize: {
         "display-xl": ["clamp(3rem, 6vw, 5rem)", { lineHeight: "1.02", letterSpacing: "-0.03em" }],

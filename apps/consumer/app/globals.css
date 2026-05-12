@@ -29,6 +29,14 @@
     --destructive: 353 73% 51%;
     --destructive-foreground: 38 33% 96%;
     --radius: 0.625rem;
+
+    /* Finalised typography system: Public Sans, single-family.
+       `--font-sans` is loaded by next/font in the root layout; the
+       display and mono variables are aliased to it so every callsite
+       (font-sans, font-display, font-mono, h1-h6 base rule) resolves to
+       the same family. Visual hierarchy comes from weight + size only. */
+    --font-display: var(--font-sans);
+    --font-mono: var(--font-sans);
   }
 
   * { @apply border-border; }
@@ -53,6 +61,7 @@
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight;
     color: inherit;
+    font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.025em;
   }
