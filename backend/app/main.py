@@ -43,7 +43,12 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[
+            "https://glimmora-relocate.vercel.app",
+            "https://relocate.glimmora.ai",
+            "http://localhost:3000",
+        ],
+        allow_origin_regex=r"https://glimmora-relocate-.*\.vercel\.app",
         allow_methods=["*"],
         allow_headers=["*"],
         allow_credentials=False,
