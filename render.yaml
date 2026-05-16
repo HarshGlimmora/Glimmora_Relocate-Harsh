@@ -1,22 +1,17 @@
 # Render Blueprint for Glimmora Relocate (MVP).
 #
-# Deploys two web services:
-#   - glimmora-backend  (FastAPI, runs alembic upgrade head on boot)
-#   - glimmora-consumer (Next.js, runs prisma db push on boot)
+# Deploys ONE web service: the FastAPI backend. The Next.js consumer app
+# is deployed separately to Vercel (see apps/consumer/).
 #
-# Both apps self-configure their schema on every boot, so a redeploy with a
-# fresh Postgres is enough to get a working stack — no shell access needed.
+# The backend runs `alembic upgrade head` on every boot from app/startup.py,
+# so a redeploy is enough to apply pending migrations — no shell access needed.
 #
 # Secrets you MUST set in the Render dashboard before first deploy:
-#   backend:
-#     - JWT_SECRET                       (any 32+ char random string)
-#     - GCP_SERVICE_ACCOUNT_JSON_B64     (base64-encoded service account JSON)
-#     - GCP_PROJECT                      (optional; auto-derived from the SA blob)
-#   consumer:
-#     - AUTH_SECRET                      (any 32+ char random string)
-#
-# The DATABASE_URL on each side is wired automatically from the matching
-# Postgres database below.
+#   - DATABASE_URL                     (the **internal** Postgres URL from
+#                                       your Render Postgres dashboard)
+#   - JWT_SECRET                       (any 32+ char random string)
+#   - GCP_SERVICE_ACCOUNT_JSON_B64     (base64 of GCP service account JSON)
+#   - GCP_PROJECT                      (optional; auto-derived from the SA blob)
 
 services:
   - type: web
@@ -24,10 +19,12 @@ services:
     runtime: python
     plan: starter
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /healthz
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
       - key: ENV
         value: production
       - key: LOG_LEVEL
@@ -35,9 +32,7 @@ services:
       - key: AI_PROVIDER
         value: auto
       - key: DATABASE_URL
-        fromDatabase:
-          name: glimmora-backend-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         sync: false
       - key: GCP_SERVICE_ACCOUNT_JSON_B64
@@ -46,33 +41,3 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
-
-  - type: web
-    name: glimmora-consumer
-    runtime: node
-    plan: starter
-    rootDir: apps/consumer
-    buildCommand: npm ci && npm run build
-    startCommand: npm run start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: glimmora-consumer-db
-          property: connectionString
-      - key: AUTH_SECRET
-        sync: false
-      - key: AUTH_TRUST_HOST
-        value: "true"
-      - key: GLIMMORA_BACKEND_URL
-        fromService:
-          type: web
-          name: glimmora-backend
-          property: hostport
-
-databases:
-  - name: glimmora-backend-db
-    plan: free
-  - name: glimmora-consumer-db
-    plan: free

@@ -95,7 +95,7 @@ def upgrade() -> None:
         sa.Column("state_changed_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("inputs_revision", sa.Integer, nullable=False, server_default="1"),
         sa.Column("inputs_snapshot", sa.JSON, nullable=False),
-        sa.Column("active", sa.Boolean, nullable=False, server_default=sa.text("1")),
+        sa.Column("active", sa.Boolean, nullable=False, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
     )
@@ -145,9 +145,9 @@ def upgrade() -> None:
         sa.Column("input_hash", sa.String(128), nullable=False),
         sa.Column("inputs_revision_at_gen", sa.Integer, nullable=False, server_default="1"),
         sa.Column("analysis_version", sa.Integer, nullable=False, server_default="1"),
-        sa.Column("stale", sa.Boolean, nullable=False, server_default=sa.text("0")),
+        sa.Column("stale", sa.Boolean, nullable=False, server_default=sa.false()),
         sa.Column(
-            "recompute_required", sa.Boolean, nullable=False, server_default=sa.text("0")
+            "recompute_required", sa.Boolean, nullable=False, server_default=sa.false()
         ),
         sa.Column("stale_reason", sa.String(240)),
         sa.Column("superseded_by", sa.String(36)),
@@ -178,7 +178,7 @@ def upgrade() -> None:
         sa.Column("latency_ms", sa.Integer),
         sa.Column("cost_usd", sa.Numeric(10, 6)),
         sa.Column("request_id", sa.String(80)),
-        sa.Column("success", sa.Boolean, nullable=False, server_default=sa.text("1")),
+        sa.Column("success", sa.Boolean, nullable=False, server_default=sa.true()),
         sa.Column("error", sa.Text),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )

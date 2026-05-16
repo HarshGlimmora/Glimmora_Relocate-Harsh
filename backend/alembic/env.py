@@ -23,11 +23,19 @@ if config.config_file_name is not None:
 
 
 def _sync_url(url: str) -> str:
-    """Convert async URLs to sync drivers for alembic's engine."""
-    return (
-        url.replace("+aiosqlite", "")
-        .replace("postgresql+asyncpg", "postgresql+psycopg")
-    )
+    """Convert async URLs to sync drivers for alembic's engine.
+
+    SQLAlchemy defaults plain `postgresql://` to psycopg2 — which we don't
+    install. Force psycopg (v3) explicitly so the build only needs one
+    Postgres driver pinned in requirements.txt.
+    """
+    url = url.replace("+aiosqlite", "")
+    url = url.replace("postgresql+asyncpg", "postgresql+psycopg")
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    elif url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg://", 1)
+    return url
 
 
 settings = get_settings()
