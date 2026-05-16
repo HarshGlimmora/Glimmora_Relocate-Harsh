@@ -5,8 +5,13 @@
  * fails (ECONNREFUSED, DNS, TLS, etc.), Next.js swallows the cause chain and
  * the dev terminal only shows `TypeError: fetch failed`. That's useless for
  * debugging. This logger unwraps the `cause` chain and prints the actual
- * underlying error, then appends a JSON record to `.logs/backend-errors.log`
- * (gitignored) so the same detail is recoverable later.
+ * underlying error.
+ *
+ * On serverless platforms (Vercel) the working directory is read-only, so
+ * the file-append fallback targets `/tmp` instead. On Vercel `/tmp` is
+ * per-instance ephemeral — file logs are useful only for the lifetime of a
+ * warm Lambda. Console output, written from `console.error`, is the
+ * authoritative log sink and is captured by the platform.
  *
  * Use from server-only modules (server actions, route handlers, RSC). Do
  * NOT import from a client component.
@@ -16,7 +21,9 @@ import "server-only";
 import { appendFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-const LOG_DIR = join(process.cwd(), ".logs");
+// Vercel and most serverless runtimes only allow writes under /tmp. Locally
+// we keep behaviour identical by also using a /tmp path.
+const LOG_DIR = "/tmp/glimmora-logs";
 const LOG_FILE = join(LOG_DIR, "backend-errors.log");
 
 let _dirEnsured = false;

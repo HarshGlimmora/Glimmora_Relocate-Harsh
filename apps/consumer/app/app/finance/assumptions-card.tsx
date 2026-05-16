@@ -72,8 +72,6 @@ export function AssumptionsCard({
   const [activeSource, setActiveSource] = React.useState<AssumptionSource | null>(null);
   const [sortDir, setSortDir] = React.useState<SortDir>("low-to-high");
 
-  if (!items.length) return null;
-
   // ---- Composition + stats (memoised, recompute when items change) ----
   const stats = React.useMemo(() => {
     const counts: Record<AssumptionSource, number> = {
@@ -91,8 +89,8 @@ export function AssumptionsCard({
       if (a.confidence < confMin) confMin = a.confidence;
       if (a.confidence > confMax) confMax = a.confidence;
     }
-    const avg = confSum / items.length;
-    const trustPct = (counts.user / items.length) * 100;
+    const avg = items.length === 0 ? 0 : confSum / items.length;
+    const trustPct = items.length === 0 ? 0 : (counts.user / items.length) * 100;
     return { counts, avg, confMin, confMax, trustPct };
   }, [items]);
 
@@ -106,6 +104,8 @@ export function AssumptionsCard({
     );
     return base.map((a, i) => ({ a, originalIndex: items.indexOf(a), key: `${a.label}-${i}` }));
   }, [items, activeSource, sortDir]);
+
+  if (!items.length) return null;
 
   return (
     <section data-assumptions-card>

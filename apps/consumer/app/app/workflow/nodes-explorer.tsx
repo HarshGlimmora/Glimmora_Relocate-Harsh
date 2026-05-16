@@ -29,8 +29,6 @@ export function NodesExplorer({
   const [activeCategory, setActiveCategory] = React.useState<string | null>(null);
   const [view, setView] = React.useState<"flat" | "grouped">("grouped");
 
-  if (!nodes.length) return null;
-
   // Counts
   const statusCounts = React.useMemo(() => {
     const c: Partial<Record<Status, number>> = {};
@@ -61,6 +59,8 @@ export function NodesExplorer({
     }
     return Array.from(map.entries());
   }, [visible]);
+
+  if (!nodes.length) return null;
 
   return (
     <section data-nodes-explorer>

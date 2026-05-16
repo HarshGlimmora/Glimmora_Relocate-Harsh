@@ -62,11 +62,9 @@ export function BlockersBoard({ blockers }: { blockers: TimelineBlocker[] }) {
   const [sortDir, setSortDir] = React.useState<SortDir>("by-severity");
   const [resolved, setResolved] = React.useState<Set<number>>(() => new Set());
 
-  if (!blockers?.length) return null;
-
   const counts = React.useMemo(() => {
     const c: Record<Sev, number> = { high: 0, medium: 0, low: 0 };
-    for (const b of blockers) {
+    for (const b of blockers ?? []) {
       const sev = (b.severity ?? "low").toLowerCase() as Sev;
       if (sev in c) c[sev] += 1;
     }
@@ -74,7 +72,7 @@ export function BlockersBoard({ blockers }: { blockers: TimelineBlocker[] }) {
   }, [blockers]);
 
   const visible = React.useMemo(() => {
-    const indexed = blockers.map((b, i) => ({ b, i }));
+    const indexed = (blockers ?? []).map((b, i) => ({ b, i }));
     const filtered = activeSev
       ? indexed.filter(({ b }) => (b.severity ?? "").toLowerCase() === activeSev)
       : indexed;
@@ -89,6 +87,8 @@ export function BlockersBoard({ blockers }: { blockers: TimelineBlocker[] }) {
     });
     return filtered;
   }, [blockers, activeSev, sortDir]);
+
+  if (!blockers?.length) return null;
 
   function toggleResolve(i: number) {
     setResolved((prev) => {

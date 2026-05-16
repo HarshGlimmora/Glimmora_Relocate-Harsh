@@ -1,13 +1,14 @@
 // Glimmora Relocate — Consumer App
-// Prisma schema · SQLite for local dev · designed to swap to Postgres at W4
-// Note: SQLite doesn't support enums; we use String fields with runtime validation in zod schemas.
+// Prisma schema · PostgreSQL (Render-hosted).
+// We use String fields with runtime validation in zod schemas instead of
+// Postgres enums to keep migrations cheap when valid values change.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

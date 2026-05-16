@@ -93,10 +93,8 @@ export function DailyLifeGrid({
   const [saved, setSaved] = React.useState<Set<number>>(() => new Set());
   const [highlightedIdx, setHighlightedIdx] = React.useState<number | null>(null);
 
-  if (!items?.length) return null;
-
   const categorized = React.useMemo(
-    () => items.map((d, i) => ({ d, i, cat: categorize(d.topic) })),
+    () => (items ?? []).map((d, i) => ({ d, i, cat: categorize(d.topic) })),
     [items],
   );
 
@@ -116,6 +114,8 @@ export function DailyLifeGrid({
       );
     });
   }, [categorized, activeCat, query]);
+
+  if (!items?.length) return null;
 
   function toggleSave(i: number) {
     setSaved((prev) => {

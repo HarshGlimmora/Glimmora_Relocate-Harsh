@@ -38,8 +38,6 @@ export function GlimmoraMark({
   className,
   height,
   size,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  withWordmark: _withWordmark = true,
 }: GlimmoraMarkProps) {
   const h = height ?? size ?? 32;
   const w = Math.round(h * ASPECT);

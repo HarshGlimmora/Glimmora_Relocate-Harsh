@@ -55,6 +55,13 @@ export function GanttChart({
   const [focusedPhaseId, setFocusedPhaseId] = React.useState<string | null>(null);
   const [criticalOnly, setCriticalOnly] = React.useState(false);
 
+  // Categories present
+  const categories = React.useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const p of phases) seen.set(p.category, (seen.get(p.category) ?? 0) + 1);
+    return Array.from(seen.entries());
+  }, [phases]);
+
   if (!phases.length) return null;
 
   const maxWeek = Math.max(
@@ -63,13 +70,6 @@ export function GanttChart({
     ...milestones.map((m) => m.target_week),
     1,
   );
-
-  // Categories present
-  const categories = React.useMemo(() => {
-    const seen = new Map<string, number>();
-    for (const p of phases) seen.set(p.category, (seen.get(p.category) ?? 0) + 1);
-    return Array.from(seen.entries());
-  }, [phases]);
 
   function isPhaseDimmed(p: TimelinePhase): boolean {
     if (activeCategory && p.category !== activeCategory) return true;

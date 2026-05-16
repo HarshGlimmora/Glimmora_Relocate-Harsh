@@ -27,8 +27,6 @@ export function ChecklistGrid({ items }: { items: ChecklistItem[] }) {
   const [activeStatus, setActiveStatus] = React.useState<StatusKey | null>(null);
   const [sortDir, setSortDir] = React.useState<SortDir>("now-first");
 
-  if (!items.length) return null;
-
   // Status counts (always reflect the unfiltered list)
   const counts = React.useMemo(() => {
     const c: Record<StatusKey, number> = { have: 0, need: 0, expiring: 0, unknown: 0 };
@@ -46,6 +44,8 @@ export function ChecklistGrid({ items }: { items: ChecklistItem[] }) {
     });
     return base;
   }, [items, activeStatus, sortDir]);
+
+  if (!items.length) return null;
 
   return (
     <section data-checklist-grid>

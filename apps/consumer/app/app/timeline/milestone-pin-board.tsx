@@ -34,10 +34,10 @@ export function MilestonePinBoard({
   const [filter, setFilter] = React.useState<FilterMode>({ kind: "all" });
   const [done, setDone] = React.useState<Set<string>>(() => new Set());
 
-  if (!milestones.length) return null;
-  const phaseById = new Map(phases.map((p) => [p.id, p] as const));
-  const maxWeek = Math.max(totalWeeksMax, ...milestones.map((m) => m.target_week), 1);
-  const criticalSet = new Set(criticalMilestoneIds);
+  const criticalSet = React.useMemo(
+    () => new Set(criticalMilestoneIds),
+    [criticalMilestoneIds],
+  );
 
   const sortedAll = React.useMemo(
     () => [...milestones].sort((a, b) => a.target_week - b.target_week),
@@ -50,6 +50,16 @@ export function MilestonePinBoard({
       return sortedAll.filter((m) => criticalSet.has(m.id));
     return sortedAll.filter((m) => m.phase_id === filter.phaseId);
   }, [sortedAll, filter, criticalSet]);
+
+  // Phases that actually have milestones (for the chip set)
+  const phasesWithMilestones = React.useMemo(() => {
+    const ids = new Set(milestones.map((m) => m.phase_id));
+    return phases.filter((p) => ids.has(p.id));
+  }, [milestones, phases]);
+
+  if (!milestones.length) return null;
+  const phaseById = new Map(phases.map((p) => [p.id, p] as const));
+  const maxWeek = Math.max(totalWeeksMax, ...milestones.map((m) => m.target_week), 1);
 
   function toggleDone(id: string) {
     setDone((prev) => {
@@ -66,12 +76,6 @@ export function MilestonePinBoard({
 
   const donePct =
     milestones.length === 0 ? 0 : Math.round((done.size / milestones.length) * 100);
-
-  // Phases that actually have milestones (for the chip set)
-  const phasesWithMilestones = React.useMemo(() => {
-    const ids = new Set(milestones.map((m) => m.phase_id));
-    return phases.filter((p) => ids.has(p.id));
-  }, [milestones, phases]);
 
   return (
     <section data-milestone-board>
